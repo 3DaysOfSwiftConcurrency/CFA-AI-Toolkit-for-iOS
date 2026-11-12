@@ -26,15 +26,15 @@ function renamePaths(directory, from, to) {
 
 export function createCFAProject({ name, out }) {
   if (fs.existsSync(out)) throw Error(`Destination already exists: ${out}`);
-  fs.cpSync(path.join(root, 'starter-apps', 'Todays Twenty'), out, { recursive: true });
-  renamePaths(out, 'TimesThirty', name);
+  fs.cpSync(path.join(root, 'starter-apps', 'CFA Blank'), out, { recursive: true });
+  renamePaths(out, 'CFABlank', name);
   for (const relative of fs.readdirSync(out, { recursive: true, encoding: 'utf8' })) {
     const file = path.join(out, relative);
     if (!fs.statSync(file).isFile() || !/\.(swift|pbxproj|xcscheme|md|plist)$/.test(file)) continue;
     fs.writeFileSync(file, fs.readFileSync(file, 'utf8')
-      .replaceAll('com.3DaysOfSwiftConcurrency.TimesThirty', `com.3DaysOfSwiftConcurrency.${name}`)
-      .replaceAll('TimesThirty', name)
-      .replaceAll('Times Thirty', name));
+      .replaceAll('com.3DaysOfSwiftConcurrency.CFABlank', `com.3DaysOfSwiftConcurrency.${name}`)
+      .replaceAll('CFABlank', name)
+      .replaceAll('CFA Blank', name));
   }
   return out;
 }

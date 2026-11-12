@@ -22,7 +22,7 @@ node scripts/create-cfa-project.mjs --name ReadingList --out /tmp/ReadingList
 xcodebuild -project /tmp/ReadingList/ReadingList.xcodeproj -scheme ReadingList -sdk iphonesimulator build
 ```
 
-The command copies the maintained Day Streak starter and retargets the project,
+The command copies the maintained CFA Blank skeleton and retargets the project,
 app, test target and bundle identifiers. `--name` is a bundle-identifier-safe
 Swift name; generated identifiers use `com.3DaysOfSwiftConcurrency.<AppName>`.
 
