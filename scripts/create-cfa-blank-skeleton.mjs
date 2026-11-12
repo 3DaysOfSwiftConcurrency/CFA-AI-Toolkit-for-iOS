@@ -13,6 +13,9 @@ function replaceNames(directory) {
     fs.writeFileSync(file, fs.readFileSync(file, 'utf8')
       .replaceAll('GitRepos', 'CFABlank')
       .replaceAll('Git Repos', 'CFA Blank')
+      .replaceAll('INFOPLIST_KEY_CFBundleDisplayName = "Todays Twenty";', 'INFOPLIST_KEY_CFBundleDisplayName = "$(PRODUCT_NAME)";')
+      .replaceAll('\t\t\t\tINFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";\n', '')
+      .replaceAll('\t\t\t\tINFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;\n', '')
       .replaceAll('___PACKAGENAME:identifier___', 'CFABlank'));
   }
 }
@@ -37,6 +40,7 @@ export function createCFABlankSkeleton() {
   fs.mkdirSync(path.join(output, 'GitRepos', '3 - App Resources'), { recursive: true });
   fs.writeFileSync(path.join(output, 'GitRepos', '3 - App Resources', 'PrivacyInfo.xcprivacy'), `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>NSPrivacyAccessedAPITypes</key><array/></dict></plist>\n`);
   renamePaths(output, 'GitRepos', 'CFABlank');
+  renamePaths(output, '___PACKAGENAME:identifier___', 'CFABlank');
   replaceNames(output);
   fs.writeFileSync(path.join(output, 'README.md'), '# CFA Blank\n\nA minimal, openable CFA foundation for a new product. It deliberately has no product feature, Settings, networking, cache, or required-reason API declaration. Add those only when the product needs them.\n');
   return output;
