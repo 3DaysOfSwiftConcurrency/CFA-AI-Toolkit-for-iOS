@@ -9,20 +9,21 @@ const root = path.resolve(import.meta.dirname, '..');
 const app = path.join(root, 'templates/Xcode/Project Templates/iOS/Application/CFA App.xctemplate');
 const tests = path.join(root, 'templates/Xcode/Project Templates/iOS/Application/CFA App Tests.xctemplate');
 
-test('CFA App is a neutral, strict-concurrency foundation', () => {
+test('CFA App is an honestly blank, strict-concurrency foundation', () => {
   assert.equal(verifyXcodeTemplateStructure(app), true);
   const source = fs.readdirSync(path.join(app, 'Source', 'Application'), { recursive: true, encoding: 'utf8' })
     .filter(file => file.endsWith('.swift'))
     .map(file => fs.readFileSync(path.join(app, 'Source', 'Application', file), 'utf8')).join('\n');
   assert.doesNotMatch(source, /GitRepos|GitHub|URLSession|RepoCache|SettingsFeature|ThemeManager/);
-  assert.match(source, /@State private var viewModel = ContentViewModel\(\)/);
-  assert.match(source, /static let shared = AppModel\(\)/);
+  assert.match(source, /struct RootView: View/);
+  assert.doesNotMatch(source, /AppModel|ViewModel|@Observable|@State private var viewModel/);
 });
 
-test('CFA App includes a matching minimal test component', () => {
-  for (const file of ['Source/AppModel tests/AppModelTests.swift', 'Source/View model tests/ContentViewModelTests.swift']) {
-    assert.equal(fs.existsSync(path.join(tests, file)), true, file);
-  }
+test('CFA App test component creates no ceremonial tests', () => {
+  assert.equal(fs.existsSync(path.join(tests, 'Source/AppModel tests/AppModelTests.swift')), false);
+  assert.equal(fs.existsSync(path.join(tests, 'Source/View model tests/ContentViewModelTests.swift')), false);
+  assert.deepEqual(fs.readdirSync(path.join(tests, 'Source'), { recursive: true, encoding: 'utf8' })
+    .filter(file => file.endsWith('.swift')), []);
   execFileSync('plutil', ['-lint', path.join(tests, 'TemplateInfo.plist')]);
 });
 
@@ -38,10 +39,13 @@ test('CFA Blank is the headless creation skeleton without product chrome', () =>
   assert.equal(fs.existsSync(path.join(skeleton, 'CFABlank.xcodeproj/project.pbxproj')), true);
   assert.equal(fs.existsSync(path.join(skeleton, 'CFABlank/1 - View/CFABlankApp.swift')), true);
   assert.equal(fs.existsSync(path.join(skeleton, 'CFABlank/1 - View/___PACKAGENAME:identifier___App.swift')), false);
+  assert.equal(fs.existsSync(path.join(skeleton, 'CFABlank/1 - View/Views/Root/RootView.swift')), true);
   const source = fs.readdirSync(path.join(skeleton, 'CFABlank'), { recursive: true, encoding: 'utf8' })
     .filter(file => file.endsWith('.swift'))
     .map(file => fs.readFileSync(path.join(skeleton, 'CFABlank', file), 'utf8')).join('\n');
-  assert.doesNotMatch(source, /Practice|DayStreak|ThemeManager|SettingsFeature|UserDefaults|GitRepos/);
+  assert.doesNotMatch(source, /Practice|DayStreak|ThemeManager|SettingsFeature|UserDefaults|GitRepos|AppModel|ViewModel|@Observable/);
+  assert.deepEqual(fs.readdirSync(path.join(skeleton, 'CFABlankTests'), { recursive: true, encoding: 'utf8' })
+    .filter(file => file.endsWith('.swift')), []);
   const privacy = fs.readFileSync(path.join(skeleton, 'CFABlank/3 - App Resources/PrivacyInfo.xcprivacy'), 'utf8');
   assert.doesNotMatch(privacy, /UserDefaults|CA92\.1/);
   const project = fs.readFileSync(path.join(skeleton, 'CFABlank.xcodeproj/project.pbxproj'), 'utf8');

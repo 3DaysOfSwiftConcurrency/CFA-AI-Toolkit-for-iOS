@@ -25,7 +25,12 @@ when the source data changes. Review-only work
 reports violations; tests inject Features into ViewModels, not ViewModels into Views.
 
 Create the smallest complete working feature, then continue shaping the new
-product across later requests. Record new-product development in project
+product across later requests. A blank scaffold is not a feature: it may contain
+only the app entry point and a structural root View. Do not manufacture an
+AppModel, Feature, ViewModel, test, or hard-coded "architecture guidance" merely
+to resemble CFA. Once a user journey exists, add its screen ViewModel, concrete
+Feature, AppModel composition, and behavioural tests as one complete slice.
+Record new-product development in project
 instructions when creating the app. Read [new-app design defaults](references/new-app-design-defaults.md)
 before choosing initial visuals. On later iterations, reuse the existing app
 and honour choices already made; do not restart scaffolding or reapply defaults.

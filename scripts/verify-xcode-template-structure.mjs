@@ -15,9 +15,7 @@ export function verifyXcodeTemplateStructure(template = defaultTemplate) {
   const info = readInfo(template);
   const expected = [
     ['1 - View/___PACKAGENAME:identifier___App.swift', 'Source/Application/1 - View/___PACKAGENAME:identifier___App.swift'],
-    ['1 - View/Views/Root/ContentView.swift', 'Source/Application/1 - View/Views/Root/ContentView.swift'],
-    ['1 - View/Views/Root/ContentViewModel.swift', 'Source/Application/1 - View/Views/Root/ContentViewModel.swift'],
-    ['2 - AppModel/AppModel.swift', 'Source/Application/2 - AppModel/AppModel.swift']
+    ['1 - View/Views/Root/RootView.swift', 'Source/Application/1 - View/Views/Root/RootView.swift']
   ];
   for (const [name, source] of expected) {
     if (info.Definitions?.[name]?.Path !== source || !fs.existsSync(path.join(template, source))) throw Error(`CFA App template structure: missing ${name}.`);
@@ -26,7 +24,8 @@ export function verifyXcodeTemplateStructure(template = defaultTemplate) {
   if (settings.SWIFT_VERSION !== '6.0' || settings.SWIFT_STRICT_CONCURRENCY !== 'complete') throw Error('CFA App template structure: missing Swift 6 strict concurrency settings.');
   const sources = expected.map(([, source]) => fs.readFileSync(path.join(template, source), 'utf8')).join('\n');
   if (/GitRepos|GitHub|URLSession|RepoCache|SettingsFeature|ThemeManager/.test(sources)) throw Error('CFA App template structure: contains product-specific demo dependencies.');
-  if (!/@State private var viewModel = ContentViewModel\(\)/.test(sources) || !/static let shared = AppModel\(\)/.test(sources)) throw Error('CFA App template structure: missing CFA screen or composition ownership.');
+  if (!/struct RootView: View/.test(sources)) throw Error('CFA App template structure: missing the structural root View.');
+  if (/AppModel|ViewModel|@Observable|@State private var viewModel/.test(sources)) throw Error('CFA App template structure: contains ceremonial CFA layers without a product feature.');
   return true;
 }
 

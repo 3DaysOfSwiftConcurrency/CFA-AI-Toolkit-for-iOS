@@ -23,8 +23,10 @@ xcodebuild -project /tmp/ReadingList/ReadingList.xcodeproj -scheme ReadingList -
 ```
 
 The command copies the maintained CFA Blank skeleton and retargets the project,
-app, test target and bundle identifiers. `--name` is a bundle-identifier-safe
-Swift name; generated identifiers use `com.3DaysOfSwiftConcurrency.<AppName>`.
+app, test target and bundle identifiers. It deliberately contains no placeholder
+Feature, AppModel, ViewModel or tests: add them together when the first real
+user journey is known. `--name` is a bundle-identifier-safe Swift name;
+generated identifiers use `com.3DaysOfSwiftConcurrency.<AppName>`.
 
 Want an existing project you can open immediately? Browse
 [Starter Apps](../../starter-apps/README.md), including Habit Tracker Pro with

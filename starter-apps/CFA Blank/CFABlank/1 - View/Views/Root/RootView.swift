@@ -1,13 +1,11 @@
 import SwiftUI
 
-struct ContentView: View {
-    @State private var viewModel = ContentViewModel()
-
+struct RootView: View {
     var body: some View {
         ContentUnavailableView(
             "Start Building",
             systemImage: "hammer",
-            description: Text(viewModel.message)
+            description: Text("Define the first user journey, then add its complete CFA feature.")
         )
     }
 }

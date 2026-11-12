@@ -9,7 +9,7 @@ features and tests, then make it your own. No template installation is required.
 | [Habit Tracker Pro](Habit%20Tracker%20Pro/README.md) | Habit Tracker plus charts and a one-time StoreKit unlock | [HabitTrackerPro.xcodeproj](Habit%20Tracker%20Pro/HabitTrackerPro.xcodeproj) |
 | [Todays Twenty](Todays%20Twenty/README.md) | Daily multiplication practice, saved sessions and reusable day-streak behaviour | [TimesThirty.xcodeproj](Todays%20Twenty/TimesThirty.xcodeproj) |
 | [Git Repos](Git%20Repos/README.md) | GitHub networking, JSON cache restoration, shared refresh and remote-list presentation | [GitRepos.xcodeproj](Git%20Repos/GitRepos.xcodeproj) |
-| [CFA Blank](CFA%20Blank/README.md) | Minimal neutral foundation for a new CFA product | [CFABlank.xcodeproj](CFA%20Blank/CFABlank.xcodeproj) |
+| [CFA Blank](CFA%20Blank/README.md) | Honestly blank foundation; add the first complete CFA feature when its journey is known | [CFABlank.xcodeproj](CFA%20Blank/CFABlank.xcodeproj) |
 
 These are customisable starting points, not a guarantee of App Store readiness.
 Read each app's setup, verification and distribution notes. Configure your own

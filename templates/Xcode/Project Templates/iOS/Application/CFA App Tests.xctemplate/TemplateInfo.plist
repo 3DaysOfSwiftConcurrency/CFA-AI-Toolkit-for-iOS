@@ -3,7 +3,5 @@
 <plist version="1.0"><dict>
 <key>Ancestors</key><array><string>com.apple.dt.unit.cocoaTouchUnitTestBundle</string></array>
 <key>Concrete</key><true/><key>Identifier</key><string>com.3daysofswift.cfa.iosAppTests</string><key>Kind</key><string>Xcode.Xcode3.ProjectTemplateUnitKind</string>
-<key>Definitions</key><dict>
-<key>View model tests/ContentViewModelTests.swift</key><dict><key>Path</key><string>Source/View model tests/ContentViewModelTests.swift</string><key>TargetIdentifiers</key><array><string>com.apple.dt.unitTestTarget</string></array></dict>
-<key>AppModel tests/AppModelTests.swift</key><dict><key>Path</key><string>Source/AppModel tests/AppModelTests.swift</string><key>TargetIdentifiers</key><array><string>com.apple.dt.unitTestTarget</string></array></dict>
-</dict></dict></plist>
+<key>Definitions</key><dict/>
+</dict></plist>

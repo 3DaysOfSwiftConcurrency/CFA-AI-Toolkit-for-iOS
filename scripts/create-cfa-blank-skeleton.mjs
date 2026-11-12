@@ -42,7 +42,7 @@ export function createCFABlankSkeleton() {
   renamePaths(output, 'GitRepos', 'CFABlank');
   renamePaths(output, '___PACKAGENAME:identifier___', 'CFABlank');
   replaceNames(output);
-  fs.writeFileSync(path.join(output, 'README.md'), '# CFA Blank\n\nA minimal, openable CFA foundation for a new product. It deliberately has no product feature, Settings, networking, cache, or required-reason API declaration. Add those only when the product needs them.\n');
+  fs.writeFileSync(path.join(output, 'README.md'), '# CFA Blank\n\nAn honestly blank, openable foundation for a new CFA product. It deliberately contains no placeholder AppModel, Feature, ViewModel, tests, Settings, networking, cache, or required-reason API declaration. Define the first user journey, then add its complete CFA slice together.\n');
   return output;
 }
 
