@@ -33,7 +33,6 @@ export function createCFABlankSkeleton() {
   fs.rmSync(path.join(output, 'GitReposTests'), { recursive: true });
   fs.cpSync(path.join(templateRoot, 'CFA App.xctemplate/Source/Application'), path.join(output, 'GitRepos'), { recursive: true });
   fs.cpSync(path.join(templateRoot, 'CFA App Tests.xctemplate/Source'), path.join(output, 'GitReposTests'), { recursive: true });
-  fs.rmSync(path.join(output, 'GitRepos', 'Assets.xcassets'), { recursive: true });
   fs.cpSync(path.join(templateRoot, 'CFA App.xctemplate/Source/Assets.xcassets'), path.join(output, 'GitRepos', 'Assets.xcassets'), { recursive: true });
   fs.mkdirSync(path.join(output, 'GitRepos', '3 - App Resources'), { recursive: true });
   fs.writeFileSync(path.join(output, 'GitRepos', '3 - App Resources', 'PrivacyInfo.xcprivacy'), `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>NSPrivacyAccessedAPITypes</key><array/></dict></plist>\n`);

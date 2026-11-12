@@ -1,5 +1,5 @@
 import Testing
-@testable import ___PACKAGENAME:identifier___
+@testable import CFABlank
 
 @MainActor
 struct ContentViewModelTests {
