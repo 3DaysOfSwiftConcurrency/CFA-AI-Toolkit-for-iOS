@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ___PROJECTNAME:identifier___
+@testable import GitRepos
 
 @Suite("Settings screen") @MainActor
 struct SettingsViewModelTests {

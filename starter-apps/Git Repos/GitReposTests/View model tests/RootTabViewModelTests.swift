@@ -1,5 +1,5 @@
 import Testing
-@testable import ___PROJECTNAME:identifier___
+@testable import GitRepos
 
 @Suite("Root navigation") @MainActor
 struct RootTabViewModelTests {

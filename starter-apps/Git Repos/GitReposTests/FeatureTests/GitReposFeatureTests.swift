@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 import Testing
-@testable import ___PROJECTNAME:identifier___
+@testable import GitRepos
 
 @Suite("Git repositories", .timeLimit(.minutes(1))) @MainActor
 struct GitReposFeatureTests {

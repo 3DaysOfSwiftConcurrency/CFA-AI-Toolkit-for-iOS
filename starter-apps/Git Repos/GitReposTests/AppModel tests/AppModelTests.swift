@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ___PROJECTNAME:identifier___
+@testable import GitRepos
 
 @Suite("Application composition", .timeLimit(.minutes(1))) @MainActor
 struct AppModelTests {

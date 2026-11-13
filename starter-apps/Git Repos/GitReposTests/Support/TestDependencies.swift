@@ -1,5 +1,5 @@
 import Foundation
-@testable import ___PROJECTNAME:identifier___
+@testable import GitRepos
 
 actor TestGitReposProvider: GitReposProvider {
     let gitHubResponses: [GitHubRepoResponse]

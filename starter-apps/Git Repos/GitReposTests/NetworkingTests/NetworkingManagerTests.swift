@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ___PROJECTNAME:identifier___
+@testable import GitRepos
 
 // This test protocol is retained by URLSession; its mutable coordination lives in an actor.
 private final class OverlapURLProtocol: URLProtocol, @unchecked Sendable {
