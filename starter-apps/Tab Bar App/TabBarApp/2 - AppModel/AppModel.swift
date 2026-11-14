@@ -6,11 +6,12 @@ final class AppModel {
 
     let homeFeature: HomeFeature
     let settingsFeature: SettingsFeature
-    private var didFinishLaunching = false
+    private var didFinishLaunching: Bool
 
     init(homeFeature: HomeFeature, settingsFeature: SettingsFeature) {
         self.homeFeature = homeFeature
         self.settingsFeature = settingsFeature
+        didFinishLaunching = false
     }
 
     static func live() -> AppModel {
