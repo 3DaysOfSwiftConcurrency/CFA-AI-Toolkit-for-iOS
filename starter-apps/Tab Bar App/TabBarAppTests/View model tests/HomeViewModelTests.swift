@@ -1,5 +1,5 @@
 import Testing
-@testable import CFAApp
+@testable import TabBarApp
 
 @MainActor
 struct HomeViewModelTests {

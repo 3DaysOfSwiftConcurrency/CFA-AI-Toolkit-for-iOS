@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import CFAApp
+@testable import TabBarApp
 
 @MainActor
 struct SettingsFeatureTests {

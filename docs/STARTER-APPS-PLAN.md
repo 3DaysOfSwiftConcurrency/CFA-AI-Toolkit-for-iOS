@@ -10,7 +10,7 @@ starter; it must never grow a second hand-maintained implementation.
 
 | CLI starter | Canonical project | Pattern it demonstrates |
 | --- | --- | --- |
-| `app` | CFA App | Home and Settings tabs, appearance preferences and complete CFA slices |
+| `tab-bar` | Tab Bar App | Home and Settings tabs, appearance preferences and complete CFA slices |
 | `blank` | CFA Blank | Empty, correctly identified project infrastructure |
 | `habit-tracker` | Habit Tracker | Persistence, editing, daily state and streaks |
 | `habit-tracker-pro` | Habit Tracker Pro | Trends and StoreKit entitlement handling |
@@ -25,8 +25,8 @@ test identifiers, and parses every generated Swift file.
 
 ## Next slices
 
-1. Synchronise the rebuilt **CFA App** starter to its Xcode template and add
-   generated-template checks. It is now available as `--starter app`.
+1. Keep **CFA App** as the empty Xcode template and **CFA Blank** as the
+   CLI-only empty scaffold. Maintain Tab Bar App as a separate, named starter.
 2. Rename and generalise the Git Repos project into **Remote List**, retaining
    its verified networking/cache behaviour while removing GitHub-specific UI
    and product wording.

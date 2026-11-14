@@ -128,8 +128,8 @@ new project. CFA App is currently an honestly blank, strict-concurrency
 foundation with the CFA folder map and a structural root View; it deliberately
 does not manufacture a Feature, AppModel, ViewModel or tests before a real user
 journey is known. Habit Tracker and Day Streak provide the application-specific
-features described below. The planned small Home + Settings CFA App starter is
-tracked in [the starter-apps plan](docs/STARTER-APPS-PLAN.md).
+features described below. The separate [Tab Bar App starter](starter-apps/Tab%20Bar%20App/README.md)
+demonstrates a small Home + Settings CFA app.
 
 ### Explore the Starter Apps
 
