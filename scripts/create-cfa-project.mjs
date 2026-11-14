@@ -12,7 +12,7 @@ export const starters = {
   'habit-tracker': { source: 'Habit Tracker', codeName: 'HabitTrackerTemplate', displayName: 'Habit Tracker', summary: 'Habits, daily progress, persistence, and streaks.' },
   'habit-tracker-pro': { source: 'Habit Tracker Pro', codeName: 'HabitTrackerPro', displayName: 'Habit Tracker Pro', summary: 'Habit tracking plus trends and a StoreKit purchase example.' },
   'day-streak': { source: 'Todays Twenty', codeName: 'TimesThirty', displayName: 'Todays Twenty', summary: 'A durable daily-practice workflow and reusable day-streak feature.' },
-  'remote-list': { source: 'Git Repos', codeName: 'GitRepos', displayName: 'Git Repos', summary: 'A remote list with caching, shared refresh, retry, and external links.' }
+  'remote-list': { source: 'Remote List', codeName: 'RemoteList', displayName: 'Remote List', summary: 'A remote list with caching, shared refresh, retry, and external links.' }
 };
 
 function usage() {

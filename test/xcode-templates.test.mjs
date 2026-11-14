@@ -27,24 +27,24 @@ test('CFA App test component creates no ceremonial tests', () => {
   execFileSync('plutil', ['-lint', path.join(tests, 'TemplateInfo.plist')]);
 });
 
-test('Git Repos optional remote-list starter has no stale template residue', () => {
-  const starter = path.join(root, 'starter-apps/Git Repos');
-  assert.equal(fs.existsSync(path.join(starter, 'GitRepos.xcodeproj/project.pbxproj')), true);
-  assert.equal(fs.existsSync(path.join(starter, 'GitRepos/Assets.xcassets/AppIcon.appiconset/GitRepos-App-Icon.png')), true);
+test('Remote List starter has no stale template residue', () => {
+  const starter = path.join(root, 'starter-apps/Remote List');
+  assert.equal(fs.existsSync(path.join(starter, 'RemoteList.xcodeproj/project.pbxproj')), true);
+  assert.equal(fs.existsSync(path.join(starter, 'RemoteList/Assets.xcassets/AppIcon.appiconset/RemoteList-App-Icon.png')), true);
   const appIconSize = execFileSync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight',
-    path.join(starter, 'GitRepos/Assets.xcassets/AppIcon.appiconset/GitRepos-App-Icon.png')], { encoding: 'utf8' });
+    path.join(starter, 'RemoteList/Assets.xcassets/AppIcon.appiconset/RemoteList-App-Icon.png')], { encoding: 'utf8' });
   assert.match(appIconSize, /pixelWidth: 1024/);
   assert.match(appIconSize, /pixelHeight: 1024/);
-  assert.equal(fs.existsSync(path.join(starter, 'GitRepos/2 - AppModel/Features/Git Repos/GitReposFeature.swift')), true);
-  const project = fs.readFileSync(path.join(starter, 'GitRepos.xcodeproj/project.pbxproj'), 'utf8');
+  assert.equal(fs.existsSync(path.join(starter, 'RemoteList/2 - AppModel/Features/Remote List/RemoteListFeature.swift')), true);
+  const project = fs.readFileSync(path.join(starter, 'RemoteList.xcodeproj/project.pbxproj'), 'utf8');
   assert.match(project, /INFOPLIST_KEY_CFBundleDisplayName = "\$\(PRODUCT_NAME\)";/);
   assert.doesNotMatch(project, /Todays Twenty|public\.app-category\.education/);
   assert.match(project, /INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;/);
-  assert.equal(fs.existsSync(path.join(starter, 'GitRepos/3 - App Resources/LaunchScreen.storyboard')), true);
-  const testSources = fs.readdirSync(path.join(starter, 'GitReposTests'), { recursive: true, encoding: 'utf8' })
+  assert.equal(fs.existsSync(path.join(starter, 'RemoteList/3 - App Resources/LaunchScreen.storyboard')), true);
+  const testSources = fs.readdirSync(path.join(starter, 'RemoteListTests'), { recursive: true, encoding: 'utf8' })
     .filter(file => file.endsWith('.swift'))
-    .map(file => fs.readFileSync(path.join(starter, 'GitReposTests', file), 'utf8')).join('\n');
-  assert.match(testSources, /@testable import GitRepos/);
+    .map(file => fs.readFileSync(path.join(starter, 'RemoteListTests', file), 'utf8')).join('\n');
+  assert.match(testSources, /@testable import RemoteList/);
   assert.doesNotMatch(testSources, /___PROJECTNAME:identifier___/);
 });
 
