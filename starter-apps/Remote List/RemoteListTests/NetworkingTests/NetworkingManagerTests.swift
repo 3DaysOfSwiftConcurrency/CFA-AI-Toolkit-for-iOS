@@ -19,8 +19,8 @@ private final class OverlapURLProtocol: URLProtocol, @unchecked Sendable {
                 return
             }
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            let payload = url.path.hasPrefix("/orgs/")
-                ? Data(#"[{"id":1,"full_name":"Example/Repo","html_url":"https://example.test/repo","description":null,"stargazers_count":3,"updated_at":"2026-01-01T00:00:00Z"}]"#.utf8)
+            let payload = url.path.hasPrefix("/posts")
+                ? Data(#"[{"id":1,"title":"Example item","body":"A sample remote-list item."}]"#.utf8)
                 : Data(url.path.utf8)
             client?.urlProtocol(self, didLoad: payload)
             client?.urlProtocolDidFinishLoading(self)
@@ -50,14 +50,14 @@ struct NetworkingManagerTests {
         configuration.protocolClasses = [OverlapURLProtocol.self]
         let session = URLSession(configuration: configuration)
         defer { session.invalidateAndCancel() }
-        let gitHubAPI = await RemoteListAPI(networkingManager: NetworkingManager(session: session))
+        let remoteListAPI = await RemoteListAPI(networkingManager: NetworkingManager(session: session))
 
         // The fixture releases neither response until both calls reach it.
-        async let first = gitHubAPI.fetchRepos()
-        async let second = gitHubAPI.fetchRepos()
-        let (firstRepos, secondRepos) = try await (first, second)
-        #expect(firstRepos.map(\.id) == [1])
-        #expect(secondRepos.map(\.id) == [1])
+        async let first = remoteListAPI.fetchItems()
+        async let second = remoteListAPI.fetchItems()
+        let (firstItems, secondItems) = try await (first, second)
+        #expect(firstItems.map(\.id) == [1])
+        #expect(secondItems.map(\.id) == [1])
     }
 
     @Test func independentRequestsCanOverlap() async throws {

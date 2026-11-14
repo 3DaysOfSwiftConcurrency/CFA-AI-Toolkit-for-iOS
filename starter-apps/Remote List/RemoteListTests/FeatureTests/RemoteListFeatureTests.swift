@@ -8,20 +8,19 @@ struct RemoteListFeatureTests {
     @Test func fileCacheRoundTripsAndRejectsCorruptData() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let cache = RepoFileCache(cacheDirectoryURL: directory)
-        #expect(try await cache.loadRepos().isEmpty)
-        let url = try #require(URL(string: "https://example.org/repo"))
-        let repo = Repo(id: 42, fullName: "Example/Repo", repositoryURL: url,
-                        summary: "Example", stars: 3, updatedAt: Date(timeIntervalSince1970: 0))
-        try await cache.saveRepos([repo])
-        #expect(try await cache.loadRepos() == [repo])
-        let withoutDescription = Repo(id: 43, fullName: "Example/Other", repositoryURL: url,
-                                      summary: nil, stars: 0, updatedAt: Date(timeIntervalSince1970: 0))
-        try await cache.saveRepos([repo, withoutDescription])
-        #expect(try await cache.loadRepos() == [repo, withoutDescription])
+        let cache = RemoteListItemFileCache(cacheDirectoryURL: directory)
+        #expect(try await cache.loadItems().isEmpty)
+        let item = RemoteListItem(id: 42, title: "Example/RemoteListItem",
+                                  summary: "Example")
+        try await cache.saveItems([item])
+        #expect(try await cache.loadItems() == [item])
+        let withoutDescription = RemoteListItem(id: 43, title: "Example/Other",
+                                                summary: nil)
+        try await cache.saveItems([item, withoutDescription])
+        #expect(try await cache.loadItems() == [item, withoutDescription])
         try Data("invalid JSON".utf8).write(to: directory.appending(path: "remote-list-items.json"), options: .atomic)
         do {
-            _ = try await cache.loadRepos()
+            _ = try await cache.loadItems()
             Issue.record("Corrupt cache data should not decode successfully")
         } catch {
             // An optional cache failure can be ignored by the Feature.
@@ -29,92 +28,86 @@ struct RemoteListFeatureTests {
     }
 
     @Test func refreshPublishesProviderResults() async throws {
-        let url = try #require(URL(string: "https://example.org/repo"))
-        let response = RemoteListResponse(id: 42, fullName: "Example/Repo", repositoryURL: url,
-                                          description: nil, stars: 3, updatedAt: .now)
-        let feature = RemoteListFeature(provider: TestRemoteListProvider(remoteListResponses: [response]), cache: TestRepoCache())
+        let response = RemoteListResponse(id: 42, title: "Example/RemoteListItem",
+                                          summary: nil)
+        let feature = RemoteListFeature(provider: TestRemoteListProvider(remoteListResponses: [response]), cache: TestRemoteListItemCache())
         await feature.refresh()
-        #expect(feature.repos.map(\.id) == [42])
-        #expect(feature.repos.first?.summary == nil)
+        #expect(feature.items.map(\.id) == [42])
+        #expect(feature.items.first?.summary == nil)
         #expect(feature.refreshError == nil)
         #expect(!feature.isRefreshing)
     }
 
     @Test func refreshFailureIsExposedAndLoadingFinishes() async {
-        let feature = RemoteListFeature(provider: FailingRemoteListProvider(), cache: TestRepoCache())
+        let feature = RemoteListFeature(provider: FailingRemoteListProvider(), cache: TestRemoteListItemCache())
         await feature.refresh()
         #expect(feature.refreshError != nil)
         #expect(!feature.isRefreshing)
     }
 
     @Test func failedRefreshStillRestoresAvailableCache() async throws {
-        let url = try #require(URL(string: "https://example.org/repo"))
-        let cached = Repo(id: 42, fullName: "Example/Repo", repositoryURL: url,
-                          summary: "Saved snapshot", stars: 3, updatedAt: .now)
-        let cache = TestRepoCache()
-        await cache.saveRepos([cached])
+        let cached = RemoteListItem(id: 42, title: "Example/RemoteListItem",
+                          summary: "Saved snapshot")
+        let cache = TestRemoteListItemCache()
+        await cache.saveItems([cached])
         let feature = RemoteListFeature(provider: FailingRemoteListProvider(), cache: cache)
         let changes = AsyncStream<Void>.makeStream()
         withObservationTracking {
-            _ = feature.repos
+            _ = feature.items
         } onChange: {
             changes.continuation.yield(())
         }
         await feature.refresh()
         var iterator = changes.stream.makeAsyncIterator()
         _ = await iterator.next()
-        #expect(feature.repos == [cached])
+        #expect(feature.items == [cached])
         #expect(feature.refreshError != nil)
         #expect(!feature.isRefreshing)
         changes.continuation.finish()
     }
 
     @Test func failedRefreshKeepsPreviouslyLoadedResults() async throws {
-        let url = try #require(URL(string: "https://example.org/repo"))
-        let response = RemoteListResponse(id: 42, fullName: "Example/Repo", repositoryURL: url,
-                                          description: nil, stars: 3, updatedAt: .now)
-        let provider = ChangingRemoteListProvider(repos: [response])
-        let feature = RemoteListFeature(provider: provider, cache: TestRepoCache())
+        let response = RemoteListResponse(id: 42, title: "Example/RemoteListItem",
+                                          summary: nil)
+        let provider = ChangingRemoteListProvider(items: [response])
+        let feature = RemoteListFeature(provider: provider, cache: TestRemoteListItemCache())
         await feature.refresh()
         await provider.failNextRequests()
         await feature.refresh()
-        #expect(feature.repos.map(\.id) == [42])
+        #expect(feature.items.map(\.id) == [42])
         #expect(feature.refreshError != nil)
         #expect(!feature.isRefreshing)
     }
 
     @Test func cacheWriteFailureDoesNotFailARefresh() async throws {
-        let url = try #require(URL(string: "https://example.org/repo"))
-        let response = RemoteListResponse(id: 42, fullName: "Example/Repo", repositoryURL: url,
-                                          description: nil, stars: 3, updatedAt: .now)
-        let cache = FailingRepoCache()
+        let response = RemoteListResponse(id: 42, title: "Example/RemoteListItem",
+                                          summary: nil)
+        let cache = FailingRemoteListItemCache()
         let feature = RemoteListFeature(provider: TestRemoteListProvider(remoteListResponses: [response]), cache: cache)
         await feature.refresh()
         await cache.waitForAttempts()
         #expect(await cache.attempts == 2)
-        #expect(feature.repos.map(\.id) == [42])
+        #expect(feature.items.map(\.id) == [42])
         #expect(feature.refreshError == nil)
         #expect(!feature.isRefreshing)
     }
 
-    @Test func refreshContinuesWhenItsOnlyCallerLeaves() async throws {
-        let url = try #require(URL(string: "https://example.org"))
-        let provider = GatedReposProvider(url: url)
-        let feature = RemoteListFeature(provider: provider, cache: TestRepoCache())
+    @Test func refreshContinuesWhenItsOnlyCallerLeaves() async {
+        let provider = GatedItemsProvider()
+        let feature = RemoteListFeature(provider: provider, cache: TestRemoteListItemCache())
         let caller = Task { @MainActor in await feature.refresh() }
         await provider.waitForFirstRequest()
         caller.cancel()
         await provider.releaseFirstRequest()
         await caller.value
         #expect(await provider.calls == 1)
-        #expect(feature.repos.map(\.id) == [1])
+        #expect(feature.items.map(\.id) == [1])
         #expect(!feature.isRefreshing)
     }
 
-    @Test func sharedRefreshAndOptionalCacheStayIndependent() async throws {
-        let url = try #require(URL(string: "https://example.org"))
-        let provider = GatedReposProvider(url: url)
-        let cache = GatedRepoCache(url: url)
+    @Test func sharedRefreshAndOptionalCacheStayIndependent() async {
+        let provider = GatedItemsProvider()
+        let cache = GatedRemoteListItemCache()
         let feature = RemoteListFeature(provider: provider, cache: cache)
         feature.startLoading()
         await provider.waitForFirstRequest()
@@ -137,51 +130,45 @@ struct RemoteListFeatureTests {
         await provider.releaseFirstRequest()
         await caller.value
         await secondCaller.value
-        #expect(feature.repos.map(\.id) == [1])
+        #expect(feature.items.map(\.id) == [1])
         #expect(!feature.isRefreshing)
 
         await cache.waitForFirstWrite()
         await cache.releaseRestore() // Old cached data arrives after the response.
         await feature.refresh()
-        #expect(feature.repos.map(\.id) == [2])
+        #expect(feature.items.map(\.id) == [2])
         await cache.releaseFirstWrite()
         await cache.waitForWrites()
         #expect(await cache.storedIDs == [1, 2])
-        #expect(feature.repos.map(\.id) == [2])
+        #expect(feature.items.map(\.id) == [2])
     }
 
 }
 
 // Controlled suspension makes request sharing and cache ordering observable.
-private actor GatedReposProvider: RemoteListProvider {
-    private let url: URL
+private actor GatedItemsProvider: RemoteListProvider {
     private(set) var calls = 0
     private var started: CheckedContinuation<Void, Never>?
     private var release: CheckedContinuation<Void, Never>?
-
-    init(url: URL) { self.url = url }
 
     func waitForFirstRequest() async {
         if calls > 0 { return }
         await withCheckedContinuation { started = $0 }
     }
     func releaseFirstRequest() { release?.resume(); release = nil }
-    func fetchRepos() async throws -> [RemoteListResponse] {
+    func fetchItems() async throws -> [RemoteListResponse] {
         calls += 1
         let id = calls
         if id == 1 {
             started?.resume(); started = nil
             await withCheckedContinuation { release = $0 }
         }
-        return [RemoteListResponse(id: id, fullName: "repo-\(id)",
-            repositoryURL: url, description: nil,
-            stars: 0, updatedAt: .now)]
+        return [RemoteListResponse(id: id, title: "item-\(id)", summary: nil)]
     }
 }
 
-private actor GatedRepoCache: RepoCache {
-    private let url: URL
-    private var restore: CheckedContinuation<[Repo], Error>?
+private actor GatedRemoteListItemCache: RemoteListItemCache {
+    private var restore: CheckedContinuation<[RemoteListItem], Error>?
     private var restoreStarted = false
     private var restoreWaiter: CheckedContinuation<Void, Never>?
     private var firstWrite: CheckedContinuation<Void, Never>?
@@ -190,9 +177,7 @@ private actor GatedRepoCache: RepoCache {
     private var finishWaiter: CheckedContinuation<Void, Never>?
     private(set) var storedIDs: [Int] = []
 
-    init(url: URL) { self.url = url }
-
-    func loadRepos() async throws -> [Repo] {
+    func loadItems() async throws -> [RemoteListItem] {
         restoreStarted = true; restoreWaiter?.resume(); restoreWaiter = nil
         return try await withCheckedThrowingContinuation { restore = $0 }
     }
@@ -201,16 +186,16 @@ private actor GatedRepoCache: RepoCache {
         await withCheckedContinuation { restoreWaiter = $0 }
     }
     func releaseRestore() {
-        let old = Repo(id: 99, fullName: "old", repositoryURL: url,
-                       summary: "", stars: 0, updatedAt: .now)
+        let old = RemoteListItem(id: 99, title: "old",
+                       summary: "")
         restore?.resume(returning: [old]); restore = nil
     }
-    func saveRepos(_ repos: [Repo]) async throws {
+    func saveItems(_ items: [RemoteListItem]) async throws {
         if !firstWriteStarted {
             firstWriteStarted = true; writeWaiter?.resume(); writeWaiter = nil
             await withCheckedContinuation { firstWrite = $0 }
         }
-        if let repo = repos.first { storedIDs.append(repo.id) }
+        if let item = items.first { storedIDs.append(item.id) }
         if storedIDs.count == 2 { finishWaiter?.resume(); finishWaiter = nil }
     }
     func waitForFirstWrite() async {
@@ -224,12 +209,12 @@ private actor GatedRepoCache: RepoCache {
     }
 }
 
-private actor FailingRepoCache: RepoCache {
+private actor FailingRemoteListItemCache: RemoteListItemCache {
     private(set) var attempts = 0
     private var waiter: CheckedContinuation<Void, Never>?
 
-    func loadRepos() -> [Repo] { [] }
-    func saveRepos(_ repos: [Repo]) throws {
+    func loadItems() -> [RemoteListItem] { [] }
+    func saveItems(_ items: [RemoteListItem]) throws {
         attempts += 1
         if attempts == 2 { waiter?.resume(); waiter = nil }
         throw CocoaError(.fileWriteNoPermission)

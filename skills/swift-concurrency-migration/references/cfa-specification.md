@@ -1049,7 +1049,7 @@ after that capability with the `Feature` suffix: `SettingsFeature`,
 `FeatureManager`.
 
 Every AppModel property that exposes a feature uses the same domain name and
-the lower-camel-case `Feature` suffix: `settingsFeature`, `gitReposFeature`,
+the lower-camel-case `Feature` suffix: `settingsFeature`, `remoteListFeature`,
 `purchasesFeature`. Use that exact property name for ViewModel dependencies,
 initializer labels, and local references, including a reference copied from
 `appModel.settingsFeature`. Never shorten one to a plural domain noun such as
@@ -1212,10 +1212,10 @@ the data. Preserve an existing good cache when a replacement fails and prevent
 older writes from overwriting newer snapshots. This exception does not apply to
 user edits, purchases, reminders, or other changes that require a durable save.
 
-For a working example, inspect `GitReposFeature` in the CFA App Xcode project
-template included with the full toolkit. It starts refresh and cache restoration
+For a working example, inspect `RemoteListFeature` in the Remote List starter
+project included with the full toolkit. It starts refresh and cache restoration
 independently, retains fresh results, and writes the optional cache separately.
-Its accompanying `GitReposFeatureTests` exercises shared refresh and cache
+Its accompanying `RemoteListFeatureTests` exercises shared refresh and cache
 failure behaviour.
 
 For replaceable server data, a saved snapshot can provide a fast initial display
@@ -1543,7 +1543,7 @@ status together: it is a disguised result type that makes cached data and retry
 behaviour needlessly difficult to model.
 
 ```swift
-private(set) var repos: [Repo] = []
+private(set) var repos: [RemoteListItem] = []
 private(set) var isRefreshing = false
 private(set) var refreshError: (any Error)?
 ```

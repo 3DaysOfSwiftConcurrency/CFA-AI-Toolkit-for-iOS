@@ -11,13 +11,13 @@ final class RemoteListFeature {
     @ObservationIgnored private var didStartCacheRestore = false
     @ObservationIgnored private var hasFreshResponse = false
     private let provider: any RemoteListProvider
-    private let cache: any RepoCache
+    private let cache: any RemoteListItemCache
 
-    private(set) var repos: [Repo] = []
+    private(set) var items: [RemoteListItem] = []
     private(set) var isRefreshing = false
     private(set) var refreshError: (any Error)?
 
-    init(provider: any RemoteListProvider, cache: any RepoCache) {
+    init(provider: any RemoteListProvider, cache: any RemoteListItemCache) {
         self.provider = provider
         self.cache = cache
     }
@@ -41,9 +41,9 @@ final class RemoteListFeature {
         let task = Task { @MainActor in
             defer { isRefreshing = false; refreshTask = nil }
             do {
-                let response = try await provider.fetchRepos()
-                let downloaded = response.map(Repo.init(response:))
-                repos = downloaded
+                let response = try await provider.fetchItems()
+                let downloaded = response.map(RemoteListItem.init(response:))
+                items = downloaded
                 hasFreshResponse = true
                 refreshError = nil
                 saveCacheInBackground(downloaded)
@@ -62,13 +62,13 @@ final class RemoteListFeature {
         didStartCacheRestore = true
         cacheRestoreTask = Task { @MainActor in
             defer { cacheRestoreTask = nil }
-            guard let saved = try? await cache.loadRepos(), !hasFreshResponse else { return }
-            repos = saved
+            guard let saved = try? await cache.loadItems(), !hasFreshResponse else { return }
+            items = saved
         }
     }
 
     // Preserve write order so an older snapshot cannot replace a newer one.
-    private func saveCacheInBackground(_ snapshot: [Repo]) {
+    private func saveCacheInBackground(_ snapshot: [RemoteListItem]) {
         let previous = cacheWriteTask
         let id = UUID()
         let task = Task { @MainActor in
@@ -77,7 +77,7 @@ final class RemoteListFeature {
                 if cacheWriteID == id { cacheWriteTask = nil; cacheWriteID = nil }
             }
             for _ in 0..<2 {
-                do { try await cache.saveRepos(snapshot); return }
+                do { try await cache.saveItems(snapshot); return }
                 catch { /* The remote response is already available. */ }
             }
         }

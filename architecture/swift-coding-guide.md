@@ -305,9 +305,9 @@ used in its declarations?
 owns current domain data, operation state, and any retained error as separate
 properties. Do not make a `LoadState` enum carry all three.
 
-For example, Git Repositories are `repos`; the current request is
+For example, Remote List items are `items`; the current request is
 `isRefreshing`; an unsuccessful request is `refreshError`. A type such as
-`GitReposLoadState.loaded([Repo])` and `.failed(String)` mixes a result value,
+`RemoteListLoadState.loaded([RemoteListItem])` and `.failed(String)` mixes a result value,
 user-facing state, and durable cache into one fragile abstraction.
 
 **Review:** Can cached data remain visible while a refresh runs or fails? If
@@ -316,8 +316,8 @@ not, separate the domain data from the operation state.
 ### Name shared feature capabilities as features
 
 **Rule:** Name each concrete CFA feature owner for its capability with a
-`Feature` suffix, such as `SettingsFeature` or `GitReposFeature`. Use the
-matching lower-camel-case name—`settingsFeature` or `gitReposFeature`—for its
+`Feature` suffix, such as `SettingsFeature` or `RemoteListFeature`. Use the
+matching lower-camel-case name—`settingsFeature` or `remoteListFeature`—for its
 AppModel property, ViewModel dependency, initializer label, and local values.
 **Feature protocols are a waste of time.** CFA ViewModels depend on concrete
 features. Do not add matching `FeatureAPI` protocols. Inject a fake storage or

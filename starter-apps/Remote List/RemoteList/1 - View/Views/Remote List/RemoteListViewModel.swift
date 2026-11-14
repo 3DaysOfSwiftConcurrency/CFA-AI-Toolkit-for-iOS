@@ -10,16 +10,16 @@ final class RemoteListViewModel {
         self.remoteListFeature = remoteListFeature
     }
 
-    var repos: [Repo] {
-        remoteListFeature.repos
+    var items: [RemoteListItem] {
+        remoteListFeature.items
     }
 
     var isRefreshing: Bool {
         remoteListFeature.isRefreshing
     }
 
-    func summary(for repo: Repo) -> String {
-        repo.summary ?? "No description is available."
+    func summary(for item: RemoteListItem) -> String {
+        item.summary ?? "No description is available."
     }
 
     var refreshFailureMessage: String? {

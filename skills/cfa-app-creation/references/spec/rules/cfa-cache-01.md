@@ -8,7 +8,7 @@
 
 **Why:** Previously downloaded data can appear quickly without sacrificing fresher server data.
 
-**Example:** In the bundled CFA App template, GitReposFeature publishes a fresh response before its optional cache write completes and rejects an older cache restore.
+**Example:** In the bundled Remote List starter, RemoteListFeature publishes a fresh response before its optional cache write completes and rejects an older cache restore.
 
 **Explanation:** [Why use record-level persistence boundaries in our code?](https://www.3daysofswiftconcurrency.com/cfa/explanation/persistence-boundaries).
 

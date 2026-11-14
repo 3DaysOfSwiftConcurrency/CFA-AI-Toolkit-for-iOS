@@ -6,29 +6,29 @@ actor TestRemoteListProvider: RemoteListProvider {
     init(remoteListResponses: [RemoteListResponse] = []) {
         self.remoteListResponses = remoteListResponses
     }
-    func fetchRepos() -> [RemoteListResponse] { remoteListResponses }
+    func fetchItems() -> [RemoteListResponse] { remoteListResponses }
 }
 
 private enum TestNetworkError: Error { case unavailable }
 
 actor FailingRemoteListProvider: RemoteListProvider {
-    func fetchRepos() throws -> [RemoteListResponse] { throw TestNetworkError.unavailable }
+    func fetchItems() throws -> [RemoteListResponse] { throw TestNetworkError.unavailable }
 }
 
 actor ChangingRemoteListProvider: RemoteListProvider {
-    private let repos: [RemoteListResponse]
+    private let items: [RemoteListResponse]
     private var shouldFail = false
 
-    init(repos: [RemoteListResponse]) { self.repos = repos }
+    init(items: [RemoteListResponse]) { self.items = items }
     func failNextRequests() { shouldFail = true }
-    func fetchRepos() throws -> [RemoteListResponse] {
+    func fetchItems() throws -> [RemoteListResponse] {
         if shouldFail { throw TestNetworkError.unavailable }
-        return repos
+        return items
     }
 }
 
-actor TestRepoCache: RepoCache {
-    private var stored: [Repo] = []
-    func loadRepos() -> [Repo] { stored }
-    func saveRepos(_ repos: [Repo]) { stored = repos }
+actor TestRemoteListItemCache: RemoteListItemCache {
+    private var stored: [RemoteListItem] = []
+    func loadItems() -> [RemoteListItem] { stored }
+    func saveItems(_ items: [RemoteListItem]) { stored = items }
 }

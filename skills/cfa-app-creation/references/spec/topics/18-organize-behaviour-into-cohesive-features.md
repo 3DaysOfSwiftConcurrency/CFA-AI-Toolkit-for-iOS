@@ -35,7 +35,7 @@ after that capability with the `Feature` suffix: `SettingsFeature`,
 `FeatureManager`.
 
 Every AppModel property that exposes a feature uses the same domain name and
-the lower-camel-case `Feature` suffix: `settingsFeature`, `gitReposFeature`,
+the lower-camel-case `Feature` suffix: `settingsFeature`, `remoteListFeature`,
 `purchasesFeature`. Use that exact property name for ViewModel dependencies,
 initializer labels, and local references, including a reference copied from
 `appModel.settingsFeature`. Never shorten one to a plural domain noun such as

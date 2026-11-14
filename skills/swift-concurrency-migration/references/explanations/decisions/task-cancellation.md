@@ -51,8 +51,8 @@ on 2026-10-27. That permission is not individual technical or historical approva
 
 ## Working example
 
-The bundled CFA App template's `GitReposFeature` owns its shared refresh task.
-`GitReposFeatureTests` checks that the refresh completes when its only caller
+The bundled Remote List starter's `RemoteListFeature` owns its shared refresh task.
+`RemoteListFeatureTests` checks that the refresh completes when its only caller
 is cancelled and that a second caller can still receive the result when one
 caller leaves. This demonstrates the usual CFA policy; other operations may
 need a different policy for a specific product or resource reason.

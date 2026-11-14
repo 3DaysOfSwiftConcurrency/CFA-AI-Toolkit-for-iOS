@@ -3,10 +3,10 @@ import Observation
 @MainActor
 @Observable
 final class RootTabViewModel {
-    var selectedTab: Tab = .gitRepos
+    var selectedTab: Tab = .remoteList
 
     enum Tab: Hashable {
-        case gitRepos
+        case remoteList
         case settings
     }
 }

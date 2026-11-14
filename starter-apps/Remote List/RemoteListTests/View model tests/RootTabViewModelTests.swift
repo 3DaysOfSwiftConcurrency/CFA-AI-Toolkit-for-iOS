@@ -3,9 +3,9 @@ import Testing
 
 @Suite("Root navigation") @MainActor
 struct RootTabViewModelTests {
-    @Test func startsOnRepositories() {
+    @Test func startsOnRemoteList() {
         let viewModel = RootTabViewModel()
-        #expect(viewModel.selectedTab == .gitRepos)
+        #expect(viewModel.selectedTab == .remoteList)
         viewModel.selectedTab = .settings
         #expect(viewModel.selectedTab == .settings)
     }

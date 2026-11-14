@@ -229,10 +229,10 @@ test('published app examples link to pinned source and relevant rule cards', () 
   assert.match(index, /\[Detail View\]\([^\n]*\/LaunchDetailView\.swift\)/);
   assert.match(index, /\[Detail ViewModel\]\([^\n]*\/LaunchDetailViewModel\.swift\)/);
   assert.equal((index.match(/LaunchDetailView\.swift\)/g) ?? []).length, 1);
-  assert.match(topics.get('rules/cfa-cache-01.md'), /bundled CFA App template.*GitReposFeature/);
+  assert.match(topics.get('rules/cfa-cache-01.md'), /bundled Remote List starter.*RemoteListFeature/);
   assert.doesNotMatch(topics.get('rules/cfa-cache-01.md'), /RocketLaunch-iOS-App-Swift-Concurrency\/blob\//);
   const persistence = topics.get('topics/19-keep-persistence-behind-repository-contracts.md');
-  assert.match(persistence, /`GitReposFeature` in the CFA App Xcode project/);
+  assert.match(persistence, /`RemoteListFeature` in the Remote List starter\s+project/);
   assert.doesNotMatch(persistence, /RocketLaunch-iOS-App-Swift-Concurrency\/blob\/[^\s)]*LaunchScheduleFeature/);
   assert.match(topics.get('rules/cfa-state-01.md'), /bundled Habit Tracker/);
   assert.match(topics.get('rules/cfa-store-01.md'), /bundled Habit Tracker/);

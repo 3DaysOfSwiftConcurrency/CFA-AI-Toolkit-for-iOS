@@ -8,7 +8,7 @@ struct AppModelTests {
         let name = "CFACompositionTests.\(UUID())"
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
-        let remoteListFeature = RemoteListFeature(provider: TestRemoteListProvider(), cache: TestRepoCache())
+        let remoteListFeature = RemoteListFeature(provider: TestRemoteListProvider(), cache: TestRemoteListItemCache())
         let settingsFeature = SettingsFeature(defaults: defaults)
         let appModel = AppModel(remoteListFeature: remoteListFeature, settingsFeature: settingsFeature)
         #expect(appModel.remoteListFeature === remoteListFeature)
@@ -20,7 +20,7 @@ struct AppModelTests {
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let launchProvider = LaunchProvider()
-        let remoteListFeature = RemoteListFeature(provider: launchProvider, cache: TestRepoCache())
+        let remoteListFeature = RemoteListFeature(provider: launchProvider, cache: TestRemoteListItemCache())
         let appModel = AppModel(remoteListFeature: remoteListFeature,
                                 settingsFeature: SettingsFeature(defaults: defaults))
         appModel.applicationDidFinishLaunching()
@@ -48,7 +48,7 @@ private actor LaunchProvider: RemoteListProvider {
     private var started: CheckedContinuation<Void, Never>?
     private var gate: CheckedContinuation<Void, Never>?
 
-    func fetchRepos() async throws -> [RemoteListResponse] {
+    func fetchItems() async throws -> [RemoteListResponse] {
         callCount += 1
         started?.resume(); started = nil
         await withCheckedContinuation { gate = $0 }

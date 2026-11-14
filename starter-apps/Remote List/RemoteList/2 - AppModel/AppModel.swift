@@ -26,7 +26,7 @@ final class AppModel {
         return AppModel(
             remoteListFeature: RemoteListFeature(
                 provider: RemoteListAPI(networkingManager: networkingManager),
-                cache: RepoFileCache(cacheDirectoryURL: .cachesDirectory)
+                cache: RemoteListItemFileCache(cacheDirectoryURL: .cachesDirectory)
             ),
             settingsFeature: SettingsFeature()
         )

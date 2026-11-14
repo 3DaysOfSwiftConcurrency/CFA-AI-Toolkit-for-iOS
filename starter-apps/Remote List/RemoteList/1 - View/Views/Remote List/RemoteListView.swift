@@ -11,16 +11,16 @@ struct RemoteListView: View {
 
         NavigationStack {
             Group {
-                if viewModel.repos.isEmpty, viewModel.isRefreshing {
+                if viewModel.items.isEmpty, viewModel.isRefreshing {
                     ProgressView("Loading items…")
                         .tint(palette.tint)
-                } else if viewModel.repos.isEmpty, let message = viewModel.refreshFailureMessage {
+                } else if viewModel.items.isEmpty, let message = viewModel.refreshFailureMessage {
                     failureCard(message, palette: palette)
-                } else if viewModel.repos.isEmpty {
+                } else if viewModel.items.isEmpty {
                     ContentUnavailableView("No items available", systemImage: "tray")
                         .foregroundStyle(palette.primaryText)
                 } else {
-                    repoList(viewModel.repos, palette: palette)
+                    itemList(viewModel.items, palette: palette)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -28,14 +28,14 @@ struct RemoteListView: View {
             .navigationTitle("Remote List")
             .toolbarColorScheme(resolvedTheme.colorScheme, for: .navigationBar)
             .safeAreaInset(edge: .bottom) {
-                if !viewModel.repos.isEmpty, viewModel.isRefreshing {
+                if !viewModel.items.isEmpty, viewModel.isRefreshing {
                     ProgressView("Refreshing items…")
                         .tint(palette.tint)
                         .foregroundStyle(palette.primaryText)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(palette.surface)
-                } else if !viewModel.repos.isEmpty, let message = viewModel.refreshFailureMessage {
+                } else if !viewModel.items.isEmpty, let message = viewModel.refreshFailureMessage {
                     VStack(spacing: 8) {
                         Text(message)
                             .font(.footnote)
@@ -52,18 +52,15 @@ struct RemoteListView: View {
         }
     }
 
-    private func repoList(_ repos: [Repo], palette: ThemePalette) -> some View {
-        List(repos, id: \.id) { repo in
+    private func itemList(_ items: [RemoteListItem], palette: ThemePalette) -> some View {
+        List(items, id: \.id) { item in
             VStack(alignment: .leading, spacing: 8) {
-                Link(repo.fullName, destination: repo.repositoryURL)
+                Text(item.title)
                     .font(.headline)
                     .foregroundStyle(palette.primaryText)
-                Text(viewModel.summary(for: repo))
+                Text(viewModel.summary(for: item))
                     .font(.subheadline)
                     .foregroundStyle(palette.secondaryText)
-                Label("\(repo.stars) saved by readers", systemImage: "star.fill")
-                    .font(.footnote)
-                    .foregroundStyle(palette.tint)
             }
             .padding(.vertical, 6)
             .listRowBackground(palette.surface)

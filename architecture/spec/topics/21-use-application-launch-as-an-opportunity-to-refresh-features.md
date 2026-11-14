@@ -116,7 +116,7 @@ status together: it is a disguised result type that makes cached data and retry
 behaviour needlessly difficult to model.
 
 ```swift
-private(set) var repos: [Repo] = []
+private(set) var repos: [RemoteListItem] = []
 private(set) var isRefreshing = false
 private(set) var refreshError: (any Error)?
 ```

@@ -7,7 +7,7 @@ struct RootTabView: View {
         TabView(selection: $viewModel.selectedTab) {
             RemoteListView()
                 .tabItem { Label("Remote List", systemImage: "chevron.left.forwardslash.chevron.right") }
-                .tag(RootTabViewModel.Tab.gitRepos)
+                .tag(RootTabViewModel.Tab.remoteList)
 
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }

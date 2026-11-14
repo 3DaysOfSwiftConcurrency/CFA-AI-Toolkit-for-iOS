@@ -308,9 +308,9 @@ Application
 │   │   ├── AppColourTheme.swift
 │   │   └── ThemeManager.swift
 │   └── Views
-│       ├── Git Repos
-│       │   ├── GitReposView.swift
-│       │   └── GitReposViewModel.swift
+│       ├── Remote List
+│       │   ├── RemoteListView.swift
+│       │   └── RemoteListViewModel.swift
 │       └── Settings
 │           ├── SettingsView.swift
 │           └── SettingsViewModel.swift
@@ -339,7 +339,7 @@ Application
 ├── Assets.xcassets
 └── ApplicationTests
     ├── View model tests
-    │   └── GitReposViewModelTests.swift
+    │   └── RemoteListViewModelTests.swift
     └── FeatureTests
         └── WeightLogFeatureTests.swift
 ```
