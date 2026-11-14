@@ -15,18 +15,20 @@ the generation commands in their READMEs. CFA App is maintained directly.
 
 ## Terminal project creation
 
-An AI session or CI job can create an Xcode project without the Xcode chooser:
+An AI session or CI job can create any supported starter without the Xcode chooser:
 
 ```sh
-node scripts/create-cfa-project.mjs --name ReadingList --out /tmp/ReadingList
+node scripts/create-cfa-project.mjs --starter remote-list --name ReadingList --out /tmp/ReadingList
 xcodebuild -project /tmp/ReadingList/ReadingList.xcodeproj -scheme ReadingList -sdk iphonesimulator build
 ```
 
-The command copies the maintained CFA Blank skeleton and retargets the project,
-app, test target and bundle identifiers. It deliberately contains no placeholder
-Feature, AppModel, ViewModel or tests: add them together when the first real
-user journey is known. `--name` is a bundle-identifier-safe Swift name;
-generated identifiers use `com.3DaysOfSwiftConcurrency.<AppName>`.
+The command copies a maintained canonical starter and retargets its project,
+app, test target and bundle identifiers. Use `--starter blank` for the honestly
+empty CFA skeleton, `--starter habit-tracker`, `--starter habit-tracker-pro`,
+`--starter day-streak`, or `--starter remote-list` for a working reference app.
+Run `node scripts/create-cfa-project.mjs --list` for descriptions. `--name` is
+a bundle-identifier-safe Swift name; generated identifiers use
+`com.3DaysOfSwiftConcurrency.<AppName>`.
 
 Want an existing project you can open immediately? Browse
 [Starter Apps](../../starter-apps/README.md), including Habit Tracker Pro with

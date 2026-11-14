@@ -226,6 +226,16 @@ test('release keeps runnable Starter Apps separate from installable Xcode templa
  assert.equal(fs.existsSync(path.join(destination,'starter-apps')),false);
 });
 
+test('release includes the command-line starter creator', t => {
+ const {dir,source}=release(t);
+ const command=path.join(source,'scripts/create-cfa-project.mjs');
+ assert.equal(fs.existsSync(command),true);
+ const destination=path.join(dir,'RemoteList');
+ const result=spawnSync(process.execPath,[command,'--starter','remote-list','--name','RemoteList','--out',destination],{encoding:'utf8'});
+ assert.equal(result.status,0,result.stderr);
+ assert.match(result.stdout,/Created/);
+});
+
 test('standalone release carries scanner dependencies and scans outside the source checkout',t=>{
  const {dir,source}=release(t); const destination=path.join(dir,'customer');
  const result=install({source,destination,mode:'skills'});

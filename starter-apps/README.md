@@ -3,12 +3,26 @@
 Working apps to get you going fast. Open an Xcode project, explore its screens,
 features and tests, then make it your own. No template installation is required.
 
+## Create a named copy from the command line
+
+Every maintained starter can be copied into a new, safely renamed Xcode project:
+
+```sh
+node scripts/create-cfa-project.mjs --starter remote-list --name ReadingList --out ./ReadingList
+```
+
+Run `node scripts/create-cfa-project.mjs --list` for the full catalogue. The
+command renames the app, unit-test target, project, schemes and bundle
+identifiers. It refuses to overwrite an existing directory. The generated app
+uses `com.3DaysOfSwiftConcurrency.<AppName>` and the test target uses
+`com.3DaysOfSwiftConcurrency.<AppName>.<AppName>Tests`.
+
 | Starter app | What you get | Open in Xcode |
 | --- | --- | --- |
 | [Habit Tracker](Habit%20Tracker/README.md) | Habits, daily progress, streaks, SwiftData storage and Settings | [HabitTrackerTemplate.xcodeproj](Habit%20Tracker/HabitTrackerTemplate.xcodeproj) |
 | [Habit Tracker Pro](Habit%20Tracker%20Pro/README.md) | Habit Tracker plus charts and a one-time StoreKit unlock | [HabitTrackerPro.xcodeproj](Habit%20Tracker%20Pro/HabitTrackerPro.xcodeproj) |
 | [Todays Twenty](Todays%20Twenty/README.md) | Daily multiplication practice, saved sessions and reusable day-streak behaviour | [TimesThirty.xcodeproj](Todays%20Twenty/TimesThirty.xcodeproj) |
-| [Git Repos](Git%20Repos/README.md) | GitHub networking, JSON cache restoration, shared refresh and remote-list presentation | [GitRepos.xcodeproj](Git%20Repos/GitRepos.xcodeproj) |
+| [Git Repos](Git%20Repos/README.md) | GitHub networking, JSON cache restoration, shared refresh and remote-list presentation; created with `--starter remote-list` | [GitRepos.xcodeproj](Git%20Repos/GitRepos.xcodeproj) |
 | [CFA Blank](CFA%20Blank/README.md) | Honestly blank foundation; add the first complete CFA feature when its journey is known | [CFABlank.xcodeproj](CFA%20Blank/CFABlank.xcodeproj) |
 
 These are customisable starting points, not a guarantee of App Store readiness.

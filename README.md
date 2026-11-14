@@ -100,7 +100,7 @@ CFA AI Toolkit for iOS instructions available to your AI coding tool.
 Choose your starting point:
 
 - **[Xcode Templates](templates/Xcode/README.md):** install a template and create a new project in Xcode. CFA App is the general-purpose foundation; Habit Tracker and Day Streak include product-specific features.
-- **[Starter Apps](starter-apps/README.md):** working apps to get you going fast. Open a project, run it, and make it your own—no template installation required.
+- **[Starter Apps](starter-apps/README.md):** working apps to get you going fast. Open a project, run it, or create a safely renamed copy from the command line—no template installation required.
 
 ### Install the Xcode project templates
 
@@ -124,9 +124,12 @@ were installed. If an error appears, read it before closing the window.
 
 Quit and reopen Xcode. Choose **File → New → Project → iOS → CFA App**, **Habit Tracker** or **Day Streak**.
 Xcode asks for your product name and organisation identifier, then creates a
-new project. CFA App includes the CFA folders, a feature, network refresh, JSON
-file cache, retry state, colour-theme settings and a unit-test target. The other templates provide
-the application-specific features described below.
+new project. CFA App is currently an honestly blank, strict-concurrency
+foundation with the CFA folder map and a structural root View; it deliberately
+does not manufacture a Feature, AppModel, ViewModel or tests before a real user
+journey is known. Habit Tracker and Day Streak provide the application-specific
+features described below. The planned small Home + Settings CFA App starter is
+tracked in [the starter-apps plan](docs/STARTER-APPS-PLAN.md).
 
 ### Explore the Starter Apps
 
