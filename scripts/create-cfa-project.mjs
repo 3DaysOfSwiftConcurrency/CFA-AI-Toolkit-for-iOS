@@ -7,6 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Each entry names one maintained, ready-to-open starter project. The project is
 // copied directly so the CLI never creates a second, drifting implementation.
 export const starters = {
+  app: { source: 'CFA App', codeName: 'CFAApp', displayName: 'CFA App', summary: 'A small Home and Settings tab app with complete CFA slices.' },
   blank: { source: 'CFA Blank', codeName: 'CFABlank', displayName: 'CFA Blank', summary: 'Empty CFA project infrastructure; add the first complete feature yourself.' },
   'habit-tracker': { source: 'Habit Tracker', codeName: 'HabitTrackerTemplate', displayName: 'Habit Tracker', summary: 'Habits, daily progress, persistence, and streaks.' },
   'habit-tracker-pro': { source: 'Habit Tracker Pro', codeName: 'HabitTrackerPro', displayName: 'Habit Tracker Pro', summary: 'Habit tracking plus trends and a StoreKit purchase example.' },

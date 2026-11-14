@@ -28,6 +28,7 @@ syntax. It does not replace a device or simulator build and UI validation.
 
 | Starter app | What you get | Open in Xcode |
 | --- | --- | --- |
+| [CFA App](CFA%20App/README.md) | Home and Settings tabs, app composition, appearance preferences and focused tests | [CFAApp.xcodeproj](CFA%20App/CFAApp.xcodeproj) |
 | [Habit Tracker](Habit%20Tracker/README.md) | Habits, daily progress, streaks, SwiftData storage and Settings | [HabitTrackerTemplate.xcodeproj](Habit%20Tracker/HabitTrackerTemplate.xcodeproj) |
 | [Habit Tracker Pro](Habit%20Tracker%20Pro/README.md) | Habit Tracker plus charts and a one-time StoreKit unlock | [HabitTrackerPro.xcodeproj](Habit%20Tracker%20Pro/HabitTrackerPro.xcodeproj) |
 | [Todays Twenty](Todays%20Twenty/README.md) | Daily multiplication practice, saved sessions and reusable day-streak behaviour | [TimesThirty.xcodeproj](Todays%20Twenty/TimesThirty.xcodeproj) |
