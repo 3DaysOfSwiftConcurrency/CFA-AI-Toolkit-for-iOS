@@ -17,6 +17,15 @@ identifiers. It refuses to overwrite an existing directory. The generated app
 uses `com.3DaysOfSwiftConcurrency.<AppName>` and the test target uses
 `com.3DaysOfSwiftConcurrency.<AppName>.<AppName>Tests`.
 
+Maintainers can verify all generated copies without opening Xcode:
+
+```sh
+node scripts/verify-starter-projects.mjs
+```
+
+This checks project-file syntax, rewritten app/test identifiers and Swift source
+syntax. It does not replace a device or simulator build and UI validation.
+
 | Starter app | What you get | Open in Xcode |
 | --- | --- | --- |
 | [Habit Tracker](Habit%20Tracker/README.md) | Habits, daily progress, streaks, SwiftData storage and Settings | [HabitTrackerTemplate.xcodeproj](Habit%20Tracker/HabitTrackerTemplate.xcodeproj) |

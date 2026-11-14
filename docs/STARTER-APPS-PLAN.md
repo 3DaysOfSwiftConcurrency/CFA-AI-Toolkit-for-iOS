@@ -18,7 +18,9 @@ starter; it must never grow a second hand-maintained implementation.
 
 All generated projects use `com.3DaysOfSwiftConcurrency.<AppName>` for the app
 and `com.3DaysOfSwiftConcurrency.<AppName>.<AppName>Tests` for the unit-test
-target. Creation refuses to overwrite a destination.
+target. Creation refuses to overwrite a destination. The generator’s regression
+check creates every starter, validates its Xcode project file, verifies app and
+test identifiers, and parses every generated Swift file.
 
 ## Next slices
 

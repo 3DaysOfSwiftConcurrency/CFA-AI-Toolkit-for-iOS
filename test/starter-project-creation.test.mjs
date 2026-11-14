@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createCFAProject, starters } from '../scripts/create-cfa-project.mjs';
+import { verifyStarterProjects } from '../scripts/verify-starter-projects.mjs';
 
 function withTemporaryDirectory(run) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cfa-starter-'));
@@ -38,4 +39,8 @@ test('starter creation rejects unsafe names and existing destinations', () => {
     fs.mkdirSync(output);
     assert.throws(() => createCFAProject({ name: 'Existing', out: output }), /Destination already exists/);
   });
+});
+
+test('every generated starter project has parseable Swift source', () => {
+  assert.equal(verifyStarterProjects(), true);
 });
