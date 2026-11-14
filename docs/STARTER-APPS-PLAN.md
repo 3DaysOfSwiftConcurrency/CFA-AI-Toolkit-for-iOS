@@ -27,10 +27,7 @@ test identifiers, and parses every generated Swift file.
 
 1. Keep **CFA App** as the empty Xcode template and **CFA Blank** as the
    CLI-only empty scaffold. Maintain Tab Bar App as a separate, named starter.
-2. Rename and generalise the Git Repos project into **Remote List**, retaining
-   its verified networking/cache behaviour while removing GitHub-specific UI
-   and product wording.
-3. Retire feature-rich templates from the Xcode chooser after their equivalent
+2. Retire feature-rich templates from the Xcode chooser after their equivalent
    starters have command-line creation coverage. Keep them only while their
    generated-source contracts remain deliberately supported.
 4. Add generation-level source, project-identity and runtime checks for each

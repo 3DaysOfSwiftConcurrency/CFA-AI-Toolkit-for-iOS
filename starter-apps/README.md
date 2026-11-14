@@ -57,7 +57,7 @@ the editable sources of their native templates. Maintain one source, not two:
 | Habit Tracker | Habit Tracker | `python3 scripts/sync-habit-template.py` |
 | Todays Twenty | Day Streak | `python3 scripts/sync-day-streak-template.py` |
 | Habit Tracker Pro | None; standalone purchase example | No generation step |
-| Git Repos | None; optional remote-list and cache example | No generation step |
+| Remote List | None; remote-list and cache example | No generation step |
 
 Use each generation command with `--check` to detect stale template output.
 Do not hand-edit generated template sources. The Xcode template installer installs
