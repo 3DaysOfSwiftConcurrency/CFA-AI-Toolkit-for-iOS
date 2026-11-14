@@ -4,7 +4,7 @@ actor RepoFileCache: RepoCache {
     private let cacheFileURL: URL
 
     init(cacheDirectoryURL: URL) {
-        cacheFileURL = cacheDirectoryURL.appending(path: "git-repositories.json")
+        cacheFileURL = cacheDirectoryURL.appending(path: "remote-list-items.json")
     }
 
     func loadRepos() throws -> [Repo] {

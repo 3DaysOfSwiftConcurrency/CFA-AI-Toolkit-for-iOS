@@ -3,7 +3,7 @@ import Observation
 import Testing
 @testable import RemoteList
 
-@Suite("Git repositories", .timeLimit(.minutes(1))) @MainActor
+@Suite("Remote list", .timeLimit(.minutes(1))) @MainActor
 struct RemoteListFeatureTests {
     @Test func fileCacheRoundTripsAndRejectsCorruptData() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
@@ -19,7 +19,7 @@ struct RemoteListFeatureTests {
                                       summary: nil, stars: 0, updatedAt: Date(timeIntervalSince1970: 0))
         try await cache.saveRepos([repo, withoutDescription])
         #expect(try await cache.loadRepos() == [repo, withoutDescription])
-        try Data("invalid JSON".utf8).write(to: directory.appending(path: "git-repositories.json"), options: .atomic)
+        try Data("invalid JSON".utf8).write(to: directory.appending(path: "remote-list-items.json"), options: .atomic)
         do {
             _ = try await cache.loadRepos()
             Issue.record("Corrupt cache data should not decode successfully")

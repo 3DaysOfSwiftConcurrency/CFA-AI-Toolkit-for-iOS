@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import RemoteList
 
-@Suite("Git repositories screen") @MainActor
+@Suite("Remote list screen") @MainActor
 struct RemoteListViewModelTests {
     @Test func missingDescriptionGetsPresentationFallback() throws {
         let remoteListFeature = RemoteListFeature(provider: TestRemoteListProvider(), cache: TestRepoCache())
@@ -10,7 +10,7 @@ struct RemoteListViewModelTests {
         let repositoryURL = try #require(URL(string: "https://example.org/repo"))
         let repository = Repo(id: 1, fullName: "Example/Repo", repositoryURL: repositoryURL,
                               summary: nil, stars: 0, updatedAt: .now)
-        #expect(viewModel.summary(for: repository) == "No repository description.")
+        #expect(viewModel.summary(for: repository) == "No description is available.")
     }
     @Test func refreshFinishesAndExposesFeatureState() async {
         let remoteListFeature = RemoteListFeature(provider: TestRemoteListProvider(), cache: TestRepoCache())
@@ -25,7 +25,7 @@ struct RemoteListViewModelTests {
         let remoteListFeature = RemoteListFeature(provider: FailingRemoteListProvider(), cache: TestRepoCache())
         let viewModel = RemoteListViewModel(remoteListFeature: remoteListFeature)
         await viewModel.refresh().value
-        #expect(viewModel.refreshFailureMessage == "Could not refresh GitHub repositories. Please try again.")
+        #expect(viewModel.refreshFailureMessage == "Could not refresh items. Please try again.")
     }
 
     @Test func repeatedRefreshesReuseOneScreenTask() async throws {
