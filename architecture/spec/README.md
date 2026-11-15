@@ -123,3 +123,4 @@ The authoritative source is [cfa-specification.md](../cfa-specification.md). The
 - [Prefer Readable Domain Language over Architectural Ceremony](topics/27-prefer-readable-domain-language-over-architectural-ceremony.md)
 - [Prohibited Patterns](topics/28-prohibited-patterns.md)
 - [Review Checklist](topics/29-review-checklist.md)
+- [AI-ready project context](topics/30-ai-ready-project-context.md)

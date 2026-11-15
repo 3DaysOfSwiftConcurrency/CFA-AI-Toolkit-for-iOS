@@ -18,6 +18,9 @@ label and local references use the matching `settingsFeature` name. Keep
 lower-level services distinct; their names describe their actual jobs.
 The canonical rules live in `architecture/cfa-specification.md` and
 `architecture/swift-coding-guide.md`.
+Keep `architecture/ai-project-guidance.md` as the integration contract for
+portable project instructions and editor adapters; those adapters must point
+back to the canonical rules rather than duplicating them.
 
 The toolkit ships eight skills. Keep the seven project workflows distinct: app creation, CFA feature work, architecture
 adoption, Legacy GCD migration, read-only architecture review, iterative CFA

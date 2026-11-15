@@ -21,6 +21,7 @@ const cfaSkillNames = [
 const architectureSkillNames = cfaSkillNames.filter(name => name !== 'swift-code-quality');
 // Keep this legacy ownership marker stable so upgrades recognise existing guidance.
 const guidanceMarker = '<!-- CFA Toolkit project guidance -->';
+const cursorGuidanceMarker = '<!-- CFA Toolkit Cursor guidance -->';
 const outdatedStartupGuidance = 'or a scheduled Task. Features can start their own asynchronous work without';
 const startupGuidanceUpdate = 'AppModel must signal Features and start required app-wide listeners before the launch callback returns.';
 const outdatedAppModelGuidance = 'AppModel stores only shared, concrete Features, and one private launch guard.';
@@ -487,6 +488,16 @@ This project guidance supplements the developer's request; it does not replace
 the installed CFA skills or authorise unrelated changes.
 `;
 
+const cursorGuidance = `${cursorGuidanceMarker}
+---
+description: CFA project architecture entry point
+alwaysApply: true
+---
+
+Read AGENTS.md and ARCHITECTURE.md before changing Swift source. Use the
+relevant CFA skill. This Cursor adapter does not replace the CFA specification.
+`;
+
 function hasDuplicateGuidance(content) {
   const first = content.indexOf(guidanceMarker);
   return first >= 0 && content.includes(guidanceMarker, first + guidanceMarker.length);
@@ -514,7 +525,7 @@ Usage:
   cfa inspect [project-folder] [--json]
   cfa doctor [project-folder]
   cfa project-guidance
-  cfa enable-project [project-folder] [--host auto|codex|claude]
+  cfa enable-project [project-folder] [--host auto|codex|claude|cursor]
 
 Examples:
   cfa dashboard
@@ -523,6 +534,7 @@ Examples:
   cfa inspect ~/Developer/MyApp
   cfa doctor ~/Developer/MyApp
   cfa enable-project ~/Developer/MyApp --host claude
+  cfa enable-project ~/Developer/MyApp --host cursor
 
 `);
 }
@@ -549,6 +561,11 @@ function guidanceFiles(project) {
   return ['AGENTS.md', 'CLAUDE.md']
     .map((name) => path.join(project, name))
     .filter((file) => fs.existsSync(file) && fs.readFileSync(file, 'utf8').includes(guidanceMarker));
+}
+
+function cursorGuidanceFiles(project) {
+  const file = path.join(project, '.cursor', 'rules', 'cfa-architecture.mdc');
+  return fs.existsSync(file) && fs.readFileSync(file, 'utf8').includes(cursorGuidanceMarker) ? [file] : [];
 }
 
 function regularFiles(folder, prefix = '') {
@@ -629,6 +646,7 @@ function doctor(projectArgument) {
   }
 
   const guidance = guidanceFiles(project);
+  const cursorGuidance = cursorGuidanceFiles(project);
   if (guidance.length > 0) {
     console.log(`INFO CFA project guidance found: ${guidance.join(', ')}`);
     for (const file of guidance) {
@@ -677,6 +695,10 @@ function doctor(projectArgument) {
     console.log(`Run: cfa enable-project ${JSON.stringify(project)}`);
   }
 
+  if (cursorGuidance.length) {
+    console.log(`INFO CFA Cursor guidance found: ${cursorGuidance.join(', ')}`);
+  }
+
   if (missingSkills.length || missingReferences.length || referenceDrift.length) process.exitCode = 1;
 }
 
@@ -689,8 +711,8 @@ function parseEnableProjectArguments(values) {
     else if (!value.startsWith('--') && !project) project = value;
     else throw Error(`Unknown or incomplete option: ${value}`);
   }
-  if (!['auto', 'codex', 'claude'].includes(host)) {
-    throw Error(`Unsupported host: ${host}. Use auto, codex, or claude.`);
+  if (!['auto', 'codex', 'claude', 'cursor'].includes(host)) {
+    throw Error(`Unsupported host: ${host}. Use auto, codex, claude, or cursor.`);
   }
   return { host, project: projectDirectory(project) };
 }
@@ -699,6 +721,18 @@ function enableProject(values) {
   const { host, project } = parseEnableProjectArguments(values);
   const codexFile = path.join(project, 'AGENTS.md');
   const claudeFile = path.join(project, 'CLAUDE.md');
+  const cursorFile = path.join(project, '.cursor', 'rules', 'cfa-architecture.mdc');
+  if (host === 'cursor') {
+    const existing = fs.existsSync(cursorFile) ? fs.readFileSync(cursorFile, 'utf8') : '';
+    if (existing.includes(cursorGuidanceMarker)) {
+      console.log(`CFA Cursor guidance is already enabled: ${cursorFile}`);
+      return;
+    }
+    fs.mkdirSync(path.dirname(cursorFile), { recursive: true });
+    fs.appendFileSync(cursorFile, `${existing.trim() ? '\n\n' : ''}${cursorGuidance}`);
+    console.log(`Enabled CFA Cursor guidance: ${cursorFile}`);
+    return;
+  }
   const guidanceFile = host === 'codex'
     ? codexFile
     : host === 'claude'

@@ -206,6 +206,27 @@ test('enable-project can create Claude guidance when explicitly requested', (t) 
   assert.equal(fs.existsSync(path.join(project, 'AGENTS.md')), false);
 });
 
+test('enable-project can add Cursor guidance without replacing existing rules', (t) => {
+  const { directory, command } = installedCommand(t);
+  const project = path.join(directory, 'project');
+  const cursorRule = path.join(project, '.cursor', 'rules', 'cfa-architecture.mdc');
+  fs.mkdirSync(path.dirname(cursorRule), { recursive: true });
+  fs.writeFileSync(cursorRule, '---\ndescription: Existing rule\n---\nKeep this text.\n');
+
+  const enabled = spawnSync(command, ['enable-project', project, '--host', 'cursor'], { encoding: 'utf8' });
+  const repeated = spawnSync(command, ['enable-project', project, '--host', 'cursor'], { encoding: 'utf8' });
+  const doctor = spawnSync(command, ['doctor', project], { encoding: 'utf8' });
+  const contents = fs.readFileSync(cursorRule, 'utf8');
+
+  assert.equal(enabled.status, 0, enabled.stderr);
+  assert.equal(repeated.status, 0, repeated.stderr);
+  assert.match(contents, /Keep this text\./);
+  assert.match(contents, /CFA Toolkit Cursor guidance/);
+  assert.match(contents, /AGENTS\.md and ARCHITECTURE\.md/);
+  assert.match(repeated.stdout, /already enabled/);
+  assert.match(doctor.stdout, /INFO CFA Cursor guidance found/);
+});
+
 test('doctor warns about previously installed CFA guidance without changing it', (t) => {
   const { directory, command } = installedCommand(t);
   const project = path.join(directory, 'project');

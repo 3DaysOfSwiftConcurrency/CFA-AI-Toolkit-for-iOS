@@ -822,6 +822,10 @@
       "reason": "Scope or reading context; not an independent implementable rule."
     },
     {
+      "section": "AI-ready project context",
+      "reason": "Integration policy; the linked canonical specification and coding guide remain the implementable sources."
+    },
+    {
       "section": "Name and Scope",
       "reason": "Scope or reading context; not an independent implementable rule."
     }

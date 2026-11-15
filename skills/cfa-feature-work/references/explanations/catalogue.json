@@ -32,6 +32,11 @@
     },
     {
       "file": "cfa-specification.md",
+      "heading": "AI-ready project context",
+      "reason": "Integration entry point; the canonical specification and coding guide remain the decision sources."
+    },
+    {
+      "file": "cfa-specification.md",
       "heading": "Name and Scope",
       "reason": "Context, identity or reference entry point; not a separate architecture decision."
     },

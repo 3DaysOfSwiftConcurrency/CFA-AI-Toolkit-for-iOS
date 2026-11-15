@@ -28,6 +28,13 @@ test('every supported starter creates an independently named Xcode project', () 
       assert.doesNotMatch(projectContents, new RegExp(starter.codeName));
       assert.equal(fs.existsSync(path.join(output, name)), true, starterName);
       assert.equal(fs.existsSync(path.join(output, `${name}Tests`)), true, starterName);
+      assert.match(fs.readFileSync(path.join(output, 'AGENTS.md'), 'utf8'), /ARCHITECTURE\.md/);
+      assert.match(fs.readFileSync(path.join(output, 'ARCHITECTURE.md'), 'utf8'), /authoritative architecture/);
+      assert.match(fs.readFileSync(path.join(output, 'CLAUDE.md'), 'utf8'), /AGENTS\.md/);
+      assert.match(fs.readFileSync(path.join(output, '.cursor/rules/cfa-architecture.mdc'), 'utf8'), /alwaysApply: true/);
+      for (const skill of ['cfa-app-creation', 'cfa-feature-work', 'cfa-unit-tests', 'swift-code-quality']) {
+        assert.equal(fs.existsSync(path.join(output, '.agents/skills', skill, 'SKILL.md')), true, `${starterName}: ${skill}`);
+      }
     });
   }
 });

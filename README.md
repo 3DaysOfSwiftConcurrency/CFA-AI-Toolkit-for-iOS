@@ -212,6 +212,9 @@ For screenshots, upgrades and troubleshooting, read
 
 ## New products and established apps
 
+Read [why teams use CFA](BENEFITS.md) for an evidence-conscious overview of the
+benefits, trade-offs and AI-agent workflow.
+
 CFA App Creation supports the whole new-product journey, not just generating
 the first files. A project can remain in **new-product development** while you
 shape its screens and features. Its recorded workflow does not change merely
@@ -454,6 +457,12 @@ overwriting it. For Claude Code, choose its instruction filename explicitly:
 cfa enable-project --host claude
 ```
 
+For Cursor, add its small adapter without replacing existing rules:
+
+```sh
+cfa enable-project --host cursor
+```
+
 This is optional. It reinforces CFA in that repository; it does not install
 skills or alter source code. Check that all eight installed skills are present,
 their bundled CFA references agree, and inspect project guidance at any time
@@ -467,6 +476,11 @@ If it reports a difference, run `cfa project-guidance` to print the installed
 CFA block for comparison. Keep your project-specific instructions when
 reconciling the two versions. Running `cfa enable-project` again preserves
 the existing block. See the [installation guide](docs/INSTALLATION.md) for details.
+
+Projects created with `create-cfa-project.mjs` are AI-ready from the first
+commit: they include portable `AGENTS.md`, local CFA skills, a concise
+`ARCHITECTURE.md`, and Cursor and Claude adapters. These files point to the
+same specification rather than creating editor-specific architecture rules.
 
 The installer places `cfa` in `~/.local/bin`. If Terminal says `command not
 found: cfa`, add that folder to your zsh path once, then open a new Terminal:

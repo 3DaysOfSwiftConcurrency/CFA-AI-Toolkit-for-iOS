@@ -1,0 +1,8 @@
+---
+description: CFA project architecture entry point
+alwaysApply: true
+---
+
+Read `AGENTS.md` and `ARCHITECTURE.md` before changing Swift source. Use the
+relevant portable CFA skill in `.agents/skills`. The canonical CFA rules are
+referenced there; this Cursor rule does not replace them.

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const projectGuidance = path.join(root, 'templates', 'project-guidance');
 
 // Each entry names one maintained, ready-to-open starter project. The project is
 // copied directly so the CLI never creates a second, drifting implementation.
@@ -65,6 +66,13 @@ function rewriteProjectIdentity(directory, starter, name) {
   }
 }
 
+function addPortableAIContext(directory) {
+  // The starter remains small in this repository. A generated project gets its
+  // own offline copy so an agent can work without a global toolkit install.
+  fs.cpSync(projectGuidance, directory, { recursive: true });
+  fs.cpSync(path.join(root, 'skills'), path.join(directory, '.agents', 'skills'), { recursive: true });
+}
+
 export function createCFAProject({ starterName = 'blank', name, out }) {
   const starter = starters[starterName];
   if (!starter) throw Error(`Unknown starter: ${starterName}\n\n${usage()}`);
@@ -73,6 +81,7 @@ export function createCFAProject({ starterName = 'blank', name, out }) {
   fs.cpSync(path.join(root, 'starter-apps', starter.source), out, { recursive: true });
   renamePaths(out, starter.codeName, name);
   rewriteProjectIdentity(out, starter, name);
+  addPortableAIContext(out);
   return out;
 }
 
