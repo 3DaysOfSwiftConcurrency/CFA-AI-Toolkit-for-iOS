@@ -124,12 +124,13 @@ were installed. If an error appears, read it before closing the window.
 
 Quit and reopen Xcode. Choose **File → New → Project → iOS → CFA App**, **Habit Tracker** or **Day Streak**.
 Xcode asks for your product name and organisation identifier, then creates a
-new project. CFA App is currently an honestly blank, strict-concurrency
-foundation with the CFA folder map and a structural root View; it deliberately
-does not manufacture a Feature, AppModel, ViewModel or tests before a real user
-journey is known. Habit Tracker and Day Streak provide the application-specific
-features described below. The separate [Tab Bar App starter](starter-apps/Tab%20Bar%20App/README.md)
-demonstrates a small Home + Settings CFA app.
+new project. CFA App provides the complete, strict-concurrency CFA skeleton:
+the four numbered folders, AppModel composition, a concrete Settings Feature
+and screen ViewModel, app resources, Swift extensions and focused tests. It
+does not add a product-specific demo feature. Habit Tracker and Day Streak
+provide the application-specific features described below. The separate [Tab
+Bar App starter](starter-apps/Tab%20Bar%20App/README.md) demonstrates a small
+Home + Settings CFA app.
 
 ### Explore the Starter Apps
 

@@ -64,17 +64,36 @@ export function verifyXcodeTemplateStructure(template = defaultTemplate) {
   const info = readInfo(template);
   const expected = [
     ['1 - View/___PACKAGENAME:identifier___App.swift', 'Source/Application/1 - View/___PACKAGENAME:identifier___App.swift'],
-    ['1 - View/Views/Root/RootView.swift', 'Source/Application/1 - View/Views/Root/RootView.swift']
+    ['1 - View/Views/Root/RootView.swift', 'Source/Application/1 - View/Views/Root/RootView.swift'],
+    ['1 - View/Theme/AppColourTheme.swift', 'Source/Application/1 - View/Theme/AppColourTheme.swift'],
+    ['1 - View/Theme/ThemeManager.swift', 'Source/Application/1 - View/Theme/ThemeManager.swift'],
+    ['1 - View/Views/Settings/SettingsView.swift', 'Source/Application/1 - View/Views/Settings/SettingsView.swift'],
+    ['1 - View/Views/Settings/SettingsViewModel.swift', 'Source/Application/1 - View/Views/Settings/SettingsViewModel.swift'],
+    ['2 - AppModel/AppModel.swift', 'Source/Application/2 - AppModel/AppModel.swift'],
+    ['2 - AppModel/Features/Settings/SettingsFeature.swift', 'Source/Application/2 - AppModel/Features/Settings/SettingsFeature.swift'],
+    ['3 - App Resources/LaunchScreen.storyboard', 'Source/Application/3 - App Resources/LaunchScreen.storyboard'],
+    ['3 - App Resources/PrivacyInfo.xcprivacy', 'Source/Application/3 - App Resources/PrivacyInfo.xcprivacy'],
+    ['4 - Swift Extensions/Date+StartOfDay.swift', 'Source/Application/4 - Swift Extensions/Date+StartOfDay.swift']
   ];
   for (const [name, source] of expected) {
-    if (info.Definitions?.[name]?.Path !== source || !fs.existsSync(path.join(template, source))) throw Error(`CFA App template structure: missing ${name}.`);
+    if (info.Definitions?.[name]?.Path !== source ||
+        !info.Nodes?.includes(name) || !fs.existsSync(path.join(template, source))) {
+      throw Error(`CFA App template structure: missing ${name}.`);
+    }
   }
   const settings = info.Targets?.[0]?.SharedSettings ?? {};
   if (settings.SWIFT_VERSION !== '6.0' || settings.SWIFT_STRICT_CONCURRENCY !== 'complete') throw Error('CFA App template structure: missing Swift 6 strict concurrency settings.');
+  const component = info.Options?.find(option => option.Identifier === 'cfaUnitTests')
+    ?.Units?.Include?.Components?.[0];
+  if (component?.Identifier !== 'com.3daysofswift.cfa.unit-tests' || component.Name !== '___PACKAGENAME___Tests') {
+    throw Error('CFA App template structure: missing the required CFA unit-test component.');
+  }
   const sources = expected.map(([, source]) => fs.readFileSync(path.join(template, source), 'utf8')).join('\n');
-  if (/GitRepos|GitHub|URLSession|RepoCache|SettingsFeature|ThemeManager/.test(sources)) throw Error('CFA App template structure: contains product-specific demo dependencies.');
-  if (!/struct RootView: View/.test(sources)) throw Error('CFA App template structure: missing the structural root View.');
-  if (/AppModel|ViewModel|@Observable|@State private var viewModel/.test(sources)) throw Error('CFA App template structure: contains ceremonial CFA layers without a product feature.');
+  if (/GitRepos|GitHub|URLSession|RepoCache/.test(sources)) throw Error('CFA App template structure: contains product-specific demo dependencies.');
+  if (!/struct RootView: View/.test(sources) || !/final class AppModel/.test(sources) ||
+      !/final class SettingsFeature/.test(sources) || !/final class SettingsViewModel/.test(sources)) {
+    throw Error('CFA App template structure: missing required CFA infrastructure.');
+  }
   return true;
 }
 

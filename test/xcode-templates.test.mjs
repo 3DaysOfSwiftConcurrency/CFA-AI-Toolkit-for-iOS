@@ -9,25 +9,31 @@ const root = path.resolve(import.meta.dirname, '..');
 const app = path.join(root, 'templates/Xcode/Project Templates/iOS/Application/CFA App.xctemplate');
 const tests = path.join(root, 'templates/Xcode/Project Templates/iOS/Application/CFA App Tests.xctemplate');
 
-test('CFA App is an honestly blank, strict-concurrency foundation', () => {
+test('CFA App has the complete, strict-concurrency CFA skeleton', () => {
   assert.equal(verifyXcodeTemplateStructure(app), true);
   const source = fs.readdirSync(path.join(app, 'Source', 'Application'), { recursive: true, encoding: 'utf8' })
     .filter(file => file.endsWith('.swift'))
     .map(file => fs.readFileSync(path.join(app, 'Source', 'Application', file), 'utf8')).join('\n');
-  assert.doesNotMatch(source, /GitRepos|GitHub|URLSession|RepoCache|SettingsFeature|ThemeManager/);
+  assert.doesNotMatch(source, /GitRepos|GitHub|URLSession|RepoCache/);
   assert.match(source, /struct RootView: View/);
-  assert.doesNotMatch(source, /AppModel|ViewModel|@Observable|@State private var viewModel/);
+  assert.match(source, /final class AppModel/);
+  assert.match(source, /final class SettingsFeature/);
+  assert.match(source, /final class SettingsViewModel/);
+  for (const folder of ['1 - View', '2 - AppModel', '3 - App Resources', '4 - Swift Extensions']) {
+    assert.equal(fs.existsSync(path.join(app, 'Source', 'Application', folder)), true, folder);
+  }
 });
 
 test('every native CFA app template carries portable AI project context', () => {
   for (const template of nativeAppTemplates) assert.equal(verifyNativeTemplateAIContext(template), true, template);
 });
 
-test('CFA App test component creates no ceremonial tests', () => {
-  assert.equal(fs.existsSync(path.join(tests, 'Source/AppModel tests/AppModelTests.swift')), false);
-  assert.equal(fs.existsSync(path.join(tests, 'Source/View model tests/ContentViewModelTests.swift')), false);
-  assert.deepEqual(fs.readdirSync(path.join(tests, 'Source'), { recursive: true, encoding: 'utf8' })
-    .filter(file => file.endsWith('.swift')), []);
+test('CFA App test component covers its AppModel, Feature and ViewModel', () => {
+  for (const file of [
+    'Source/AppModel tests/AppModelTests.swift',
+    'Source/FeatureTests/SettingsFeatureTests.swift',
+    'Source/View model tests/SettingsViewModelTests.swift'
+  ]) assert.equal(fs.existsSync(path.join(tests, file)), true, file);
   execFileSync('plutil', ['-lint', path.join(tests, 'TemplateInfo.plist')]);
 });
 

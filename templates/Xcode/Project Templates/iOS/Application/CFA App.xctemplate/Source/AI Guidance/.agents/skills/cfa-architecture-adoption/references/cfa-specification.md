@@ -295,7 +295,9 @@ both part of the architecture. CFA follows Xcode's own app-project conventions:
 
 Do not create a second CFA asset catalog or override Xcode's inherited asset
 generator. In `TemplateInfo.plist`, every CFA-owned resource needs a matching
-`Path`, single-string `Group`, and `Nodes` entry. The starter's
+`Path` and `Nodes` entry. Let Xcode derive the navigator group from the
+definition's folder path; a `Group` value is only used when Xcode requires an
+explicit non-default placement. The starter's
 `PrivacyInfo.xcprivacy` ensures `3 - App Resources` is a real navigator group,
 not an empty visual convention.
 
