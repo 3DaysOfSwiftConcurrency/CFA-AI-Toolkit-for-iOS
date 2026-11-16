@@ -1050,6 +1050,20 @@ after that capability with the `Feature` suffix: `SettingsFeature`,
 `PurchasesFeature`, `HabitsFeature`. Do not name feature owners `Manager` or
 `FeatureManager`.
 
+**Application lifecycle is not a Feature.** Do not introduce an
+`AppLifecycleFeature`, `LifecycleFeature`, a generic `StartupFeature`, or a
+similarly named catch-all owner. Launch, foreground/background, scene and
+delegate callbacks are system delivery boundaries, not product capabilities.
+The app delegate signals `AppModel`; AppModel makes the small routing decision
+and starts or forwards work to the relevant real Feature. A `SettingsFeature`
+may restore an appearance preference, a `MessagingFeature` may register for
+push, and an account Feature may respond to an account event. Each capability
+keeps its own state and business behaviour. A lower-level collaborator is named
+for its actual job—such as `PushRegistrationService`,
+`RemoteConfigurationClient`, or `DeepLinkRouter`—and is injected below its
+appropriate owner. Never use a lifecycle-labelled Feature to bundle unrelated
+infrastructure or to give a screen ViewModel broad app-wide access.
+
 Every AppModel property that exposes a feature uses the same domain name and
 the lower-camel-case `Feature` suffix: `settingsFeature`, `remoteListFeature`,
 `purchasesFeature`. Use that exact property name for ViewModel dependencies,
@@ -1515,6 +1529,13 @@ the earliest applicable launch callback:
 ```swift
 func applicationDidFinishLaunching()
 ```
+
+The lifecycle boundary is not a Feature boundary. Do not create an
+`AppLifecycleFeature` (or a similarly named catch-all type) to collect launch,
+push, deep-link, remote-configuration, badge, or account work. `AppModel`
+routes each system event to the relevant business Feature or to a focused
+lower-level collaborator named for its actual job. A lifecycle callback is the
+trigger, not the capability owner.
 
 AppModel keeps one simple Boolean to ensure the method runs once. The app
 delegate calls this synchronous method directly,

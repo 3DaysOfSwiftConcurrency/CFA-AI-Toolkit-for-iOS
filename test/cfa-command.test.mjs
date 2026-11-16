@@ -179,6 +179,8 @@ test('enable-project appends CFA guidance without overwriting existing instructi
   assert.match(content, /each scene keeps its\s+root available while Features load or fail/);
   assert.match(content, /Call the AppModel launch signal directly\s+and synchronously from the application lifecycle callback/);
   assert.match(content, /AppModel signals the relevant Features and starts its\s+required app-wide listeners before the callback returns/);
+  assert.match(content, /Do not model application lifecycle as a Feature/);
+  assert.match(content, /`AppLifecycleFeature` and similar\s+catch-all lifecycle owners are\s+non-CFA/);
   assert.match(content, /SwiftUI Views never store task handles, including in @State/);
   assert.match(content, /use task identity to reject stale results and clear the handle only when\s+that identity still matches/);
   assert.match(content, /ViewModel\s+owns explicitly created screen tasks and retains their named handles/);

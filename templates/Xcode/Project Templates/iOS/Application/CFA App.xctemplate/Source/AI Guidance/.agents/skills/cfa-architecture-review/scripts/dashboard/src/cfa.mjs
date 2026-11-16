@@ -44,6 +44,7 @@ const outdatedSharedWaitGuidance = 'A departing screen may stop waiting while th
 const sharedWaitGuidanceUpdate = 'For a prompt exit, cancel the screen’s wait independently of the Feature’s shared refresh.';
 const outdatedIsolationGuidance = 'Keep Features explicitly on MainActor.';
 const isolationGuidanceUpdate = 'Keep ViewModels and Features explicitly on MainActor.';
+const lifecycleFeatureGuidance = 'Do not model application lifecycle as a Feature.';
 const projectGuidance = `${guidanceMarker}
 # CFA project guidance
 
@@ -76,6 +77,10 @@ skill from that toolkit before changing the project.
   label use the matching lower-camel-case Feature name. Use concrete features
   directly; do not add matching FeatureAPI protocols. Lower-level services keep names that
   describe their actual jobs.
+- ${lifecycleFeatureGuidance} The app delegate sends system events to AppModel,
+  which routes each event to the relevant real Feature or focused infrastructure
+  collaborator. \`AppLifecycleFeature\` and similar catch-all lifecycle owners are
+  non-CFA; a lifecycle callback is a trigger, not a product capability.
 - On supported deployment targets, use @Observable for ViewModels and
   Features whose state the UI observes. Preserve a compatible observation
   mechanism when a migration must support an older deployment target.
@@ -688,6 +693,9 @@ function doctor(projectArgument) {
       }
       if (content.includes(outdatedIsolationGuidance)) {
         console.log(`WARN outdated isolation guidance in ${file}. ${isolationGuidanceUpdate}`);
+      }
+      if (!content.includes(lifecycleFeatureGuidance)) {
+        console.log(`WARN missing lifecycle-boundary guidance in ${file}; application lifecycle is not a Feature and AppLifecycleFeature-style catch-alls are non-CFA.`);
       }
     }
   } else {

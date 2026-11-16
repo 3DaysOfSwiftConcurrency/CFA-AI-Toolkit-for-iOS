@@ -118,6 +118,10 @@ the architecture:
    screen needs to return promptly, cancel its wait independently.
    A ViewModel retains a handle for each independently managed button action;
    equivalent repeated actions reuse that handle, which async callers can await.
+   Application lifecycle is not a product Feature: never add an
+   `AppLifecycleFeature`, `LifecycleFeature`, or similar catch-all. Route each
+   system event through AppModel to the relevant real Feature, or inject a
+   lower-level collaborator named for its precise infrastructure job.
 10. A production SwiftData repository with non-trivial reads, writes, imports
     or data sets uses a dedicated `@ModelActor`. Keep its `ModelContext` and
     SwiftData records within the storage boundary and return immutable

@@ -87,6 +87,13 @@ the earliest applicable launch callback:
 func applicationDidFinishLaunching()
 ```
 
+The lifecycle boundary is not a Feature boundary. Do not create an
+`AppLifecycleFeature` (or a similarly named catch-all type) to collect launch,
+push, deep-link, remote-configuration, badge, or account work. `AppModel`
+routes each system event to the relevant business Feature or to a focused
+lower-level collaborator named for its actual job. A lifecycle callback is the
+trigger, not the capability owner.
+
 AppModel keeps one simple Boolean to ensure the method runs once. The app
 delegate calls this synchronous method directly,
 without wrapping the AppModel call in a Task. AppModel synchronously invokes
