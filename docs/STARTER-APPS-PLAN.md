@@ -11,7 +11,7 @@ starter; it must never grow a second hand-maintained implementation.
 | CLI starter | Canonical project | Pattern it demonstrates |
 | --- | --- | --- |
 | `tab-bar` | Tab Bar App | Home and Settings tabs, appearance preferences and complete CFA slices |
-| `blank` | CFA Blank | Empty, correctly identified project infrastructure |
+| `foundation` | Tab Bar App | Complete CFA foundation with AppModel, feature slices, Settings and tests |
 | `habit-tracker` | Habit Tracker | Persistence, editing, daily state and streaks |
 | `habit-tracker-pro` | Habit Tracker Pro | Trends and StoreKit entitlement handling |
 | `day-streak` | Todays Twenty | Durable sequential practice and streak calculation |
@@ -25,8 +25,9 @@ test identifiers, and parses every generated Swift file.
 
 ## Next slices
 
-1. Keep **CFA App** as the empty Xcode template and **CFA Blank** as the
-   CLI-only empty scaffold. Maintain Tab Bar App as a separate, named starter.
+1. Keep **CFA App** as the complete neutral Xcode template. Use **Tab Bar App**
+   as the CLI foundation so every generated project starts with AppModel,
+   feature ownership, Settings, tests, and the four root folders.
 2. Retire feature-rich templates from the Xcode chooser after their equivalent
    starters have command-line creation coverage. Keep them only while their
    generated-source contracts remain deliberately supported.

@@ -23,8 +23,8 @@ xcodebuild -project /tmp/ReadingList/ReadingList.xcodeproj -scheme ReadingList -
 ```
 
 The command copies a maintained canonical starter and retargets its project,
-app, test target and bundle identifiers. Use `--starter blank` for the honestly
-empty CFA skeleton, `--starter habit-tracker`, `--starter habit-tracker-pro`,
+app, test target and bundle identifiers. Use `--starter foundation` for the
+complete CFA foundation, `--starter habit-tracker`, `--starter habit-tracker-pro`,
 `--starter day-streak`, or `--starter remote-list` for a working reference app.
 Run `node scripts/create-cfa-project.mjs --list` for descriptions. `--name` is
 a bundle-identifier-safe Swift name; generated identifiers use

@@ -9,7 +9,7 @@ const projectGuidance = path.join(root, 'templates', 'project-guidance');
 // copied directly so the CLI never creates a second, drifting implementation.
 export const starters = {
   'tab-bar': { source: 'Tab Bar App', codeName: 'TabBarApp', displayName: 'Tab Bar App', summary: 'A small Home and Settings tab app with complete CFA slices.' },
-  blank: { source: 'CFA Blank', codeName: 'CFABlank', displayName: 'CFA Blank', summary: 'Empty CFA project infrastructure; add the first complete feature yourself.' },
+  foundation: { source: 'Tab Bar App', codeName: 'TabBarApp', displayName: 'Tab Bar App', summary: 'The complete CFA foundation: AppModel, a feature slice, Settings, tests, and all four root folders.' },
   'habit-tracker': { source: 'Habit Tracker', codeName: 'HabitTrackerTemplate', displayName: 'Habit Tracker', summary: 'Habits, daily progress, persistence, and streaks.' },
   'habit-tracker-pro': { source: 'Habit Tracker Pro', codeName: 'HabitTrackerPro', displayName: 'Habit Tracker Pro', summary: 'Habit tracking plus trends and a StoreKit purchase example.' },
   'day-streak': { source: 'Todays Twenty', codeName: 'TimesThirty', displayName: 'Todays Twenty', summary: 'A durable daily-practice workflow and reusable day-streak feature.' },
@@ -31,7 +31,7 @@ function readArguments(argv) {
   if (argv.length === 1 && argv[0] === '--list') return { list: true };
   const values = new Map();
   for (let index = 0; index < argv.length; index += 2) values.set(argv[index], argv[index + 1]);
-  const starterName = values.get('--starter') ?? values.get('--template') ?? 'blank';
+  const starterName = values.get('--starter') ?? values.get('--template') ?? 'foundation';
   const name = values.get('--name');
   const out = values.get('--out');
   if ((argv.length !== 4 && argv.length !== 6) || !starters[starterName] || !name || !out || !/^[A-Za-z][A-Za-z0-9]*$/.test(name)) {
@@ -73,7 +73,7 @@ function addPortableAIContext(directory) {
   fs.cpSync(path.join(root, 'skills'), path.join(directory, '.agents', 'skills'), { recursive: true });
 }
 
-export function createCFAProject({ starterName = 'blank', name, out }) {
+export function createCFAProject({ starterName = 'foundation', name, out }) {
   const starter = starters[starterName];
   if (!starter) throw Error(`Unknown starter: ${starterName}\n\n${usage()}`);
   if (!/^[A-Za-z][A-Za-z0-9]*$/.test(name)) throw Error(`Invalid app name: ${name}`);

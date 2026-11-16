@@ -48,6 +48,23 @@ test('starter creation rejects unsafe names and existing destinations', () => {
   });
 });
 
+test('the default foundation project includes the required CFA composition', () => {
+  withTemporaryDirectory(directory => {
+    const output = path.join(directory, 'FoundationProject');
+    createCFAProject({ name: 'FoundationProject', out: output });
+    const app = path.join(output, 'FoundationProject');
+
+    for (const folder of ['1 - View', '2 - AppModel', '3 - App Resources', '4 - Swift Extensions']) {
+      assert.equal(fs.existsSync(path.join(app, folder)), true, folder);
+    }
+
+    const appModel = fs.readFileSync(path.join(app, '2 - AppModel', 'AppModel.swift'), 'utf8');
+    assert.match(appModel, /final class AppModel/);
+    assert.match(appModel, /settingsFeature: SettingsFeature/);
+    assert.equal(fs.existsSync(path.join(output, 'FoundationProjectTests', 'FeatureTests', 'SettingsFeatureTests.swift')), true);
+  });
+});
+
 test('every generated starter project has parseable Swift source', () => {
   assert.equal(verifyStarterProjects(), true);
 });

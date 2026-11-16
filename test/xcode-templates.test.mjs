@@ -58,21 +58,9 @@ test('Remote List starter has no stale template residue', () => {
   assert.doesNotMatch(testSources, /___PROJECTNAME:identifier___/);
 });
 
-test('CFA Blank is the headless creation skeleton without product chrome', () => {
-  const skeleton = path.join(root, 'starter-apps/CFA Blank');
-  assert.equal(fs.existsSync(path.join(skeleton, 'CFABlank.xcodeproj/project.pbxproj')), true);
-  assert.equal(fs.existsSync(path.join(skeleton, 'CFABlank/1 - View/CFABlankApp.swift')), true);
-  assert.equal(fs.existsSync(path.join(skeleton, 'CFABlank/1 - View/___PACKAGENAME:identifier___App.swift')), false);
-  assert.equal(fs.existsSync(path.join(skeleton, 'CFABlank/1 - View/Views/Root/RootView.swift')), true);
-  const source = fs.readdirSync(path.join(skeleton, 'CFABlank'), { recursive: true, encoding: 'utf8' })
-    .filter(file => file.endsWith('.swift'))
-    .map(file => fs.readFileSync(path.join(skeleton, 'CFABlank', file), 'utf8')).join('\n');
-  assert.doesNotMatch(source, /Practice|DayStreak|ThemeManager|SettingsFeature|UserDefaults|GitRepos|AppModel|ViewModel|@Observable/);
-  assert.deepEqual(fs.readdirSync(path.join(skeleton, 'CFABlankTests'), { recursive: true, encoding: 'utf8' })
-    .filter(file => file.endsWith('.swift')), []);
-  const privacy = fs.readFileSync(path.join(skeleton, 'CFABlank/3 - App Resources/PrivacyInfo.xcprivacy'), 'utf8');
-  assert.doesNotMatch(privacy, /UserDefaults|CA92\.1/);
-  const project = fs.readFileSync(path.join(skeleton, 'CFABlank.xcodeproj/project.pbxproj'), 'utf8');
-  assert.match(project, /INFOPLIST_KEY_CFBundleDisplayName = "\$\(PRODUCT_NAME\)";/);
-  assert.doesNotMatch(project, /Todays Twenty|public\.app-category\.education|UILaunchStoryboardName/);
+test('the command-line foundation has all four required CFA root folders', () => {
+  const foundation = path.join(root, 'starter-apps', 'Tab Bar App', 'TabBarApp');
+  for (const folder of ['1 - View', '2 - AppModel', '3 - App Resources', '4 - Swift Extensions']) {
+    assert.equal(fs.existsSync(path.join(foundation, folder)), true, folder);
+  }
 });
