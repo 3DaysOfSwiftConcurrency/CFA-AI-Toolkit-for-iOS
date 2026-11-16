@@ -17,7 +17,7 @@ test('specification generation validates explanations from the canonical tool', 
 test('topic reading edition retains every canonical section and is bundled consistently', () => {
   const expected = specTopics(root);
   const canonical = fs.readFileSync(path.join(root, 'architecture/cfa-specification.md'), 'utf8');
-  const reconstructed = expected.get('introduction.md') + [...expected].filter(([name]) => name.startsWith('topics/')).map(([, value]) => value.replace(/\]\(\.\.\/\.\.\/((?:swift-coding-guide|project-workflow|new-app-design-defaults)\.md(?:#[^)]*)?|spec\/(?:examples\/open-source-apps|explanations)\.md)\)/g, ']($1)')).join('');
+  const reconstructed = expected.get('introduction.md') + [...expected].filter(([name]) => name.startsWith('topics/')).map(([, value]) => value.replace(/\]\(\.\.\/\.\.\/((?:swift-coding-guide|project-workflow|new-app-design-defaults)\.md(?:#[^)]*)?|spec\/(?:examples\/open-source-apps|explanations)\.md)\)/g, ']($1)').replace(/\]\(\.\.\/\.\.\/\.\.\/CFA-ENGINEERING-PHILOSOPHY\.md\)/g, '](../CFA-ENGINEERING-PHILOSOPHY.md)')).join('');
   assert.equal(reconstructed, canonical);
   for (const folder of ['architecture/spec', ...cfaSkills.map(name => `skills/${name}/references/spec`)]) {
     for (const [name, value] of expected) assert.equal(fs.readFileSync(path.join(root, folder, name), 'utf8'), value, `${folder}/${name}`);

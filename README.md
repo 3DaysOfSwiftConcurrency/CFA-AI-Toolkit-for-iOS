@@ -552,6 +552,7 @@ This section is for AI coding assistants (Codex, Claude Code, Cursor and others)
 2. [`architecture/swift-coding-guide.md`](architecture/swift-coding-guide.md): Swift standards.
 3. [`architecture/cfa-change-gate.md`](architecture/cfa-change-gate.md): the invariants to keep and the completion record a change needs.
 4. [`architecture/project-workflow.md`](architecture/project-workflow.md): commit existing work first, and record the workflow mode once.
+5. [`CFA-ENGINEERING-PHILOSOPHY.md`](CFA-ENGINEERING-PHILOSOPHY.md): the practical decision guide for choosing the simplest clear, owned, testable design within the canonical rules.
 
 **Pick the skill that matches the task** (folders in [`skills/`](skills)):
 `cfa-app-creation`, `cfa-feature-work`, `cfa-architecture-adoption`, `swift-concurrency-migration` (Legacy GCD migration), `cfa-architecture-review` (read-only), `cfa-codebase-tidy`, `cfa-unit-tests`, `swift-code-quality`.

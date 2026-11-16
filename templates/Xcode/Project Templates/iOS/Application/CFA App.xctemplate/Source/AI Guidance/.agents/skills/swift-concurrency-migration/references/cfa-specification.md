@@ -1835,6 +1835,10 @@ Reject or refactor the following during review:
 
 Before accepting a change, answer every question:
 
+Apply the [CFA Engineering Philosophy](../CFA-ENGINEERING-PHILOSOPHY.md)
+alongside this checklist. It guides the KISS decision between compliant
+alternatives; this checklist remains the specific CFA review standard.
+
 1. Can the folder location alone explain which layer owns every new type, with
    no vague dumping-ground folder hiding unrelated responsibilities?
 2. Does every screen-level SwiftUI View have its own adjacent ViewModel? For

@@ -17,7 +17,9 @@ Name each concrete feature owner with a `Feature` suffix, such as
 label and local references use the matching `settingsFeature` name. Keep
 lower-level services distinct; their names describe their actual jobs.
 The canonical rules live in `architecture/cfa-specification.md` and
-`architecture/swift-coding-guide.md`.
+`architecture/swift-coding-guide.md`. Read `CFA-ENGINEERING-PHILOSOPHY.md`
+when making or reviewing design choices: KISS decides between valid options;
+the philosophy complements but does not replace specific canonical rules.
 Keep `architecture/ai-project-guidance.md` as the integration contract for
 portable project instructions and editor adapters; those adapters must point
 back to the canonical rules rather than duplicating them.

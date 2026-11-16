@@ -62,6 +62,7 @@ export function sync(base = root, { skipXcodeProjects = false } = {}) {
   }
   for (const name of cfaSkills) copy('architecture/cfa-specification.md',`skills/${name}/references/cfa-specification.md`);
   for (const name of cfaSkills) copy('architecture/cfa-change-gate.md',`skills/${name}/references/cfa-change-gate.md`);
+  for (const name of cfaSkills) copy('CFA-ENGINEERING-PHILOSOPHY.md',`skills/${name}/CFA-ENGINEERING-PHILOSOPHY.md`);
   for (const name of referenceFeatureSkills) copy('architecture/reference-feature.md',`skills/${name}/references/reference-feature.md`);
   for (const name of behaviourContractSkills) copy('architecture/product-behaviour-contract.md',`skills/${name}/references/product-behaviour-contract.md`);
   const tool=path.join(base,'tools/architecture-dashboard');

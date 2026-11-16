@@ -24,6 +24,14 @@ services it uses. Preserve the existing UI within the agreed migration scope.
 For every proposed new or changed type, state: “This type owns …”. Confirm that
 the responsibility is not already owned by an existing type.
 
+Apply the [CFA Engineering Philosophy](../CFA-ENGINEERING-PHILOSOPHY.md) as a
+decision check. KISS decides between valid designs: reject a type, protocol,
+dependency, SDK, inheritance hierarchy, or chain that does not solve a present,
+clear ownership or behaviour problem. Trace each changed vertical slice from
+View intent or `.task`, through its ViewModel and Feature, to the outcome the
+screen observes. Use the philosophy to assess readability and maintainability;
+the specific invariants below remain authoritative.
+
 Preserve these CFA invariants unless the developer explicitly asks to change
 the architecture:
 

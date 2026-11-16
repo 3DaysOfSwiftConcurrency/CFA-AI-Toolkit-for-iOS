@@ -11,7 +11,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent.parent
 EXCLUSIONS = json.loads((ROOT / 'scripts/release-exclusions.json').read_text())
 SOURCE_PARTS = ['.codex-plugin', '.github', 'readme-images', 'architecture', 'skills', 'tools', 'scripts', 'test', 'evals', 'examples', 'templates', 'starter-apps', 'docs',
-                'README.md', 'BENEFITS.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', '.gitignore', 'Install.command', 'Install Xcode Template.command', 'package.json', 'plugin.json']
+                'README.md', 'BENEFITS.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', 'CFA-ENGINEERING-PHILOSOPHY.md', '.gitignore', 'Install.command', 'Install Xcode Template.command', 'package.json', 'plugin.json']
 
 def is_release_path(relative):
     return (not any(part in EXCLUSIONS['directoryNames'] for part in relative.parts)

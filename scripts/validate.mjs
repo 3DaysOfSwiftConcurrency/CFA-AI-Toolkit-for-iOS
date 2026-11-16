@@ -309,7 +309,7 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
     throw Error('Missing or stale bundled dashboard licence. Run npm run sync.');
   }
   const markdownFiles = [
-    ...['README.md', 'AGENTS.md', 'CONTRIBUTING.md'].filter(file => fs.existsSync(path.join(base, file))),
+    ...['README.md', 'AGENTS.md', 'CONTRIBUTING.md', 'CFA-ENGINEERING-PHILOSOPHY.md'].filter(file => fs.existsSync(path.join(base, file))),
     ...['architecture', 'docs', 'skills', 'tools', 'evals', 'examples'].flatMap(folder => {
       const directory = path.join(base, folder);
       return fs.existsSync(directory) ? files(directory).filter(file => file.endsWith('.md')).map(file => path.posix.join(folder, file)) : [];
