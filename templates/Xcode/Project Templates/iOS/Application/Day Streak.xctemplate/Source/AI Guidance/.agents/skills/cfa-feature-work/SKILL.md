@@ -1,0 +1,275 @@
+---
+name: cfa-feature-work
+description: Add, change or remove a feature in an existing CFA SwiftUI iOS app. Use for feature work in a CFA project. In another architecture, preserve its existing boundaries unless the developer requests CFA adoption or migration.
+---
+
+# CFA feature work
+
+Read the [CFA specification reading map](references/spec/README.md) to locate applicable topics. The complete CFA specification remains authoritative; use it for whole-app audits.
+
+Read [project workflow and design authority](references/project-workflow.md) first.
+Respect the recorded workflow and current request; new-app design defaults do
+not authorize UI changes during maintenance or a narrowly scoped task.
+
+When explaining a substantive finding or answering why a rule exists, use
+[decision rationale and verified learning links](references/explanations/guide.md).
+Read only the relevant topic note. Explain the consequence in the user's context;
+do not impose CFA on another architecture or link to an unpublished article.
+
+Apply the specification's screen-construction invariant within the requested
+scope: a private `viewModel` property with inline `@State` construction by default.
+A detail View may construct its own State-backed ViewModel from a selected immutable snapshot
+in its initializer. Never inject or share ViewModels. Keep screen and scene
+selection in presentation and follow the [detail snapshot lifetime rule](references/spec/rules/cfa-ui-03.md)
+when the source data changes. Review-only work
+reports violations; tests inject Features into ViewModels, not ViewModels into Views.
+
+Read the [CFA specification](references/cfa-specification.md), [CFA change
+gate](references/cfa-change-gate.md), [reference feature](references/reference-feature.md) and [product behaviour
+contract](references/product-behaviour-contract.md) before editing.
+
+First identify the live target, AppModel composition, existing feature owner,
+affected Views/ViewModels, storage and tests. Record the intended user journey,
+success/failure states and existing behaviour that must remain intact.
+
+Apply the [Feature coordination rule](references/spec/rules/cfa-feature-02.md)
+when a change touches several Features. Keep screen-only composition in the
+ViewModel. Give reusable business coordination an explicit Model owner when
+needed, with directional dependencies and one owner for each authoritative value.
+
+When exposing refresh state, follow the [launch and refresh guidance](references/spec/topics/21-use-application-launch-as-an-opportunity-to-refresh-features.md).
+Keep confirmed domain data, refresh status and refresh errors separate so
+usable data remains visible during a refresh and after failure. The Feature
+owns domain data and operation outcomes. Its screen ViewModel turns them into
+presentation-ready loading and error information. Verify the pending, failure
+and successful retry paths with previously loaded data.
+
+When a business decision depends on current time, apply the
+[injectable clock rule](references/spec/rules/cfa-time-01.md). Inject the
+clock or date function and read it when the Feature makes the decision.
+Keep business date comparisons in the Feature. Test relevant time zones
+and date boundaries, including a clock advance on the same Feature instance
+where it can remain active across the boundary.
+
+When adding or sharing a service, apply the
+[service placement rule](references/spec/rules/cfa-svc-01.md). Keep a
+domain-specific provider beside its Feature while that placement still
+describes its work. A second consumer can receive it without moving it.
+Move broadly applicable services to a shared location. Compose a shared
+instance locally in `AppModel.live()` when common configuration or shared
+state warrants it, then inject it through the consumers' initializers.
+
+When changing network services, apply the
+[networking rule](references/spec/rules/cfa-net-01.md). Route URLSession
+requests through NetworkingManager and keep provider-specific validation and
+decoding in their adapters. Preserve documented request limits. For
+independent requests, hold the first response open in a controlled transport
+and verify the next request reaches it before the first finishes. If an
+actor protects shared state, check for actual serialization of requests
+across suspension before attributing a bottleneck to it.
+
+If the change introduces or touches a paid capability, apply the
+[paid capability rule](references/spec/rules/cfa-pay-01.md) and establish its
+access policy from the product requirements. The screen ViewModel reads current
+entitlement from PurchasesFeature before presenting or invoking the capability.
+Trace other entry points to their own checks and test both locked and entitled
+behaviour. If a changed route suspends between checking entitlement and using
+the capability, verify that a revocation during the wait blocks the resumed
+route. Keep pricing decisions separate from the capability's implementation.
+Server operations enforce their own access policy.
+
+When changing deep links or notification actions, apply the
+[deep-link rules](references/spec/rules/cfa-link-01.md) and preserve the
+existing product's history and navigation behaviour. Trace each changed
+opening callback to the receiving scene. When the product uses CFA's
+pending-request design, include the pending store in that trace. Verify that
+declining leaves the request pending and that retrying a failed removal
+does not navigate twice. For multi-window changes, apply the
+[scene navigation rule](references/spec/rules/cfa-link-02.md). Verify that
+an unavailable scene leaves the request pending and that one scene can open
+a different request while another scene is still deciding. Adding pending
+storage to an existing product requires a feature change that calls for it.
+
+When changing sign-out, account switching or session expiry, apply the
+[account lifecycle rule](references/spec/rules/cfa-account-01.md). Trace which
+Features own account data and coordinate their cleanup through explicit calls.
+If sign-out fails before the session ends, preserve that session and its data.
+Reconcile partial authentication failures with the actual session. If the
+session ended and cleanup fails, keep the app signed out and surface the
+cleanup error. After a session change, check the active account or session
+generation before publishing in-flight results, even after requesting cancellation. If the same account can sign in
+again while earlier work is pending, use session identity and verify that the
+old result cannot reach the new session. Verify that delayed writes cannot
+recreate cleared records and that delayed cleanup leaves newer records intact.
+Check cleanup and retained data
+against the product's sign-out contract.
+
+When changing store access, apply the
+[database availability rule](references/spec/rules/cfa-launch-02.md) and its
+verification checklist. Keep root navigation available during slow or failed
+opening. Verify Feature-scoped retry and reuse of the working store after a
+fetch failure.
+
+If the change affects durable storage, reopen a disposable store created by
+the previous version with representative synthetic records. Verify that the
+configured location and saved records remain usable and that a failed open or
+upgrade preserves the original data. Verify fresh setup separately.
+
+When changing how a non-critical preference is restored, apply the
+[preference recovery rule](references/spec/rules/cfa-pref-01.md). Verify the
+product-defined fallback for a missing or obsolete value in a recognised
+format. Preserve the saved value unless an intentional migration or successful
+user choice replaces it. Verify that unreadable storage and failed writes
+remain visible as errors.
+
+When changing offline editing or cross-device synchronization, apply the
+[offline editing and sync rule](references/spec/rules/cfa-sync-01.md). Define
+what counts as locally saved and what counts as server-confirmed. For offline
+edits sent to a custom server, save the edit and its pending-sync metadata
+together before reporting local success. Verify that a failed local write
+leaves no edit ready to send. Test recovery after failed sync and restart,
+and duplicate-safe retries with the same edit identity. Include a lost reply
+after the server applies the edit and verify it is applied only once. Test the
+agreed conflict and rejection outcomes. When replacing the sync implementation, include a
+pending edit saved by the previous version. For Apple-managed sync, verify
+capability, account and schema behaviour on supported devices. Exercise
+conflicting offline edits against the agreed resolution policy.
+
+When changing event observation, apply the
+[app-wide listener rule](references/spec/rules/cfa-app-02.md). AppModel owns
+listeners needed regardless of which screen is visible. The responsible
+Feature interprets forwarded events and owns the resulting state. Keep
+screen-only observation scoped to the screen or its ViewModel. For a changed
+app-wide listener, verify that repeated launch signals still leave one listener
+and that events reach the Feature with no relevant screen open. When both
+lifetimes are involved, verify that leaving the screen ends its observation
+while app-wide events still reach the Feature. If cancellation is supported,
+verify that the stopped listener no longer forwards events. If replacement
+is supported, also verify that delayed cleanup leaves the replacement running.
+Shut down isolated listeners during test cleanup.
+
+For system background work in scope, apply the
+[background-work rule](references/spec/rules/cfa-bg-01.md). Keep registration
+and work with the owning Feature. Verify each permitted identifier registers
+once during synchronous launch and scheduling happens separately. Check that
+success, failure and expiration each complete the system callback exactly once,
+including when expiration races normal completion. Verify that expiration
+cancels the owned work. Verify actual delivery separately on a supported device.
+
+When adding or changing a widget or another device target, or changing shared
+Model code or services it uses, apply the
+[multi-device rule](references/spec/rules/cfa-device-01.md). Reuse the owning
+Feature and shared Model source. Include only the target's own presentation
+files and compose the services available to its process. Trace data from the
+writer through the handoff to the receiving Feature. Build affected targets
+and verify source membership and API availability. Separately verify the
+handoff on supported devices, including missing, unreadable, delayed and
+stale snapshots. For an App Group widget snapshot, request a timeline reload
+only after the write succeeds. WidgetKit controls when the reload occurs.
+
+Fit new UI into the existing product design. Do not add themes, footers or
+branding merely because a new Feature is being created. In new-product
+development, App Creation guides product shaping without expanding this task.
+
+If the project is already CFA, make the smallest complete vertical change:
+
+1. Add or change the domain behaviour in its owning Feature. Use the
+   Feature's microservices for networking, storage or device APIs as needed.
+   Keep the Feature on MainActor. Verify that networking, persistence and
+   expensive processing use an appropriate isolation boundary off MainActor
+   by default. Keep framework-required MainActor work in a narrow adapter.
+   Check the actual isolation and compiler settings when moving work into
+   an async helper.
+   Apply the [Feature API rule](references/spec/rules/cfa-api-01.md) when
+   adding or changing commands. Read the resulting call sites. They should
+   express a domain operation, such as saving a weight entry, without reaching
+   into the Feature’s storage service or navigating its implementation state.
+   Apply the [immutable snapshot rule](references/spec/rules/cfa-snapshot-01.md)
+   when exposing API or persistence data. Use `let` properties with immutable
+   contents. Check nested values and collection elements for mutable reference
+   state that could change a published snapshot in place. Submit edits through
+   the owning Feature and publish a replacement value after the required save.
+   Keep unsaved editor values in the screen ViewModel.
+   Apply the [durable save rule](references/spec/rules/cfa-store-01.md).
+   Persist each record change by stable identity and publish it as saved
+   only after required persistence succeeds.
+   On failure, keep the draft available for retry and leave confirmed state
+   unchanged. For a replaceable download, apply the
+   [optional snapshot rule](references/spec/rules/cfa-cache-01.md). Publish
+   current server data and return the refresh result while optional caching
+   proceeds independently. If changing this path, verify that refresh proceeds
+   during a slow restore and with a missing, incompatible or unreadable cache.
+   Hold the cache write open and verify both publication and caller completion. For independent
+   sources, complete one refresh before restoration and verify that cached
+   data from other sources remains usable.
+   Verify that a failed refresh keeps valid data visible. If cache replacement
+   fails, verify retries stop within the configured limit and the fresh
+   result stays visible. Reopen storage to check the last usable snapshot and
+   verify that any offline availability refers to saved data. Control write
+   order to verify that an older write cannot replace a newer snapshot.
+   For changed asynchronous operations, apply the
+   [overlapping-call rule](references/spec/rules/cfa-task-01.md). Share one
+   execution when it can satisfy equivalent callers. Queue commands that
+   must each take effect in admission order across suspension points and
+   return each caller's outcome. Use controlled dependencies to verify
+   ordering, cancellation and cleanup after failure.
+   For shared refreshes, apply the
+   [refresh lifetime rule](references/spec/rules/cfa-task-02.md). By default,
+   the Feature keeps refreshing when the last screen leaves and retains the
+   result for later use. Cancel the only waiter while the request is suspended,
+   let the refresh finish without another caller, and verify that the Feature
+   retains its result. In separate cases, verify that a later equivalent caller
+   joins without a second request and that cancelling one of several waiters
+   leaves the others able to receive the result. If a departing screen needs
+   to return promptly, test that its wait ends while the refresh is suspended.
+2. Give every new screen-level SwiftUI View its own adjacent, bespoke ViewModel.
+   Reusable presentation components may take snapshots, bindings and action
+   closures. Use those closures to forward intent to the owning screen's
+   ViewModel. Keep service calls and business decisions in the model.
+   Apply the [ViewModel task rule](references/spec/rules/cfa-task-03.md) when
+   changing a screen action that starts an unstructured task. Equivalent taps
+   return the same active handle, which async callers await. Verify that
+   success, failure and cancellation clear the handle so a later action can
+   start. If replacement can start before the old task exits, hold the old
+   task open, install the replacement, and then let the old task finish.
+   Verify that its result and cleanup leave the replacement’s state and handle
+   intact. Keep separate outcomes for commands that must each take effect.
+3. Keep AppModel.shared as the production composition root. Construct shared
+   services locally in AppModel.live() and inject them into the Features that
+   need them. Keep service references with their consumers. Avoid additional
+   global singletons and generic manager layers.
+4. For a removal request, establish whether it removes a screen, an operation
+   or the whole Feature. Trace remaining callers across screens, targets and system entry
+   points. Remove only the routes, Views, ViewModels, APIs, tests and Xcode
+   memberships that belong exclusively to the removed scope. Keep shared
+   capabilities and the tests that cover their remaining callers. Remove stored
+   data only when its retention requirements permit it.
+5. After replacing an implementation, apply the
+   [straightforward change rule](references/spec/rules/cfa-maint-01.md).
+   Check whether the change left an obsolete entry point, wrapper or duplicate
+   route. Before removing it, check callers across targets and system callbacks,
+   including references in project configuration. Preserve adapters still needed
+   for compatibility or remaining consumers. Verify the surviving routes after
+   cleanup.
+6. Give each new ViewModel and concrete Feature its own named test file and
+   suite. For existing types, extend their suites to cover changed observable
+   behaviour at the owning boundary. A new screen using an existing Feature
+   needs its own ViewModel tests and can reuse that Feature’s API tests.
+   Build the target and run the affected suites.
+
+If the project is not CFA, do not silently distribute CFA types throughout an
+unrelated architecture. An explicitly requested isolated fix stays within
+the existing architecture. If the developer requests CFA, use Architecture
+Adoption for structural work and Swift Concurrency Migration when the scope
+includes replacing legacy concurrency. Keep that decision separate from the
+original feature request.
+
+Deliver the changed user journey, ownership map and executed verification. Keep
+the change small, readable and reversible; do not refactor unrelated features.
+
+## Shared Swift coding standards
+
+Read the [Swift coding guide](references/swift-coding-guide.md) before
+implementing or reviewing Swift. Apply its rules for crash safety, shared model
+decisions, declarative Views, KISS, errors, concurrency, responsiveness and
+verification within this workflow's authorized scope.

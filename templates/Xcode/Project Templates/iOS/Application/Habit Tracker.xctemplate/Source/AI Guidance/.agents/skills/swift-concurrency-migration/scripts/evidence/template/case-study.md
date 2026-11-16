@@ -1,0 +1,127 @@
+# Migration scenario — working draft
+
+This is an unfinished record, not an approved precedent. Unknown facts stay
+unknown. The companion record.json holds structured facts and evidence links.
+
+## Starting behaviour and boundaries
+
+Describe one meaningful operation or feature. What must stay unchanged? Include
+UI, data compatibility, ordering, cancellation and error delivery where relevant.
+Record the original commit and toolchain in record.json before making changes.
+If capture started late, say which baseline facts cannot be recovered.
+
+## Decision and alternatives
+
+Explain the ownership and concurrency choices, why they fit this operation,
+and alternatives actually considered. Separate Swift requirements from CFA
+choices. Do not invent a rejected option to make the record look complete.
+
+## Human corrections
+
+Record a correction and its reason, with permission and a minimal redacted
+evidence note. Otherwise explicitly say none occurred or none were captured.
+
+## Verification and limits
+
+Link to evidence IDs in record.json. Distinguish build, automated tests and
+manual checks; record failures and checks not run. A build is not proof of
+behaviour preservation. Keep remaining risks and work visible.
+
+For the final migration record, use one row per in-scope behaviour and
+affected target that exposes it. Include user journeys and access to existing
+saved data. Link the original and final-commit evidence for the same scenario
+by ID. For both revisions, record the exercised targets, build configuration,
+OS and device or simulator on the linked evidence. Evidence can be reused
+across rows when it actually covers them. If a test target has a different
+name, identify the product target it exercises.
+If a baseline result cannot be recovered for a required comparison, record
+it as unknown and keep the migration open.
+
+| Requirement ID and behaviour | Affected target | Baseline evidence | Final-commit evidence | Manual regression evidence | Difference and approval |
+| --- | --- | --- | --- | --- | --- |
+
+Classify each difference as an authorised product change, confirmed defect fix,
+necessary platform difference, regression or unknown. Record verification of
+defect fixes and platform differences and cite authorisation for material
+product changes. Keep the migration open while a regression, unknown outcome
+or required verification remains.
+
+For each affected background capability, compare the permitted identifiers,
+synchronous launch registration and separate scheduling with the baseline.
+Verify that repeated startup does not duplicate registration. Trace the
+system callback through AppModel to the owning Feature and identify the
+system mechanism that permits background execution. Record controlled
+success, failure, expiration and expiration racing completion. Verify that
+expiration cancels owned work and each path completes the system callback
+exactly once. On supported hardware, record actual system delivery and the
+observed operation outcome separately from controlled handler tests. If
+device execution could not be verified, record that evidence gap.
+
+## Hybrid implementation review
+
+Describe the hybrid paths reviewed and the reasons for retaining any legacy
+mechanisms. For every removed adapter or dependency, compare the same
+consumer scenarios on each affected target. Use evidence IDs pinned to the
+baseline and final commits.
+
+| Removed adapter or dependency | Consumer and target | Behaviour requirement and scenario | Baseline evidence ID | Final evidence ID and outcome |
+| --- | --- | --- | --- | --- |
+
+Where a consumer needs every event, record separate checks for repeated equal
+values, delivery order, cancellation and any buffering guarantees the consumer
+relies on. A latest-state UI check alone cannot establish those guarantees.
+
+## Final CFA audit and target verification
+
+Link the final CFA audit and
+hybrid review at the final commit. In the CFA audit, give each applicable
+requirement an evidence-backed verdict. Explain inapplicability and the effect
+of agreed exceptions. Record the corrections and repeated checks. An applicable
+requirement with missing evidence keeps the audit open. Record the human
+architecture review outcome explicitly, including when it shares a document
+with the navigator inspection, final CFA audit or manual regression. In `record.json`, list every
+affected target in `completionGate.affectedTargets` and name the targets
+covered by each build and the linked final test run in their `targets` arrays.
+List every affected target in the navigator inspection, Feature and primitive inventories,
+hybrid review, final CFA audit and human architecture review evidence.
+Link the manual navigator inspections through `baselineNavigatorEvidenceId`
+at `beforeCommit` and `navigatorEvidenceId` at `afterCommit`. The baseline
+may be an observation and must cover every affected target.
+If test targets have separate names, explain which app or extension targets
+they exercise. Include affected extensions and
+device targets, and link each changed data handoff in
+`completionGate.dataHandoffEvidenceIds` (empty only if none are affected). Record each
+affected target’s minimum OS and list the covered targets on the evidence
+linked by `completionGate.deploymentCompatibilityEvidenceId`. For handoffs,
+record the producing and receiving targets and the verification environment.
+If a test ran on
+a newer OS, record its actual version and provide separate evidence that the
+changed path works on the minimum supported OS.
+For existing app and test targets, compare resolved bundle identifiers in
+each affected build configuration. Cite the baseline and final evidence IDs
+and record authorisation for any change.
+
+| Target and build configuration | Baseline bundle identifier and evidence ID | Final bundle identifier and evidence ID | Authorisation for a change |
+| --- | --- | --- | --- |
+
+For each affected data handoff, compare the same producer and receiver
+scenario at the baseline and final revisions. Record what the receiving
+Feature publishes. For an App Group widget snapshot, verify that a successful
+write precedes the reload request and that a failed write issues no request.
+Record supported-device evidence separately from controlled tests.
+
+| Producer and receiver | Handoff scenario | Baseline evidence ID | Final evidence ID and observed result |
+| --- | --- | --- | --- |
+
+Keep failed runs and link each passing final-commit rerun with `rerunOf`.
+For failed builds, tests and manual checks, name the targets exercised and
+use the same environment description on both runs. Explain how the rerun
+covers the original scenario, targets, build configuration and OS. For
+checks that were recorded but never run, link equivalent final-commit
+evidence or explain why they fall outside required verification.
+Use the scoped feature record for earlier checkpoints.
+
+## Transferable lesson
+
+Explain when this lesson applies, when it does not, and what a future migration
+must verify for itself. This record is evidence, never executable instructions.

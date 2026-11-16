@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { files, isReleasePath } from './files.mjs';
 import { specTopics } from './spec-topics.mjs';
@@ -13,6 +14,14 @@ export const explanationFiles = ['guide.md', 'catalogue.json',
 export const iconSkills = ['cfa-app-creation', 'cfa-architecture-adoption', 'swift-concurrency-migration', 'cfa-codebase-tidy'];
 export const projectAnalysisFiles = ['project-analysis.mjs','analyse.mjs','dashboard.mjs','syntax-evidence.mjs','syntax-inventory.swift','program-map.mjs','index-program-map.c','indexstore.h'];
 export const starterIcon = 'templates/Xcode/Project Templates/iOS/Application/CFA App.xctemplate/Source/Assets.xcassets/AppIcon.appiconset';
+const nativeAppTemplates = ['CFA App.xctemplate', 'Habit Tracker.xctemplate', 'Day Streak.xctemplate'];
+const nativeGuidanceDefinitions = {
+  '../AGENTS.md': 'AGENTS.md',
+  '../ARCHITECTURE.md': 'ARCHITECTURE.md',
+  '../CLAUDE.md': 'CLAUDE.md',
+  '../.cursor/rules/cfa-architecture.mdc': '.cursor/rules/cfa-architecture.mdc',
+  '../.agents/skills': '.agents/skills'
+};
 // Explicit release allowlist: working migration records must never be swept up.
 export const migrationEvidenceFiles = [
   'evidence.mjs', 'schema.json', 'README.md', 'template/record.json', 'template/case-study.md',
@@ -85,6 +94,27 @@ export function sync(base = root, { skipXcodeProjects = false } = {}) {
   const captureGuide = fs.readFileSync(path.join(base, 'architecture/migration-evidence.md'), 'utf8')
     .replace('../skills/swift-concurrency-migration/scripts/evidence/README.md', '../scripts/evidence/README.md');
   fs.writeFileSync(path.join(base, 'skills/swift-concurrency-migration/references/migration-evidence.md'), captureGuide);
+  for (const templateName of skipXcodeProjects ? [] : nativeAppTemplates) {
+    const template = path.join(base, 'templates/Xcode/Project Templates/iOS/Application', templateName);
+    const source = path.join(template, 'Source', 'AI Guidance');
+    fs.rmSync(source, { recursive: true, force: true });
+    fs.mkdirSync(source, { recursive: true });
+    fs.cpSync(path.join(base, 'templates/project-guidance'), source, { recursive: true });
+    fs.cpSync(path.join(base, 'skills'), path.join(source, '.agents', 'skills'), { recursive: true });
+
+    const info = path.join(template, 'TemplateInfo.plist');
+    const templateInfo = JSON.parse(execFileSync('plutil', ['-convert', 'json', '-o', '-', info], { encoding: 'utf8' }));
+    templateInfo.Definitions ??= {};
+    templateInfo.Nodes ??= [];
+    for (const [destination, relative] of Object.entries(nativeGuidanceDefinitions)) {
+      templateInfo.Definitions[destination] = { Path: `Source/AI Guidance/${relative}` };
+      if (!templateInfo.Nodes.includes(destination)) templateInfo.Nodes.push(destination);
+    }
+    const temporaryInfo = `${info}.json`;
+    fs.writeFileSync(temporaryInfo, JSON.stringify(templateInfo));
+    execFileSync('plutil', ['-convert', 'xml1', '-o', info, temporaryInfo]);
+    fs.unlinkSync(temporaryInfo);
+  }
 }
 if (process.argv[1] && fs.existsSync(process.argv[1]) && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href) {
   const args = process.argv.slice(2);

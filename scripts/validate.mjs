@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { root, skills, cfaSkills, referenceFeatureSkills, behaviourContractSkills, iconSkills, starterIcon, migrationEvidenceFiles, explanationFiles, projectAnalysisFiles } from './sync.mjs';
 import { validateCatalogue, audit } from '../tools/explanations/explanations.mjs';
 import { files, hash, isReleasePath, json } from './files.mjs';
-import { verifyXcodeTemplateStructure } from './verify-xcode-template-structure.mjs';
+import { nativeAppTemplates, verifyNativeTemplateAIContext, verifyXcodeTemplateStructure } from './verify-xcode-template-structure.mjs';
 import { verifyTemplateOrientations } from './verify-ios-orientations.mjs';
 import { specTopics } from './spec-topics.mjs';
 const productDescription = 'CFA AI Toolkit for iOS: AI skills and tools to build, modernise, test and maintain SwiftUI apps with Swift Concurrency.';
@@ -347,6 +347,7 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
   if (source && checkXcodeProjects) {
     if (process.platform === 'darwin') {
       verifyXcodeTemplateStructure(path.join(base, 'templates/Xcode/Project Templates/iOS/Application/CFA App.xctemplate'));
+      for (const template of nativeAppTemplates) verifyNativeTemplateAIContext(template);
       verifyTemplateOrientations(base);
     }
     execFileSync('python3', [path.join(base, 'scripts/sync-habit-template.py'), '--check'], { stdio: 'pipe' });

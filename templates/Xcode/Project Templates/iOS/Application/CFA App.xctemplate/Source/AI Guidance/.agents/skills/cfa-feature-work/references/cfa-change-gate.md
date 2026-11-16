@@ -1,0 +1,611 @@
+# CFA change gate
+
+Use this gate before changing a CFA app. It is a short design pass and a final
+structural review, not a line-by-line ceremony.
+
+Read [project workflow and design authority](project-workflow.md) first.
+Visual defaults are not architecture invariants; preserve approved product
+designs unless the current request authorizes a change.
+
+## Before implementation
+
+Write down the affected route for every screen in scope. For SwiftUI screens,
+use this map:
+
+```text
+Screen View → Screen ViewModel → Feature → Microservices
+```
+
+`AppModel.shared` composes and exposes the Features; microservices include
+providers, storage and device API adapters when needed. For an existing UIKit
+screen in a migration, map its actual presentation owner to the Features and
+services it uses. Preserve the existing UI within the agreed migration scope.
+
+For every proposed new or changed type, state: “This type owns …”. Confirm that
+the responsibility is not already owned by an existing type.
+
+Preserve these CFA invariants unless the developer explicitly asks to change
+the architecture:
+
+1. Each screen-level SwiftUI View owns a dedicated ViewModel in private `@State`
+   named `viewModel`.
+   Construct it at the declaration by default. A detail View may initialize
+   its stored ViewModel from a selected immutable snapshot. A computed property or a
+   ViewModel passed in or shared by another View violates screen ownership.
+   Previews use the same ownership and storage boundaries. A normal preview
+   constructs the View, which creates its ViewModel and resolves its Feature
+   through the normal default. Do not attach SwiftData to a View or preview.
+2. ViewModels default narrow Feature dependencies from AppModel.shared; tests
+   may provide isolated Features.
+3. Preserve independent screen and scene selection in presentation, not shared
+   Features. Selected detail data may be passed into the View.
+   Keep an open detail and its selected snapshot stable when the source list
+   changes. Use explicit refresh where appropriate. Live updates depend on
+   the product requirements.
+   When a new app supports deep links or notification actions, its
+   DeepLinkingFeature validates received opening requests. Persist only the safe
+   data needed to identify and present each request before confirming it is kept.
+   If the saved list is unreadable, report the failure and preserve the file.
+   Resume accepting durable requests once the list can be read or the
+   product’s explicit recovery flow has resolved the failure.
+   Handle expired or unavailable destinations clearly. Scheduling and delivery alone do
+   not add an item. Settings shows the shared pending list, which either scene
+   can act on using its own navigation state. Protect unsaved edits and active
+   payment flows. Deduplicate repeated callbacks by opening-event identity,
+   including callbacks that arrive after the request was removed. Keep a
+   distinct opening event for the same destination available. Concurrent
+   attempts must not open the same request twice, and a scene waiting on one
+   request must leave other requests available to other scenes.
+   Remove a request after successful navigation or explicit dismissal. Declining,
+   cancelling before navigation, or failing to navigate leaves it pending.
+   Navigation succeeds when the destination opens, even if cancellation follows
+   or its content is still loading. If saving removal fails after navigation,
+   report the storage failure and retry removal without navigating again.
+   If an explicit dismissal cannot be saved, report the failure and leave the
+   request pending for retry. Until removal is saved, the request may reappear
+   after restart.
+   A separate history is opt-in for new apps.
+   During migration, preserve existing deep-link, notification and history
+   capabilities.
+4. When the app uses `ThemeManager`, it is a presentation dependency supplied through the
+   SwiftUI environment. AppModel and features are not environment
+   values.
+5. Features own feature state and behaviour; ViewModels own screen
+   presentation state and route user intent to their feature. Published API
+   or persistence snapshots use immutable `let` properties and contents, and
+   are replaced after confirmed changes. Do not embed mutable reference state
+   that undermines the snapshot; temporary editor drafts are presentation state.
+   Start with independent Features. For a reusable business workflow spanning
+   Features, use the [coordination rule](spec/rules/cfa-feature-02.md). Verify
+   an explicit, acyclic dependency direction and one owner for each shared
+   value. A screen that combines existing outputs can do so in its ViewModel.
+6. RootTabView is structural only. It presents tabs and navigation; it does not
+   refresh features, interpret feature failures, or own feature loading state.
+7. Every concrete feature type ends in `Feature`, such as `SettingsFeature`.
+   Its AppModel property, ViewModel dependency, initializer label, and local
+   reference use the matching lower-camel-case name, such as
+   `settingsFeature`. The ViewModel depends on that concrete feature;
+   do not add a matching `FeatureAPI` protocol. Inject a fake
+   repository or provider into the concrete feature instead. Reserve
+   infrastructure names for lower-level services;
+   do not call a feature owner a `Manager`.
+8. API operations return domain data or throw. Features keep domain
+   data, operation state and retained errors as separate values; no result-like
+   `LoadState` enum may carry all three.
+9. Application launch begins at the application lifecycle boundary. The app
+   delegate directly calls AppModel's synchronous `applicationDidFinishLaunching()`;
+   AppModel uses a Boolean guard and synchronously invokes Feature startup methods.
+   Features own their asynchronous work. Returning from the callback confirms
+   startup was initiated, not that disk or network loading has finished.
+   Keep synchronous startup brief and do not block on disk or network I/O.
+   A screen `.task` starts screen-owned initial work with that View's lifetime;
+   it is not a substitute for launch or a guarantee that loading finishes before
+   the View appears. When both paths request an equivalent refresh, the Feature
+   owns and shares the in-flight work, and callers await its outcome. Clear its
+   retained handle after completion without letting older work clear newer work.
+   A shared Feature refresh normally continues when a screen leaves, even if
+   that screen was its only caller; keep the result for later use. A different
+   cancellation policy needs a specific product or resource reason. Awaiting
+   the shared handle does not end the wait on caller cancellation. If the
+   screen needs to return promptly, cancel its wait independently.
+   A ViewModel retains a handle for each independently managed button action;
+   equivalent repeated actions reuse that handle, which async callers can await.
+10. A production SwiftData repository with non-trivial reads, writes, imports
+    or data sets uses a dedicated `@ModelActor`. Keep its `ModelContext` and
+    SwiftData records within the storage boundary and return immutable
+    `Sendable` domain values to the MainActor Feature. The storage
+    implementation owns the context for small stores too. Views and previews
+    reach storage through their ViewModel and Feature.
+11. Views remain declarative. Presentation formatting and screen-specific
+    system reads belong to the adjacent ViewModel. When multiple screens need the
+    same immutable system presentation data, or tests need deterministic values,
+    normalize it in an adjacent typed presentation value such as `AppInformation`.
+    Business, persistence, and shared mutable state belong to the owning Feature.
+12. A ViewModel initializer defaults its narrow Feature dependencies from
+    `AppModel.shared`. A detail ViewModel may also receive a selected immutable domain
+    snapshot. A typed immutable presentation value may be injected when a system value
+    such as app identity must be deterministic in tests. Such a value contains no
+    business behaviour or mutable state; do not inject `Bundle`, raw metadata dictionaries,
+    services, or unrelated convenience parameters.
+13. Each local data responsibility uses the simplest single persistence route.
+    A replaceable remote snapshot normally uses one JSON cache; SwiftData is reserved
+    for genuinely structured, queryable, growing, or relational local data.
+    Do not persist the same snapshot through both a database and a file cache.
+    Publish durable user edits as saved only after required persistence succeeds.
+    Persist individual changes by stable record identity. Reserve whole-dataset
+    replacement for explicit operations with their own integrity rules.
+    For simple preferences, update `UserDefaults` before publishing the value.
+    Its setter confirms the in-memory update only. Use a storage API that
+    reports the write outcome when the product requires confirmed persistence.
+    When both restoration and refresh are needed, start them independently.
+    A missing, incompatible or unreadable optional cache must leave the download
+    free to proceed. Publish current server data and complete the refresh for
+    its callers without waiting for the cache write. Keep valid in-memory
+    results if refresh fails. Retry cache writes within a bounded policy,
+    preserve a good cache if replacement fails, and prevent older writes or
+    restores from replacing newer data. Report offline availability only
+    for a saved cache. Verify that fresh data is visible and refresh returns
+    while the cache write is still pending, and that a failed cache write
+    leaves the fresh results usable.
+    Use JSON by default. Leave Instant Loading binary snapshots out of app
+    creation and migration proposals. Help apply them on request for a
+    sufficiently stable format with safe rejection of incompatible data.
+    Apply the [offline editing and sync rule](spec/rules/cfa-sync-01.md) when
+    the product requires synchronization. For offline edits sent to a custom
+    server, save the edit and its pending-sync metadata together before
+    reporting local success. Report server confirmation separately. Force a
+    local write failure and verify the app reports the failure without
+    publishing local success or admitting a pending edit for upload. Verify
+    pending edits survive failed sync and restart. Retry with the same edit
+    identity and verify one logical server change. Include a lost reply after
+    server acceptance and verify that retry does not apply the edit twice.
+    Check that conflicting
+    edits and server rejections follow the product policy.
+    If changing an existing sync implementation, start verification with
+    an edit persisted by the previous implementation. Check that the updated
+    app restores its identity and pending metadata and can retry it safely.
+    Verify Apple-managed sync and cross-device conflicts on supported devices
+    when applicable, separately from tests using controlled dependencies.
+    Use the product-defined safe fallback when a non-critical preference is
+    missing or when its recognised stored format contains an obsolete value. Preserve the old value where appropriate.
+    Replace it through an intentional migration or a successful user choice.
+    Treat unreadable or corrupt durable storage and failed durable writes as errors. A fallback must never imply that user
+    records loaded or saved successfully.
+14. AppModel stores `shared`, concrete Features, one private launch Boolean,
+    and private task handles needed to own app-wide listeners. Its explicit
+    initializer assigns injected Features, sets the launch guard to false and
+    initializes any app-wide listener task handles to nil;
+    its single `static live()` constructs all production dependencies. No
+    service, container, loading/error presentation state, or defaulted Feature
+    property belongs in AppModel. AppModel starts and owns app-wide listeners
+    and forwards events to the responsible Feature, which interprets them.
+    Scope observation needed only by one screen to that screen or its ViewModel.
+    Feature-owned background capabilities register their own handlers. For
+    BGTaskScheduler, register each permitted identifier once before launch
+    finishes and schedule requests separately. Route app-level callbacks through
+    AppModel. Verify that expiration cancels work and that success, failure
+    and expiration each complete the system callback exactly once. Exercise
+    expiration racing completion. Record actual background delivery on a
+    supported device separately from controlled handler tests.
+    Keep unrelated background capabilities with their owning Features. A Feature
+    can keep work running after its screen closes. Continuing after the app
+    itself enters the background requires an appropriate system mechanism.
+    For additional device or extension targets, include the appropriate shared
+    Model source and target-specific presentation. Build each affected target
+    and verify target membership, API availability and lifecycle requirements. Each process has its own
+    AppModel and Feature instances. Transfer immutable snapshots through an
+    appropriate platform mechanism and refresh observable state at the receiving
+    Feature. If the iPhone app shares an App Group snapshot with a widget,
+    verify that a successful write precedes the timeline reload request and
+    that a failed write issues no request. WidgetKit controls reload timing.
+    Send the Watch a separate snapshot copy through a suitable transfer
+    mechanism. Test missing, unreadable, delayed and stale snapshots against
+    the receiving target's policy. Verify actual transfer and receiver updates
+    on supported devices, and record that evidence separately from target builds
+    and controlled storage tests. If multiple targets can edit the same data,
+    exercise the product’s conflict policy.
+15. SwiftData access goes through `SwiftDataManager`; every `URLSession` request
+    goes through `NetworkingManager`. Composition code may configure and inject
+    a session. Feature-specific API adapters validate and decode their own
+    responses. Features own those lower-level collaborators. Keep domain-specific services beside their owning Feature
+    while that location remains descriptive. Put broadly applicable services
+    in a shared location and compose a shared instance in `AppModel.live()`
+    when common configuration or shared state warrants it. Inject that
+    dependency through each consumer's initializer. A second consumer alone
+    does not change a domain-specific service's placement. Views and ViewModels
+    reach storage and transport through their Features. Independent requests must
+    reach the transport without waiting for another response unless a
+    documented policy limits them. Where networking changes, hold one
+    response open and verify that a second independent request reaches
+    the transport before releasing the first.
+16. The app delegate calls `AppModel.shared.applicationDidFinishLaunching()`
+    directly and synchronously. AppModel signals the relevant Features and
+    starts required app-wide listeners before the callback returns. For an
+    asynchronous listener, verify that AppModel creates and retains its task
+    during startup. The task may begin consuming events after the callback
+    returns. Verify task creation and retention separately from event
+    consumption, and check that repeated launch signals start no duplicates.
+    Features may start asynchronous work without making the callback await
+    disk or network completion.
+    Keep synchronous startup work brief. Task creation order does not establish
+    disk or network start order. Measure launch and first-frame timing
+    separately from Feature readiness.
+    No View `.task` performs app launch, and no App, delegate, or View stores an
+    AppModel reference. ViewModels retain only the narrow Features needed by their screen.
+17. The SwiftUI `App.body` declares a stable root View and app-wide presentation
+    modifiers only. No startup `if`/`switch`, storage gating, database loading,
+    feature error display, or AppModel property belongs there. The root View
+    manages navigation only; feature screens present their own state.
+18. Database availability never gates the interface, including root wrappers
+    and app-wide blocking overlays. Construct the root independently of storage;
+    open storage lazily inside a Feature's data request. Before opening a
+    file-backed store, its owner prepares the parent directory at the configured
+    store URL. Directory, opening and fetch failures follow the request's
+    error path through Feature → ViewModel → feature screen. Verify that an
+    initial fetch failure is visible and a failed refresh preserves previously
+    loaded results. Retry the same domain request, reusing an already-open
+    store after a fetch failure. Preserve the configured location and saved
+    data, and verify independent navigation while storage is pending or has
+    failed.
+19. ViewModel methods name the work they perform, not the UI gesture or
+    lifecycle signal that triggered it. Use `refresh()`, `save()` or `retry()`;
+    never `refreshTapped()`, `savePressed()` or `screenAppeared()`.
+
+20. Features represent business capabilities, independently of screens and tabs.
+    A screen can present several independent business capabilities through its
+    dedicated ViewModel; several screens may use the same Feature. Give each
+    Feature a real responsibility and named tests, with one authoritative owner
+    for shared business state. Do not invent a Feature to match a tab count.
+    Features explicitly use MainActor and own authoritative application state.
+    Microservices keep internal request tracking, caches and storage machinery
+    under suitable isolation. Trace networking, persistence and expensive
+    processing through the service using the target's Swift language mode,
+    default isolation and relevant SDK annotations. An async declaration alone
+    does not establish where work executes. Keep framework-required MainActor
+    calls in a narrow adapter and measure responsiveness when timing matters.
+    When account changes affect other Features, coordinate the real workflow
+    explicitly. Trace sign-out, account switching and external session expiry
+    when supported. Verify that external expiry reaches its owner with the
+    account screen closed. If sign-out fails before the session ends, keep the
+    session and its data intact and report the failure so the user can retry.
+    Reconcile partial authentication outcomes against the actual session. When
+    a session ends, clear its affected state. Report cleanup failures and
+    verify that a failed cleanup leaves an ended session signed out. Check the
+    current account or session generation before publishing an in-flight result,
+    including when a request has been cancelled. If the same account can sign
+    back in before earlier work finishes, verify that the earlier session
+    cannot publish into the new one. Trace delayed writes and cleanup to
+    persistent storage. Verify they cannot recreate cleared records or delete
+    data saved by a newer session.
+    If sign-out promises a fresh-install experience, clear account-specific
+    in-memory state, caches and local files once the session has ended. Preserve
+    independent purchases and user-owned documents, and handle unsynchronised
+    work according to the product contract.
+21. New-app visual starting points live in [new-app design defaults](new-app-design-defaults.md).
+    Use them only where appropriate to the recorded workflow and current request;
+    user-approved designs override defaults. Do not require palette counts or
+    a popup theme selector when adopting CFA in an established product.
+22. ViewModels retain named handles for the unstructured Tasks they create by
+    default. Equivalent repeated button actions return the same handle, and
+    asynchronous callers await its value. SwiftUI lifecycle tasks and structured
+    child tasks keep their existing owners without stored wrappers. Each Feature
+    operation shares equivalent in-flight work and returns its outcome to all
+    callers, or queues commands that must each execute in admission order
+    across suspension points and returns each caller its own outcome. Record
+    input identity, cleanup, cancellation and any product-required exception. Never lose a required edit as a duplicate, even
+    when its input matches another command.
+
+23. The branded Settings About/footer is a new-app default, not a CFA invariant.
+    Existing apps receive it only on an explicit request such as “add CFA footer
+    to Settings View”. Never repeatedly prompt or fail an ordinary tidy-up
+    because themes, a footer or CFA branding are absent.
+
+## Before delivery
+
+Review the changed source as one feature slice. Check the old entry points,
+helpers, state and tests for anything the change made redundant. Before
+removing code, check target membership, framework callbacks, dynamic entry
+points and external consumers. Remove confirmed unused code within scope
+and update affected tests during implementation. In a read-only review,
+report what the evidence establishes.
+
+When the scope includes a paid capability, establish its entitlement policy.
+Check that PurchasesFeature owns entitlement state and that the screen
+ViewModel checks it before paid presentation or execution and presents the
+product’s locked or purchase experience when access is denied. Trace each
+alternate entry point that bypasses the screen to its caller's own check.
+Keep pricing and entitlement checks outside the capability Feature. Flag
+established unguarded paths and report unresolved paths as unverified. Test locked and entitled paths. If entitlement
+can change during a suspension before use, change it while the route is
+suspended and verify the resumed route checks again. Server-protected
+operations enforce authorisation independently.
+
+- Where one execution satisfies equivalent ViewModel actions or Feature calls,
+  verify those callers share its completion. Do not coalesce distinct commands
+  that must each take effect. Verify queued commands execute in admission order
+  and return their own outcomes. Test failure/cancellation cleanup and a later
+  retry using controlled dependencies. If the operation permits replacement
+  before cancellation finishes, suspend the old task, install a replacement
+  and let the old task finish. Verify its cleanup leaves the replacement
+  handle intact and its result cannot overwrite current state.
+
+- For changed pull-to-refresh flows, verify that the refresh action awaits
+  completion through an async method or the returned task handle. Hold the
+  request pending and check that the indicator remains active until the
+  screen's wait ends.
+- For a shared refresh that should survive navigation, cancel its only screen
+  waiter while the request is suspended. Let the request complete with no
+  replacement waiter and verify that the Feature retains the result. In a
+  separate case, admit an equivalent caller while the request is still in flight
+  and verify that it receives the shared outcome without a second request.
+  Verify that cancelling one of several waiters leaves the others able to finish.
+  When a waiter must exit promptly, verify that it returns before releasing the
+  suspended refresh.
+- Trace every affected screen to its ViewModel and required AppModel Features.
+  Do not require a distinct Feature per tab or screen. Require named tests for
+  each actual Feature; test shared data across screens without duplicating owners.
+- For a growing ViewModel, ask: is it arranging existing capabilities for this
+  screen, or implementing a new business capability itself? Only the latter
+  points towards extracting business behaviour into the model. Keep presentation
+  coordination in the presentation layer; dependency count alone is not a defect.
+- For changed workflows that coordinate Features, trace which Feature owns
+  each business decision and state update. Verify that coordination serves a
+  business capability, preserves one authoritative owner for each state value,
+  and keeps dependencies free of cycles.
+- Inventory screen initializers and call sites. Verify private ViewModel
+  ownership and the `viewModel` property name separately. Allow selected-value
+  detail initialization. Screen initializers must not receive a ViewModel,
+  AppModel, a Feature, a repository or an ancestor's navigation command.
+  Check that View and ViewModel initialization and View body construction
+  avoid blocking I/O, slow work and asynchronous side effects. Keep screen
+  and scene navigation selection in presentation. For a changed detail flow, open
+  distinct snapshots in two independently identified destinations. Rebuild a
+  detail View with changed input and the same SwiftUI identity. Verify that
+  its existing ViewModel retains its selection. Refresh the source list,
+  including a response that omits a selected item, and
+  verify both destinations stay open with their own selections. If a detail
+  offers explicit refresh, verify it updates only that destination.
+- Allow reusable presentation components to receive action closures that
+  forward UI intent to their owning screen. Screen Views use their own
+  ViewModel for work. Keep service closures and other screens’ ViewModel
+  actions out of screen inputs.
+- Compare visuals and interactions with the baseline. Do not introduce
+  unrequested design changes or restore defaults the user replaced.
+- For initial app design, verify the applicable new-app design defaults and
+  user-approved alternatives: working icon, selected theme behaviour, Settings
+  layout and system launch appearance. An explicit change to one of these in
+  an established app does not opt into the others.
+- For icon fixes, preserve artwork and target identity; new starter artwork
+  requires new-app creation or an explicit request. Report unavailable visual
+  checks accurately.
+- Never introduce a timed splash or storage gate, regardless of visual design.
+- Apply the [type placement rule](spec/rules/cfa-struct-07.md) when adding or
+  moving domain types and extensions. Inspect declarations and callers to
+  establish ownership. Keep domain types with the Feature that defines their
+  meaning, storage records inside persistence, and transport payloads inside
+  their provider or adapter. Keep purpose-specific extensions with their
+  owners, UI framework extensions in the View layer, and broadly reusable
+  standard library and Foundation extensions in `4 - Swift Extensions`.
+- After moving files, check the physical paths and Xcode navigator groups,
+  verify target membership and resource lookup, update scripts that use the
+  old paths, and build and test the affected targets.
+- Inspect every newly created or moved Swift file for the imports required by
+  its own declarations; imports in another source file do not satisfy this.
+- Confirm that each new screen ViewModel and concrete Feature has its own
+  named test file in its ViewModel test group or under `FeatureTests`,
+  respectively.
+  Verify target membership and the behaviours each test actually exercises.
+- Confirm that launch refresh logic is absent from RootTabView and feature
+  screens use `.task` for their own initial work—not as a substitute for
+  application launch. Trace the delegate's direct synchronous call to
+  AppModel and confirm AppModel signals each relevant Feature before the
+  delegate returns. Confirm the Features own their refresh tasks and that
+  pending disk or network work cannot gate the root UI. Verify that a
+  repeated launch callback does not start the work again.
+- When launch and screen refresh can overlap, verify the Feature's policy.
+  By default, equivalent callers that need the outcome join the same
+  Feature-owned request and receive its result. The synchronous launch signal
+  may start the request without waiting. Test success, failure and cleanup,
+  and record the reason and tests for any different product policy.
+- Confirm repeated synchronous Button actions follow their intended policy:
+  equivalent requests may reuse a ViewModel-owned task when one result satisfies
+  every caller; distinct commands that must each take effect are admitted and
+  coordinated without silently dropping presses. Async callers await the
+  appropriate task's value.
+- Read the App `body`: it must install a stable root without branching on
+  storage, loading, or errors. Do not merely move that branch into RootTabView.
+- For persistence changes, hold the initial store open pending and verify that
+  the root appears and Settings or another independent screen is reachable
+  while it waits. Fail the open and verify that independent navigation still
+  works and the affected Feature presents a recoverable request error. Verify
+  successful retry and retained data after failed refresh. For a file-backed
+  store, test first use with a missing parent directory and a failure to create
+  it. Verify retry uses the configured store and that the failure neither
+  removes existing data nor substitutes another store. Report any storage or
+  UI checks that did not run.
+- For time-dependent business decisions, verify the Feature reads an injected
+  clock when making the decision. Keep date-relative business intent in the
+  Feature API, for example `recordCoffeeToday`, so the ViewModel does not
+  reconstruct the business calendar. Test relevant date and time-zone boundaries.
+  Where a Feature must work across a date change, advance the controlled clock
+  on the same instance and verify its next decision. Direct time reads in a
+  View are suitable for transient visuals.
+- For preference restoration, exercise a supported saved value, a missing
+  value, and an obsolete value in the recognised format. Verify that a safe
+  fallback takes effect without asking the user to intervene and preserves
+  the stored value where the product requires it. Test unreadable or corrupt
+  durable storage separately. Where the storage API reports write outcomes,
+  fail a subsequent user change and verify that the previous effective
+  preference stays visible while the app reports the failure.
+- For changed failure paths, trace the Feature outcome through the ViewModel.
+  Verify that the ViewModel owns screen-specific error text and that the
+  screen presents the outcome of the requested operation.
+- For changes to durable editing, hold the save pending and verify that
+  confirmed state stays unchanged. Fail the save and verify the screen
+  presents a recoverable error and its ViewModel retains the draft for retry.
+  Retain the published snapshot in a reader across a successful retry. Verify
+  the owning Feature publishes a replacement and the reader's earlier snapshot
+  stays unchanged, including its nested values. Separately, cancel an unsaved
+  edit and verify that the draft is discarded and the stored and confirmed
+  values are unchanged.
+- For optional download caches, verify refresh starts while restoration is
+  pending, or when the cache is missing, incompatible or unreadable. Hold the
+  cache write pending and verify the Feature publishes fresh data and releases
+  its refresh callers. Force the cache write to fail and verify that retries
+  are bounded, the fresh data stays visible, the previous usable cache is
+  preserved and the app does not claim the fresh data is available offline.
+  A failed refresh preserves valid displayed data. A late restore or delayed
+  write must leave the newer snapshot intact. For independently refreshed
+  sources, complete one source’s refresh first and verify that restoration
+  still supplies usable cached data for the other sources.
+- For changes to the pending deep-link flow, verify that invalid opening
+  requests leave the pending list and its stored snapshot intact. Force the initial save to fail
+  and verify that the failure is reported and the request is never presented as
+  saved. Admit a request while restoration is suspended and verify that both
+  the restored and new requests survive restart. Separately, open a request
+  while an older restoration result is suspended. Verify that the delayed
+  result leaves the opened request removed and other requests available,
+  including after reopening the store. With an unreadable list,
+  verify that receiving a new request reports the read error and preserves the
+  original file. Restore readable data and verify that retry keeps both the
+  recovered and incoming requests. Verify that declining or
+  cancelling before navigation leaves a saved request available after restart.
+  Simulate an unavailable scene and verify the request survives reopening the
+  store and can be opened when a scene becomes available.
+  Cancel after the destination opens and verify that it still counts as opened
+  and the pending item is removed. Verify either scene can open a shared
+  request, simultaneous attempts on that request navigate only once, and the
+  other scene keeps its current destination. Hold one scene’s decision open
+  and verify that another scene can open a different pending request while the
+  first stays pending. Replay the same opening event after navigation and
+  verify it does not reopen the destination. Verify a distinct event for that
+  destination remains available. Race an open against dismissal of the same
+  request and verify the outcomes agree with the pending list and navigation state.
+  Force a removal write to fail
+  after navigation, then verify that the error is reported and retrying the
+  write removes the item without reopening the destination. During migration,
+  verify that existing URL and notification destinations, deferred opening
+  behaviour and any ability to reopen an item from history are preserved. Use the
+  [review checklist](spec/topics/29-review-checklist.md) for the full scope.
+- Confirm that concrete feature types and their AppModel properties retain the
+  `Feature` suffix.
+- When a change introduces or duplicates app-wide values, apply the
+  [shared constants rule](spec/rules/cfa-const-01.md). Define repeated shared
+  values once in a purpose-named enum when the callers should change together.
+  Keep independent policies separate even when their literals match. Keep
+  Feature-specific values with their owner and use bundle metadata and
+  localization resources where they are authoritative. Report embedded
+  secrets by source location without reproducing their values.
+- For changed app-wide listeners, drive a controlled event source after repeated
+  startup signals. Verify a single listener forwards events to the owning
+  Feature with no screen present. If cancellation is supported, verify that
+  the stopped listener no longer forwards events. If replacement is supported,
+  also verify that delayed cleanup leaves the replacement running. Shut down
+  isolated listeners during
+  test cleanup. For screen-only observation, leave the screen and verify
+  its observation ends while app-wide event delivery continues.
+- For changed observer-backed streams that support resubscription, verify that
+  a late event from the old registration cannot update the replacement and
+  that delayed teardown removes only the old registration.
+- Inspect AppModel's stored properties, initializer, and `live()`; then search
+  for `AppModel.shared` stored elsewhere, View-tied launch calls,
+  `ModelContainer` outside the storage boundary, and requests started directly
+  through `URLSession` outside `NetworkingManager`. Verify whether other
+  `URLSession` references only configure or inject the session.
+- Confirm that SwiftData contexts and `@Model` objects stay within the storage
+  implementation. For non-trivial production database work, verify that a
+  dedicated `@ModelActor` owns the context and expensive work runs off MainActor.
+- For changed record-level writes, overlap edits to different records and
+  verify that both changes survive reopening the store.
+- If a change affects durable storage, reopen a disposable store created
+  by the prior version with representative synthetic records. Verify that its
+  location and saved records remain
+  usable and that a failed open or upgrade preserves the original data.
+- After replacing a route, check callers, target membership, tests and system
+  entry points before removing superseded methods, stored state or files.
+  Preserve code that still serves another route. Remove duplicate state owners
+  and speculative abstractions introduced by the change, and correct placeholder
+  names.
+- Build and run focused tests when available. Report an unavailable runtime or
+  toolchain honestly; do not turn missing verification into a pass.
+
+If any invariant fails, correct the plan before expanding the implementation.
+
+## Migration progress and completion language
+
+During a migration, default to reporting the next concrete milestone: for
+example, **“Continuing migration: moving the Movies feature into the visible
+CFA ownership structure.”** Do not use “migration complete”, “finished with
+migration”, or equivalent whole-project language for a route-level refactor,
+a source-only check, or a pre-change test baseline.
+
+A route may be described as a **verified feature checkpoint** only after its
+post-change build/tests and behaviour checks pass. It remains part of a
+continuing migration until the agreed project scope is complete.
+
+Before calling a CFA migration complete, capture a completion record that
+identifies all of the following:
+
+- the before/after Xcode navigator map, showing the agreed CFA folders and
+  feature ownership visibly—not just source paths on disk. Reconcile temporary
+  package placements and move files into their intended locations when safe;
+  record intentional package boundaries or unresolved blockers, and verify
+  target membership and affected builds after moves;
+- the feature inventory, including every scoped tab or screen, its concrete
+  Feature dependencies, presentation owner (the dedicated ViewModel for a
+  screen-level SwiftUI View), composition owner, named tests, and any
+  intentionally retained legacy boundary;
+- a current concurrency inventory showing every scoped GCD, callback,
+  OperationQueue, timer, lock, or delegate route as migrated or explicitly
+  retained with a reason;
+- for each migrated system background capability, evidence that the permitted
+  identifiers, launch registration and scheduling behaviour still match the
+  baseline. Record the owning Feature and controlled results for success,
+  failure, expiration and the expiration/completion race. Report actual
+  delivery on supported hardware separately from handler tests;
+- the hybrid implementation review, identifying remaining users of legacy
+  mechanisms and dependencies and recording which adapters were removed or
+  intentionally retained to preserve behaviour or platform support. For removed
+  adapters or dependencies, link the baseline and rerun of the affected
+  consumer scenarios on each affected target. Where a
+  consumer needs every event, verify repeated values, ordering and cancellation
+  separately from the latest UI state. Where the existing contract specifies
+  buffering, hold the consumer back and compare which events it receives
+  before and after migration;
+- for existing widgets and device targets affected by Model or service
+  changes, evidence of target membership, build compatibility and preserved
+  data handoff. Verify the receiving target separately from the app build,
+  including snapshot write and reload ordering where applicable;
+- the existing app and test target bundle identifiers across affected build
+  configurations. Check the final values against the baseline and record any
+  explicitly requested change under the
+  [project identity rule](spec/rules/cfa-id-01.md);
+- the minimum OS for each affected target and compatibility evidence for
+  changed paths at that minimum. Check API availability separately from
+  Swift language mode. Preserve existing deployment support unless the
+  developer approves a change;
+- the final CFA audit across the agreed scope, with evidence for each applicable
+  requirement and reasons for requirements that do not apply. Resolve actionable
+  deviations and re-verify after corrections. Record any agreed exception and
+  its effect on the conformance verdict. An applicable requirement with missing
+  evidence remains unverified and keeps this checkpoint open;
+- passing builds for each affected target, plus relevant automated tests
+  and manual behaviour regression, all tied to the final commit. Compare
+  affected capabilities, meaningful interactions and access to existing saved
+  data with the pre-migration baseline. Classify observed differences using
+  the product behaviour contract. Record
+  authorised product changes, confirmed defects fixed in scope, and material
+  differences introduced by required platform or API changes. A regression
+  or unexplained difference keeps this checkpoint open. Include existing
+  extension or device targets that consume changed shared code.
+  Verify any affected data handoff separately from the build. If a relevant
+  regression check fails, retain its evidence and reconcile differences in
+  target, build configuration and OS. Verify the affected scenario on the
+  configuration where it failed before accepting the handoff; and
+- a human architecture review confirming that the navigator communicates the
+  agreed structure.
+
+If any item is absent, failed, or only inferred, say **“Continuing migration”**
+and name the missing checkpoint. Record failed pilots as blocked evidence and
+exclude them from successful migration precedents. A reviewed failed pilot can
+still document a lesson or serve as a negative example after evidence review.

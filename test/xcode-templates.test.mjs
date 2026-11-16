@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { verifyXcodeTemplateStructure } from '../scripts/verify-xcode-template-structure.mjs';
+import { nativeAppTemplates, verifyNativeTemplateAIContext, verifyXcodeTemplateStructure } from '../scripts/verify-xcode-template-structure.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const app = path.join(root, 'templates/Xcode/Project Templates/iOS/Application/CFA App.xctemplate');
@@ -17,6 +17,10 @@ test('CFA App is an honestly blank, strict-concurrency foundation', () => {
   assert.doesNotMatch(source, /GitRepos|GitHub|URLSession|RepoCache|SettingsFeature|ThemeManager/);
   assert.match(source, /struct RootView: View/);
   assert.doesNotMatch(source, /AppModel|ViewModel|@Observable|@State private var viewModel/);
+});
+
+test('every native CFA app template carries portable AI project context', () => {
+  for (const template of nativeAppTemplates) assert.equal(verifyNativeTemplateAIContext(template), true, template);
 });
 
 test('CFA App test component creates no ceremonial tests', () => {

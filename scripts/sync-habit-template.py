@@ -56,6 +56,18 @@ def generated_files():
             nodes.append(node)
     definitions["Assets.xcassets"] = {"Path": "Source/Assets.xcassets", "TargetIdentifiers": ["com.apple.dt.applicationTarget"]}
     nodes.append("Assets.xcassets")
+    # These project-root files are copied by scripts/sync.mjs from the shared,
+    # canonical project guidance. They deliberately do not belong to the app target.
+    guidance = {
+        "../AGENTS.md": "AGENTS.md",
+        "../ARCHITECTURE.md": "ARCHITECTURE.md",
+        "../CLAUDE.md": "CLAUDE.md",
+        "../.cursor/rules/cfa-architecture.mdc": ".cursor/rules/cfa-architecture.mdc",
+        "../.agents/skills": ".agents/skills",
+    }
+    for destination, relative in guidance.items():
+        definitions[destination] = {"Path": f"Source/AI Guidance/{relative}"}
+        nodes.append(destination)
     shared = {"SWIFT_VERSION": "6.0", "IPHONEOS_DEPLOYMENT_TARGET": "18.0", "GENERATE_INFOPLIST_FILE": "YES", "SWIFT_STRICT_CONCURRENCY": "complete", "SWIFT_DEFAULT_ACTOR_ISOLATION": "nonisolated", "MARKETING_VERSION": "1.0", "CURRENT_PROJECT_VERSION": "1"}
     info = {
         "Kind": "Xcode.Xcode3.ProjectTemplateUnitKind",
@@ -91,14 +103,27 @@ def main():
     args = parser.parse_args()
     groups = generated_files()
     for destination, outputs in groups.items():
-        existing = {f.relative_to(destination).as_posix() for f in destination.rglob("*") if f.is_file() and not f.name.startswith(".")}
+        existing = {
+            f.relative_to(destination).as_posix()
+            for f in destination.rglob("*")
+            if f.is_file()
+            and not f.name.startswith(".")
+            # AI Guidance is synchronised from the canonical shared context by
+            # scripts/sync.mjs, rather than from the buildable sample app.
+            and not f.relative_to(destination).as_posix().startswith("Source/AI Guidance/")
+        }
         unexpected = existing - outputs.keys()
         if unexpected:
             raise SystemExit(f"Unexpected template files (review manually): {sorted(unexpected)}")
         for relative, content in outputs.items():
             file = destination / relative
             if args.check:
-                if not file.exists() or file.read_bytes() != content:
+                matches = file.exists() and (
+                    plistlib.load(file.open("rb")) == plistlib.loads(content)
+                    if relative == "TemplateInfo.plist"
+                    else file.read_bytes() == content
+                )
+                if not matches:
                     raise SystemExit(f"Stale Habit Tracker template: {relative}. Run python3 scripts/sync-habit-template.py")
             else:
                 file.parent.mkdir(parents=True, exist_ok=True)
