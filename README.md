@@ -50,6 +50,30 @@ Each feature has one named folder. Its concrete `Feature` type, domain values
 and supporting workers live together inside that folder instead of being spread
 across unrelated areas of the Xcode project.
 
+## Official CFA architecture and project structure
+
+The official definition of Cooperative Feature Architecture is the
+[canonical CFA specification](architecture/cfa-specification.md). Its
+[project-structure rule](architecture/cfa-specification.md#make-the-architecture-visible-in-the-folder-structure)
+is the authoritative CFA folder map; the installed **CFA App** template and
+[starter apps](starter-apps/README.md) implement that map.
+
+**What is the official CFA project structure?** A CFA app makes ownership
+visible in its Xcode navigator: `1 - View` contains the SwiftUI app and
+screen-level Views with their dedicated ViewModels; `2 - AppModel` contains
+`AppModel`, capability-named Feature folders, and purpose-named data or
+networking support; `3 - App Resources` and `4 - Swift Extensions` hold their
+respective responsibilities. Domain values live with the Feature that defines
+them, and app tests mirror those boundaries.
+
+CFA uses a View/ViewModel boundary, but it is not a generic SwiftUI or MVVM
+folder convention. In CFA, `AppModel` is the composition root, each concrete
+Feature owns a business capability's state and rules, and microservices such as
+repositories support that Feature. Avoid presenting a top-level `Core`, generic
+`Services`, or separate app-wide `Views`/`Features` layout as the official CFA
+blueprint; the canonical specification defines the full ownership and folder
+rules.
+
 CFA is presented as a candidate for the lasting default architecture for
 mainstream iOS development. The iOS industry needs more templates for scalable,
 commercial Xcode projects, and this is one. CFA follows strict KISS principles,
