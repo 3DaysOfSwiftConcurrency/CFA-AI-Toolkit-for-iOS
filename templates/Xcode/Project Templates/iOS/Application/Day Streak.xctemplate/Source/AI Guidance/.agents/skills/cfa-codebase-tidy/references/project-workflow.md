@@ -90,6 +90,36 @@ Follow explicit user requirements and project design decisions over defaults.
 If a requested structural change cannot preserve behaviour, explain the
 specific conflict and obtain direction before changing that behaviour.
 
+## Xcode scheme discovery
+
+Before any Xcode build, test, simulator launch, or presentation check, discover
+the real build container and schemes. At the project root, use
+`xcodebuild -list -json` with `-workspace <name>.xcworkspace` when exactly one
+workspace exists; otherwise use `-project <name>.xcodeproj` only when exactly
+one project exists. Do not infer a scheme from an app, target, folder, or
+product name.
+
+Use a scheme only when it appears in that command's JSON result. An explicitly
+requested scheme must still appear in the result. If there is one discovered
+scheme it may be selected; if there are none or more than one, stop and report
+the discovered names and the missing choice. Never manufacture a name or
+silently switch to an unrelated scheme.
+
+Before executing a test or presentation check, validate the selected scheme's
+requested action and explicit destination with a dry run, for example:
+
+```zsh
+xcodebuild -workspace "Actual.xcworkspace" -scheme "Actual" \
+  -destination 'platform=iOS Simulator,name=Actual Simulator,OS=latest' test -dry-run
+```
+
+Use the same discovered container, verified scheme and validated destination
+for the real command. If discovery, action validation, or destination validation
+fails, report that failure plainly instead of presenting a build, test, or UI
+check as successful. The toolkit helper
+`scripts/xcode-scheme-discovery.mjs` performs this discovery and dry-run gate
+when it is available in the repository.
+
 Before delivery, compare the changed UI/behaviour with the baseline. Every
 intentional visual or interaction change must follow the current request or
 an applicable new-app default that the user has not overridden. Record any
