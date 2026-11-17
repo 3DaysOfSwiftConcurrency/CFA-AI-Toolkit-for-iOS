@@ -5,6 +5,11 @@ description: Create, edit or review high-quality Swift for production apps, exam
 
 # Swift Code Quality
 
+Before writing code, apply [Decide before writing code](references/swift-coding-guide.md#decide-before-writing-code).
+Resolve ownership, the smallest useful API, failure behaviour and any task
+lifetime first. Implement and verify one coherent behaviour at a time. For a
+review-only request, use these decisions to assess the code without editing it.
+
 Read [project workflow and design authority](references/project-workflow.md) first.
 Respect the recorded workflow and current request; new-app design defaults do
 not authorize UI changes during maintenance or a narrowly scoped task.

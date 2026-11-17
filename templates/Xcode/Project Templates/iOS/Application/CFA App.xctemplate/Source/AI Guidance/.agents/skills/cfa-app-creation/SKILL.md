@@ -5,6 +5,11 @@ description: Create and iteratively shape new SwiftUI iOS products using CFA, fr
 
 # CFA App Creation
 
+Before writing code, apply [Decide before writing code](references/swift-coding-guide.md#decide-before-writing-code).
+Resolve ownership, the smallest useful API, failure behaviour and any task
+lifetime first. Implement and verify one coherent behaviour at a time. For a
+review-only request, use these decisions to assess the code without editing it.
+
 Start with the [CFA specification reading map](references/spec/README.md) and read only the linked rule needed for the current design decision. The complete CFA specification remains authoritative; reserve a whole-document read for a whole-app audit.
 
 Read [project workflow and design authority](references/project-workflow.md) first.

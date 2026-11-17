@@ -11,6 +11,11 @@
   ],
   "exclusions": [
     {
+      "file": "swift-coding-guide.md",
+      "heading": "Decide before writing code",
+      "reason": "Implementation workflow applying existing ownership, readability, failure and concurrency rules; not a separate architecture decision."
+    },
+    {
       "file": "cfa-specification.md",
       "heading": "Purpose of this Document",
       "reason": "Context, identity or reference entry point; not a separate architecture decision."

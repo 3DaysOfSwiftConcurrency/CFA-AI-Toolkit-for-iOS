@@ -5,6 +5,11 @@ description: Adopt CFA in an existing iOS app or bring existing CFA features int
 
 # CFA Architecture Adoption
 
+Before writing code, apply [Decide before writing code](references/swift-coding-guide.md#decide-before-writing-code).
+Resolve ownership, the smallest useful API, failure behaviour and any task
+lifetime first. Implement and verify one coherent behaviour at a time. For a
+review-only request, use these decisions to assess the code without editing it.
+
 Read the [CFA specification reading map](references/spec/README.md) to locate applicable topics. The complete CFA specification remains authoritative; use it for whole-app audits.
 
 Read [project workflow and design authority](references/project-workflow.md) first.

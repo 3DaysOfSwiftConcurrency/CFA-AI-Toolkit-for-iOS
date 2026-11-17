@@ -4,6 +4,56 @@ Our working principles for readable, dependable Swift. This is a living guide: a
 
 Creation follows these rules from the start. Adoption, Legacy GCD migration and tidying apply them within the requested scope. Read-only reviews report violations and suggested corrections without editing code. Legacy GCD migration adopts CFA while preserving product behaviour; it does not mechanically replace GCD syntax or preserve an unclear ownership model.
 
+## Decide before writing code
+
+Apply this decision process before the first edit to each coherent behaviour.
+Inspect the existing implementation and callers first. For a substantive change,
+state a brief implementation contract in the working plan: requested outcome,
+existing owner, proposed API, failure behaviour and verification. A small local
+correction needs only the relevant decisions; do not create a planning document
+or ask for approval for routine implementation choices.
+
+1. **Where does this responsibility belong?** In CFA, classify it before naming
+   a type: screen presentation belongs to its ViewModel; business state and
+   decisions belong to the concrete Feature; storage, transport and device work
+   belong to focused collaborators. Lifecycle delivery reaches AppModel, which
+   routes to the appropriate owner. A lifecycle trigger does not justify an
+   `AppLifecycleFeature`. In another architecture, use its existing boundaries
+   unless adoption is requested. Follow the canonical CFA specification for
+   detailed ownership rules.
+2. **Can the existing owner express it directly?** Prefer a clearly named method
+   on that owner. Add a type, protocol, actor or dependency only when you can
+   name its present responsibility and why the existing owner cannot express
+   it clearly. A forwarding layer or possible future reuse is insufficient.
+3. **What will callers observe?** Choose domain-specific names and a narrow API
+   before implementing internals. Identify inputs, returned values, observable
+   state and errors. Preserve established external and storage contracts.
+   When a required operation fails, decide how the caller learns of failure
+   and what previously valid state remains; never invent success or a default
+   merely to make the function finish.
+4. **Does work suspend or outlive its caller?** If so, identify isolation, task
+   ownership, cancellation and the intended outcome of overlapping calls before
+   introducing a Task or actor. Decide which state must be rechecked after an
+   await. Use the existing concurrency policy and the relevant rules below.
+   Skip concurrency machinery for synchronous work that does not need it.
+5. **What example demonstrates correctness?** Identify the expected result and
+   relevant failure or overlap scenario before coding. Reuse existing tests
+   when they cover the contract; add behavioural coverage where it is missing.
+   A declaration or file-presence assertion cannot verify the behaviour.
+
+Implement one coherent path from caller to outcome, then inspect that changed
+path before expanding it. Read declarations and call sites together: do names
+explain the action, does each value have one owner, and can a new reader follow
+the control flow? Expand dense expressions into meaningful named steps when
+needed. Remove unnecessary forwarding layers and unused code introduced by
+the change. Use the project's formatting convention; do not perform unrelated
+style rewrites. Correct concrete issues immediately and run the relevant
+checks before building another slice on top of the change.
+
+At handoff, compare the result with the implementation contract and report
+observed test/build outcomes and any unverified behaviour. Passing a formatter,
+compiler or static scan alone does not establish architectural correctness.
+
 ## 1. Force unwrapping means choosing a crash
 
 **Rule:** Do not use the force-unwrap operator unless it is deliberately considered a shorthand replacement for `fatalError()`. Treat every occurrence as an explicit crash decision, never as a convenient way to access an optional.
