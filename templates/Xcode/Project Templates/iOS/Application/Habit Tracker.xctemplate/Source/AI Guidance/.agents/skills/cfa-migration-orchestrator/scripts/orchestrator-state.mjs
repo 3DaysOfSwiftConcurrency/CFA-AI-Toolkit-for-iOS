@@ -24,7 +24,8 @@ function git(project, args) {
 function baseline(project) {
   const revision = git(project, ['rev-parse', 'HEAD']);
   const status = git(project, ['status', '--porcelain']);
-  return { revision, dirty: status === null ? false : status.length > 0 };
+  const meaningfulStatus = status === null ? '' : status.split('\n').filter(line => !line.endsWith('.cfa-migration.lock')).join('\n');
+  return { revision, dirty: meaningfulStatus.length > 0 };
 }
 function diffCheck(project) {
   const result = spawnSync('git', ['-C', project, 'diff', '--check'], { encoding: 'utf8' });
@@ -42,7 +43,7 @@ function sourceFingerprint(project, ledgerFile = null) {
   const ignored = ledgerFile ? path.relative(project, ledgerFile) : 'MIGRATION_LEDGER.md';
   const hash = createHash('sha256');
   for (const file of files) {
-    if (file === ignored) continue;
+    if (file === ignored || file.endsWith('.cfa-migration.lock')) continue;
     const absolute = path.join(project, file);
     if (!fs.statSync(absolute, { throwIfNoEntry: false })?.isFile()) continue;
     hash.update(file); hash.update('\0'); hash.update(fs.readFileSync(absolute)); hash.update('\0');
@@ -72,6 +73,24 @@ function writeLedger(file, ledger) {
   const temporary = path.join(path.dirname(file), `.${path.basename(file)}.${process.pid}.tmp`);
   fs.writeFileSync(temporary, ledger, { mode: 0o600 });
   fs.renameSync(temporary, file);
+}
+async function withLedgerLock(file, operation) {
+  const lock = path.join(path.dirname(file), `.${path.basename(file)}.cfa-migration.lock`);
+  try {
+    const descriptor = fs.openSync(lock, 'wx', 0o600);
+    fs.writeFileSync(descriptor, JSON.stringify({ pid: process.pid, createdAt: now() }));
+    fs.closeSync(descriptor);
+  } catch (error) {
+    if (error?.code !== 'EEXIST') throw error;
+    const age = Date.now() - (fs.statSync(lock, { throwIfNoEntry: false })?.mtimeMs ?? Date.now());
+    if (age > defaultLeaseSeconds * 1000) {
+      fs.unlinkSync(lock);
+      return withLedgerLock(file, operation);
+    }
+    fail('Another migration worker is updating this ledger. The watchdog will retry automatically.');
+  }
+  try { return await operation(); }
+  finally { fs.unlinkSync(lock, { force: true }); }
 }
 function replaceState(file, state) {
   const ledger = readLedger(file);
@@ -183,10 +202,17 @@ export async function auditProject(project, providers = {}) {
   };
 }
 
-export async function main(args, { out = console.log, providers = {} } = {}) {
+export async function main(args, { out = console.log, providers = {}, locked = false } = {}) {
   const [command, target, ...rest] = args;
+  const readOnly = new Set(['validate', 'status']);
+  const suppliedLedger = option(rest, '--ledger');
+  const ledger = command === 'init' && target ? path.resolve(suppliedLedger ?? path.join(target, 'MIGRATION_LEDGER.md')) :
+    command === 'audit' && suppliedLedger ? path.resolve(suppliedLedger) : target ? path.resolve(target) : null;
+  if (!locked && ledger && !readOnly.has(command)) {
+    return withLedgerLock(ledger, () => main(args, { out, providers, locked: true }));
+  }
   if (command === 'init') {
-    const goal = option(rest, '--goal'), scope = option(rest, '--scope'), suppliedLedger = option(rest, '--ledger');
+    const goal = option(rest, '--goal'), scope = option(rest, '--scope');
     if (!target || !text(goal) || !text(scope) || !onlyOptions(rest, ['--goal', '--scope', '--ledger'])) fail(usage());
     const project = path.resolve(target);
     if (!fs.statSync(project, { throwIfNoEntry: false })?.isDirectory()) fail(`Project directory does not exist: ${project}`);

@@ -91,6 +91,18 @@ test('engine preserves existing ledgers and rejects invalid requests', t => {
   assert.match(bad.stderr, /Usage:/);
 });
 
+test('engine leaves a live ledger update to its owner and lets the watchdog retry', t => {
+  const directory = project(t, 'cfa-migration-engine-lock-');
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  assert.equal(spawnSync(process.execPath, [script, 'init', directory, '--goal', 'Migrate app', '--scope', 'App target']).status, 0);
+  const lock = path.join(directory, '.MIGRATION_LEDGER.md.cfa-migration.lock');
+  fs.writeFileSync(lock, 'live migration worker');
+  const result = spawnSync(process.execPath, [script, 'checkpoint', ledger, '--phase', 'audit', '--next-action', 'Review source.', '--action', 'Concurrent update.', '--result', 'Must retry.'], { encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /watchdog will retry automatically/);
+  fs.unlinkSync(lock);
+});
+
 test('engine rejects unsupported completion and incomplete blockers', () => {
   const state = initialState('Migrate app', 'App target');
   state.phase = 'completed';
