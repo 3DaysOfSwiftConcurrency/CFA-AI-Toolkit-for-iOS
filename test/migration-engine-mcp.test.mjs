@@ -55,7 +55,11 @@ test('Codex continuation queues only active migrations in their configured chat'
   assert.deepEqual(calls[0][1].slice(0, 5), ['queue', '--thread', 'thread-123', '--resume', '--message']);
   assert.match(calls[0][1][5], /token token-123/);
   assert.match(calls[0][1][5], /not the current migration state/);
-  assert.deepEqual(requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123', pending: { token: 'token-123' } }, phase: 'completed', nextAction: 'Done.' }), { queued: false, reason: 'Migration is completed.' });
+  assert.deepEqual(requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123', pending: { token: 'token-123' } }, phase: 'completed', nextAction: 'Done.' }), {
+    queued: false,
+    status: 'completed',
+    reason: '🎉 The migration to Swift Concurrency using CFA is complete.'
+  });
   assert.throws(() => requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123', pending: { token: 'token-123' } }, phase: 'verify', nextAction: 'Run tests.' }, {
     execute: () => ({ status: 0, stderr: 'Warning: could not resume thread thread-123', stdout: '' })
   }), /Could not queue Codex continuation/);

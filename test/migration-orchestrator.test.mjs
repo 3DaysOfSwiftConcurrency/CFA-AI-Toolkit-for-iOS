@@ -112,6 +112,13 @@ test('engine records blocked and completed states only with their required evide
   assert.equal(spawnSync(process.execPath, [script, 'complete', ledger, ...flags.flatMap((flag, index) => [flag, ids[index]])], { encoding: 'utf8' }).status, 0);
   const status = spawnSync(process.execPath, [script, 'status', ledger], { encoding: 'utf8' });
   assert.match(status.stdout, /"phase": "completed"/);
+  const claim = JSON.parse(spawnSync(process.execPath, [script, 'claim-continuation', ledger, '--token', 'terminal-token'], { encoding: 'utf8' }).stdout);
+  assert.deepEqual(claim, {
+    claimed: false,
+    status: 'completed',
+    reason: '🎉 The migration to Swift Concurrency using CFA is complete.',
+    nextAction: 'No further migration work is required. The required completion evidence is recorded.'
+  });
   assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
 });
 

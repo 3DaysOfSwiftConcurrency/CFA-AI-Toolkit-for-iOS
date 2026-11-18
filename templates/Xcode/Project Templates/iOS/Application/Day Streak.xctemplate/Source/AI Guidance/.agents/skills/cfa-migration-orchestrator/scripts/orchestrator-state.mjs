@@ -231,7 +231,12 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
       out(JSON.stringify(result)); return result;
     }
     if (state.phase === 'completed') {
-      const result = { claimed: false, reason: 'Migration is completed.', nextAction: state.nextAction };
+      const result = {
+        claimed: false,
+        status: 'completed',
+        reason: '🎉 The migration to Swift Concurrency using CFA is complete.',
+        nextAction: 'No further migration work is required. The required completion evidence is recorded.'
+      };
       out(JSON.stringify(result)); return result;
     }
     if (!state.continuation?.pending || state.continuation.pending.token !== token) {

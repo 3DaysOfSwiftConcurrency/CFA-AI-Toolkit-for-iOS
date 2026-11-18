@@ -23,7 +23,14 @@ function continuationMessage(state) {
 
 export function requestCodexContinuation(state, { execute = spawnSync, codex = 'codex' } = {}) {
   if (!state?.continuation) return { queued: false, reason: 'No Codex continuation is configured.' };
-  if (state.phase === 'blocked' || state.phase === 'completed') return { queued: false, reason: `Migration is ${state.phase}.` };
+  if (state.phase === 'blocked') return { queued: false, reason: 'Migration is blocked.' };
+  if (state.phase === 'completed') {
+    return {
+      queued: false,
+      status: 'completed',
+      reason: '🎉 The migration to Swift Concurrency using CFA is complete.'
+    };
+  }
   if (!state.continuation.pending?.token) return { queued: false, reason: 'No continuation reservation is pending.' };
   const result = execute(codex, ['queue', '--thread', state.continuation.threadId, '--resume', '--message', continuationMessage(state)], { encoding: 'utf8' });
   const detail = (result.stderr || result.stdout || '').trim();
@@ -108,7 +115,7 @@ export function createMigrationEngineServer({ queueContinuation = requestCodexCo
     inputSchema: z.object({ ledger })
   }, ({ ledger: ledgerFile }) => invoke(['validate', ledgerFile]));
   server.registerTool('cfa_migration_claim_continuation', {
-    title: 'Claim a CFA migration continuation', description: 'Claim one reserved host continuation and return the current ledger state. Stale or terminal signals do no work.',
+    title: 'Claim a CFA migration continuation', description: 'Claim one reserved host continuation and return the current ledger state. Stale or terminal signals do no work; a completed migration returns its completion message.',
     inputSchema: z.object({ ledger, token: nonEmpty })
   }, ({ ledger: ledgerFile, token }) => invoke(['claim-continuation', ledgerFile, '--token', token]));
   server.registerTool('cfa_migration_reopen', {
