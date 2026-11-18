@@ -55,6 +55,9 @@ test('Codex continuation queues only active migrations in their configured chat'
   assert.deepEqual(calls[0][1].slice(0, 5), ['queue', '--thread', 'thread-123', '--resume', '--message']);
   assert.match(calls[0][1][5], /Do not conclude because an individual verification check is unavailable/);
   assert.deepEqual(requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123' }, phase: 'completed', nextAction: 'Done.' }), { queued: false, reason: 'Migration is completed.' });
+  assert.throws(() => requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123' }, phase: 'verify', nextAction: 'Run tests.' }, {
+    execute: () => ({ status: 0, stderr: 'Warning: could not resume thread thread-123', stdout: '' })
+  }), /Could not queue Codex continuation/);
 });
 
 test('MCP server returns current source locations as review leads without writing a ledger', async t => {
