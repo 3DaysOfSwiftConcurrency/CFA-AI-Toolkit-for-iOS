@@ -185,6 +185,6 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
   replaceState(file, state); out(`Recorded evidence ${id}.`); return state;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+if (process.argv[1] && fs.existsSync(process.argv[1]) && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href) {
   try { await main(process.argv.slice(2)); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

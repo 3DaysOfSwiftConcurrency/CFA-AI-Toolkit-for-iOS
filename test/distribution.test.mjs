@@ -278,6 +278,23 @@ test('standalone release carries scanner dependencies and scans outside the sour
  assert.equal(fs.readFileSync(path.join(fixture,'Feature.swift'),'utf8'),'actor Feature { func refresh() async { await Task.yield() } }');
 });
 
+test('installed migration engine audits through the bundled cross-skill tools', t => {
+ const {dir,source}=release(t); const destination=path.join(dir,'customer');
+ const result=install({source,destination,mode:'skills'});
+ assert.equal(result.status,'installed');
+ const project=path.join(dir,'migration-project');fs.mkdirSync(project);
+ fs.writeFileSync(path.join(project,'MIGRATION_LEDGER.md'),'# Migration ledger\n');
+ fs.writeFileSync(path.join(project,'HomeView.swift'),'import SwiftUI\nstruct HomeView: View { var body: some View { Text("Home") } }\n');
+ const engine=path.join(destination,'.agents/skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs');
+ const init=spawnSync(process.execPath,[engine,'init',project,'--goal','Audit app','--scope','Main target'],{encoding:'utf8'});
+ assert.equal(init.status,0,init.stderr);
+ const ledger=path.join(project,'MIGRATION_LEDGER.md');
+ const audit=spawnSync(process.execPath,[engine,'audit',project,'--ledger',ledger,'--id','installed-audit'],{encoding:'utf8'});
+ assert.equal(audit.status,0,audit.stderr);
+ assert.equal(spawnSync(process.execPath,[engine,'validate',ledger],{encoding:'utf8'}).status,0);
+ assert.match(fs.readFileSync(ledger,'utf8'),/"id": "installed-audit"/,`init: ${init.stdout}${init.stderr}\naudit: ${audit.stdout}${audit.stderr}`);
+});
+
 test('installed architecture-review skill inventories an app and creates its Health Check report',t=>{
  const {dir,source}=release(t), destination=path.join(dir,'customer');
  install({source,destination,mode:'skills'});
