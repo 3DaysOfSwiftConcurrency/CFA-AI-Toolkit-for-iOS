@@ -1,6 +1,6 @@
 ---
 name: cfa-app-creation
-description: Create and iteratively shape new SwiftUI iOS products using CFA, from initial Xcode scaffolding through ongoing new-product development. Use for new-app creation and continued product design, unless another architecture is requested. Bounded feature, tidy-up and maintenance tasks retain their own scopes.
+description: Create and iteratively shape new SwiftUI iOS and macOS products using CFA, from initial Xcode scaffolding through ongoing new-product development. Use for new-app creation and continued product design, unless another architecture is requested. Bounded feature, tidy-up and maintenance tasks retain their own scopes.
 ---
 
 # CFA App Creation
@@ -39,7 +39,7 @@ Record new-product development in project
 instructions when creating the app. Read [new-app design defaults](references/new-app-design-defaults.md)
 before choosing initial visuals. On later iterations, reuse the existing app
 and honour choices already made; do not restart scaffolding or reapply defaults.
-CFA is the default architecture for new iOS projects. Do not ask whether to use CFA unless
+CFA is the default architecture for new iOS and macOS projects. Do not ask whether to use CFA unless
 the developer has explicitly requested a different architecture or framework.
 
 Read the [reference feature](references/reference-feature.md) before implementing durable, overlapping commands. Read the relevant specification topic and [CFA change gate](references/cfa-change-gate.md) before changing that boundary; do not load the complete specification or coding guide merely to begin a small app. Respect the user’s app requirements, deployment target and bundle identifier. Check the available Xcode version and installed destinations. For a non-interactive scaffold, run `node scripts/create-cfa-project.mjs --name <AppName> --out <directory>` from the toolkit root.
@@ -52,6 +52,18 @@ Read the [reference feature](references/reference-feature.md) before implementin
 6. Before delivery, inventory every screen-level View and every concrete Feature. Require a matching `<Screen>ViewModel.swift` beside each screen, a `<Screen>ViewModelTests.swift` file for each ViewModel, and a `<Feature>Tests.swift` file for each Feature, with meaningful observable assertions. Include Settings in this inventory only when the product includes it; reusable presentation components can accept snapshots, bindings and action closures that forward intent to their owning screen. They do not need a dedicated screen ViewModel. The seven-palette pack, About section and outside-cell version footer are optional full-template chrome, never a default requirement. Wherever the design displays bundle metadata or capability descriptions, use the app’s real metadata and verified capabilities. Build the iPhone target, run the tests, and exercise the first journey. Record unavailable simulator/device checks accurately.
 
 Deliver the Xcode project, a short explanation of feature ownership, and executed validation. Apply the specification’s review checklist to the created slice. Do not perform legacy migration as part of this skill.
+
+## macOS app creation
+
+Before creating or regenerating a native macOS project, read the
+[macOS app creation rule](references/macos-app-creation.md). Create a committed
+shared scheme whose Build action enables the `.app` target for running and
+profiling, and whose Run and Profile actions explicitly name that same app with
+a `BuildableProductRunnable`. Before handoff, run
+`node scripts/verify-macos-app-scheme.mjs <shared-scheme.xcscheme>` from this
+skill's directory. Load the scheme through `xcodebuild`, and record an actual
+Command-R launch separately when interactive verification is available. A
+successful Command-B build does not prove that the scheme can launch the app.
 
 When adding a SwiftUI preview, construct the screen as usual, for example
 `#Preview { NotesEditorView() }`. The screen constructs its ViewModel and

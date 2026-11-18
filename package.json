@@ -18,6 +18,7 @@
     "explanations:validate": "node tools/explanations/explanations.mjs validate",
     "verify:xcode-template": "node scripts/verify-xcode-template-structure.mjs",
     "verify:ios-app-identity": "node scripts/verify-ios-app-identity.mjs",
+    "verify:macos-app-scheme": "node scripts/verify-macos-app-scheme.mjs",
     "release": "python3 scripts/release.py"
   },
   "dependencies": {

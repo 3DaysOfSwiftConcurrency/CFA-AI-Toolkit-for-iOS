@@ -50,6 +50,7 @@ export function sync(base = root, { skipXcodeProjects = false } = {}) {
       copy(`architecture/${file}`, `skills/${name}/references/${file}`);
     }
   }
+  copy('architecture/macos-app-creation.md', 'skills/cfa-app-creation/references/macos-app-creation.md');
   for (const name of skills) copy('architecture/swift-coding-guide.md',`skills/${name}/references/swift-coding-guide.md`);
   for (const name of skills) {
     for (const file of explanationFiles) copy(`architecture/explanations/${file}`, `skills/${name}/references/explanations/${file}`);
@@ -80,6 +81,7 @@ export function sync(base = root, { skipXcodeProjects = false } = {}) {
   for(const skill of skills) copy('LICENSE',`skills/${skill}/LICENSE`);
   copy('scripts/verify-ios-orientations.mjs', 'skills/cfa-app-creation/scripts/verify-ios-orientations.mjs');
   copy('scripts/verify-ios-app-identity.mjs', 'skills/cfa-app-creation/scripts/verify-ios-app-identity.mjs');
+  copy('scripts/verify-macos-app-scheme.mjs', 'skills/cfa-app-creation/scripts/verify-macos-app-scheme.mjs');
   copy('LICENSE','skills/cfa-architecture-review/scripts/dashboard/LICENSE');
   for (const file of migrationEvidenceFiles) {
     copy(`tools/migration-evidence/${file}`, `skills/swift-concurrency-migration/scripts/evidence/${file}`);

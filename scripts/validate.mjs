@@ -227,6 +227,16 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
   if (source && hash(appIdentityChecker) !== hash(path.join(base, 'scripts/verify-ios-app-identity.mjs'))) {
     throw Error('Stale app identity checker. Run npm run sync.');
   }
+  const macOSAppCreationRule = path.join(base, 'skills/cfa-app-creation/references/macos-app-creation.md');
+  if (!fs.existsSync(macOSAppCreationRule)) throw Error('Missing bundled macOS app creation rule.');
+  if (source && hash(macOSAppCreationRule) !== hash(path.join(base, 'architecture/macos-app-creation.md'))) {
+    throw Error('Stale macOS app creation rule. Run npm run sync.');
+  }
+  const macOSAppSchemeChecker = path.join(base, 'skills/cfa-app-creation/scripts/verify-macos-app-scheme.mjs');
+  if (!fs.existsSync(macOSAppSchemeChecker)) throw Error('Missing bundled macOS app scheme checker.');
+  if (source && hash(macOSAppSchemeChecker) !== hash(path.join(base, 'scripts/verify-macos-app-scheme.mjs'))) {
+    throw Error('Stale macOS app scheme checker. Run npm run sync.');
+  }
   for(const file of ['LICENSE','README.md','docs/INSTALLATION.md','docs/PRIVACY.md']) if(!fs.existsSync(path.join(base,file))) throw Error(`Missing ${file}`);
   for(const name of skills) {
     const skill=path.join(base,'skills',name);
