@@ -150,6 +150,8 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
   const portable=json(path.join(base,'plugin.json'));
   const packageFile=path.join(base,'package.json');
   const packageManifest=fs.existsSync(packageFile) ? json(packageFile) : undefined;
+  const packageLock=path.join(base,'package-lock.json');
+  const mcpServer=path.join(base,'mcp/cfa-migration-engine.mjs');
   const dashboardManifest=json(path.join(base,'skills/cfa-architecture-review/scripts/dashboard/package.json'));
   const requiredPortableKeywords=['swift','swiftui','ios','swift-concurrency','architecture','cfa'];
   if(portable.$schema!=='https://agent-plugins.org/schemas/1.0.0/plugin.schema.json' ||
@@ -163,6 +165,10 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
       (packageManifest && (packageManifest.name!==productIdentifier || packageManifest.version!==manifest.version ||
         packageManifest.license!==manifest.license || packageManifest.description!==productDescription))) {
     throw Error('Plugin and package identity must use the current CFA AI Toolkit for iOS metadata.');
+  }
+  if (!packageManifest || packageManifest.dependencies?.['@modelcontextprotocol/server'] !== '2.4.0' || packageManifest.dependencies?.zod !== '4.6.7' ||
+      packageManifest.devDependencies?.['@modelcontextprotocol/client'] !== '2.4.0' || !fs.existsSync(packageLock) || !fs.existsSync(mcpServer)) {
+    throw Error('Missing or inconsistent CFA Migration Engine MCP server package.');
   }
   if(dashboardManifest.name!=='cfa-architecture-dashboard' || dashboardManifest.version!==manifest.version ||
       dashboardManifest.license!==manifest.license || dashboardManifest.engines?.node!=='>=20' ||

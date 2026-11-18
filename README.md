@@ -119,6 +119,10 @@ iOS app, it can read the CFA architecture instructions and use CFA.
 The installation does not change Xcode or your existing apps. It only makes the
 CFA AI Toolkit for iOS instructions available to your AI coding tool.
 
+For an MCP-capable client, the toolkit also includes a local CFA Migration Engine
+server. It exposes the existing ledger workflow and shared CFA rules rather than a
+second rules implementation; see [MCP setup](docs/MCP.md).
+
 ## Xcode Templates and Starter Apps
 
 Choose your starting point:

@@ -12,11 +12,19 @@
     "test": "node --test --test-concurrency=1 test/*.test.mjs tools/architecture-dashboard/test/*.test.mjs tools/swift-syntax-prototype/test.mjs",
     "sync": "node scripts/sync.mjs",
     "validate": "node scripts/validate.mjs",
+    "mcp:migration": "node mcp/cfa-migration-engine.mjs",
     "evals": "node scripts/run-evaluations.mjs",
     "explanations:audit": "node tools/explanations/explanations.mjs audit",
     "explanations:validate": "node tools/explanations/explanations.mjs validate",
     "verify:xcode-template": "node scripts/verify-xcode-template-structure.mjs",
     "verify:ios-app-identity": "node scripts/verify-ios-app-identity.mjs",
     "release": "python3 scripts/release.py"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.4.0"
   }
 }

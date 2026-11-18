@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Node.js 20 or newer (`node --version`) for Terminal installation and the dashboard. No npm package installation is needed. On macOS, `Install.command` can also use Codex's installed runtime when it is available.
+- Node.js 20 or newer (`node --version`) for Terminal installation and the dashboard. The optional MCP server has a one-time, explicit `npm ci --omit=dev` dependency installation step. On macOS, `Install.command` can also use Codex's installed runtime when it is available.
 - For the Codex plugin: a Codex CLI supporting `codex plugin add` and personal marketplaces.
 - For iPhone builds: a Mac, Xcode and an available Simulator/device.
 - For AI-guided workflows: your own supported agent/account and its normal permissions.
@@ -99,6 +99,13 @@ skill discovery and execution separately in the AI host.
 ```sh
 cfa doctor
 ```
+
+## CFA Migration Engine MCP server
+
+The toolkit includes a local, standard-input/output MCP server for its CFA Migration
+Engine. It exposes migration ledger actions and shared CFA documents without copying
+the rules into a second server implementation. See [MCP setup](MCP.md) to install its
+runtime dependencies and add the server to your MCP-capable coding client.
 
 To reinforce CFA automatically whenever an AI host works inside one existing
 CFA project, append safe, marked guidance to that project’s instruction file:

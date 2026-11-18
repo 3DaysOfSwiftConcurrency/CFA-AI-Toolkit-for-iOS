@@ -20,6 +20,15 @@ test('public architecture map uses the canonical CFA folder names', () => {
  assert.doesNotMatch(readme,/│   └── Networking & Data Storage|    ├── ViewModelTests\n/);
 });
 
+test('release packages the CFA Migration Engine MCP server and its pinned runtime manifest', t => {
+ const {source}=release(t);
+ assert.ok(fs.existsSync(path.join(source,'mcp/cfa-migration-engine.mjs')));
+ const manifest=json(path.join(source,'package.json'));
+ assert.equal(manifest.dependencies['@modelcontextprotocol/server'],'2.4.0');
+ assert.equal(manifest.dependencies.zod,'4.6.7');
+ assert.ok(fs.existsSync(path.join(source,'package-lock.json')));
+});
+
 test('portable installation guidance distinguishes releases from source checkouts', () => {
  const readme=fs.readFileSync(path.join(root,'README.md'),'utf8');
  const installation=fs.readFileSync(path.join(root,'docs/INSTALLATION.md'),'utf8');

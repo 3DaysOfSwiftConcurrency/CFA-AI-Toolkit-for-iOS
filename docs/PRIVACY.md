@@ -13,5 +13,7 @@ HTML and JSON reports include source excerpts and file paths. Keep them local un
 you intend to share those details. Historical Trend reports are not shipped.
 
 No authentication credentials, model API keys, simulator images, Xcode installation
-or user datasets are included in the toolkit. The plugin has no MCP server, hooks or
-network connector.
+or user datasets are included in the toolkit. Its optional CFA Migration Engine MCP
+server uses local standard input/output only: it does not listen on a network port,
+upload source, or include a network connector. Installing its published Node runtime
+dependencies is a separate, explicit package-manager action.

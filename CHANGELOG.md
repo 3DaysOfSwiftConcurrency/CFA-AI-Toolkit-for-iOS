@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add a local stdio MCP server for the CFA Migration Engine. Its eight tools call
+  the existing ledger runner, while MCP resources read the shared migration workflow
+  and canonical CFA specification instead of duplicating architecture rules.
+
 - Add an engine audit command that runs the existing CFA inspector and migration
   source analysis, then records their fingerprint and review leads in the
   existing ledger without claiming automatic conformance.
