@@ -54,3 +54,11 @@ export function installWatchdog(ledger, { launchAgentsDirectory = path.join(os.h
   }
   return { label, plist };
 }
+
+export function uninstallWatchdog(ledger, { launchAgentsDirectory = path.join(os.homedir(), 'Library', 'LaunchAgents'), execute = spawnSync } = {}) {
+  const label = watchdogLabel(ledger);
+  const plist = path.join(launchAgentsDirectory, `${label}.plist`);
+  execute('launchctl', ['bootout', `gui/${process.getuid()}`, plist], { encoding: 'utf8' });
+  fs.rmSync(plist, { force: true });
+  return { label, plist, removed: true };
+}

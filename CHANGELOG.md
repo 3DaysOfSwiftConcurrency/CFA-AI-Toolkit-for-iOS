@@ -1,13 +1,24 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-11-18
+
+- Add a self-healing Codex continuation mode for the CFA Migration Engine.
+  Claimed workers hold renewable leases; a per-ledger macOS watchdog redelivers
+  an unclaimed signal, replaces an expired worker, fences the former token, and
+  removes itself when the migration reaches a terminal state.
+- Bind new migration completion gates to the exact source fingerprint and
+  serialize ledger updates, preventing stale evidence or concurrent workers
+  from silently declaring an altered project complete.
+- Verify the new workflow end-to-end against the existing CFA-structured
+  Kickstarter migration: final CFA audit and architecture review passed, and
+  the Library-iOS reference suite passed 2,500/2,500.
 
 - Add a Codex-hosted continuation target to the existing migration ledger and
   an MCP tool that queues the same Codex thread after every successful
   non-terminal Engine update. The MCP server continues to read shared CFA
   rules; the host bridge supplies persistence across agent turns.
 
-- Add a local stdio MCP server for the CFA Migration Engine. Its eight tools call
+- Add a local stdio MCP server for the CFA Migration Engine. Its fourteen tools call
   the existing ledger runner, while MCP resources read the shared migration workflow
   and canonical CFA specification instead of duplicating architecture rules.
 

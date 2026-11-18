@@ -121,7 +121,9 @@ CFA AI Toolkit for iOS instructions available to your AI coding tool.
 
 For an MCP-capable client, the toolkit also includes a local CFA Migration Engine
 server. It exposes the existing ledger workflow and shared CFA rules rather than a
-second rules implementation; see [MCP setup](docs/MCP.md).
+second rules implementation. On macOS with Codex, its optional continuation mode
+can recover an interrupted migration through a leased, watchdog-backed workflow;
+see [MCP setup](docs/MCP.md).
 
 ## Xcode Templates and Starter Apps
 

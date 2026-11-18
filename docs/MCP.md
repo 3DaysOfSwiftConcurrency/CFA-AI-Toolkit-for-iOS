@@ -3,13 +3,16 @@
 The CFA Migration Engine can run as a local MCP server. It exposes the existing
 ledger-based Engine; it does not independently implement CFA rules.
 
-The server provides ten tools:
+The server provides fourteen tools:
 
 - `cfa_migration_init`, `cfa_migration_audit`, `cfa_migration_review_leads`,
   `cfa_migration_status` and `cfa_migration_validate`
 - `cfa_migration_checkpoint`, `cfa_migration_evidence`,
-  `cfa_migration_block` and `cfa_migration_complete`
-- `cfa_migration_enable_continuation`
+  `cfa_migration_block`, `cfa_migration_reopen` and `cfa_migration_complete`
+- `cfa_migration_claim_continuation`,
+  `cfa_migration_enable_continuation`,
+  `cfa_migration_heartbeat_continuation` and
+  `cfa_migration_recover_continuation`
 
 It also exposes the shared workflow, canonical CFA specification and Engine state
 reference as read-only MCP resources. The tools use the same
@@ -54,22 +57,32 @@ It does not modify Swift source, run an Xcode build, execute a test suite or dec
 scanner leads to be CFA violations. Those actions and judgments remain explicit work
 performed by the agent and recorded as evidence.
 
-## Codex-hosted continuation
+## Self-healing Codex continuation
 
 MCP by itself is a request/response protocol: it cannot keep an agent running
 after the host has ended a turn. When the server is used locally by Codex, call
 `cfa_migration_enable_continuation` with the current Codex thread ID. The
-Engine stores that target in the existing ledger and, after each successful
-non-terminal audit, checkpoint or evidence update, invokes:
+Engine stores that target in the existing ledger, installs one macOS user
+watchdog for that ledger, and queues the Codex chat after each successful
+non-terminal migration update:
 
 ```sh
 codex queue --thread <thread-id> --resume --message "Continue the MCP-backed CFA migration…"
 ```
 
 This resumes the same Codex chat with the ledger's current phase and next
-action. If that chat is currently writing, the next action remains queued until
-the writer finishes; it is not started concurrently. It intentionally does not
-queue a blocked or completed migration.
-The host command must be available locally; if it is not, the state change is
-preserved but the tool reports that continuation could not be queued. This is a
-Codex-host integration, not a duplicate set of CFA rules in the MCP server.
+action. Claiming the signal creates a time-bounded worker lease. State-changing
+calls carry the returned token; a heartbeat renews it before long work. If the
+agent or host stops, the watchdog detects the expired lease, fences the old
+worker, and safely queues a replacement signal. It also redelivers an
+unclaimed signal at a bounded interval.
+
+The watchdog is a per-ledger macOS `LaunchAgent` under the current user's
+`Library/LaunchAgents` directory. It removes itself when the ledger becomes
+blocked or completed. It does not run builds, alter source, or bypass a genuine
+product decision: it only restores the safe next migration action.
+
+This unattended mode requires macOS, a local Codex host with `codex queue`
+support, and a machine that remains powered on. The ordinary ledger and audit
+tools remain usable from any supported MCP client. This is a Codex-host
+integration, not a duplicate set of CFA rules in the MCP server.

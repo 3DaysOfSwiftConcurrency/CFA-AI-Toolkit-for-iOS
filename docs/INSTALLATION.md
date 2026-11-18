@@ -104,8 +104,10 @@ cfa doctor
 
 The toolkit includes a local, standard-input/output MCP server for its CFA Migration
 Engine. It exposes migration ledger actions and shared CFA documents without copying
-the rules into a second server implementation. See [MCP setup](MCP.md) to install its
-runtime dependencies and add the server to your MCP-capable coding client.
+the rules into a second server implementation. On macOS with Codex, its optional
+self-healing continuation can recover stopped migration workers automatically. See
+[MCP setup](MCP.md) to install its runtime dependencies and add the server to your
+MCP-capable coding client.
 
 To reinforce CFA automatically whenever an AI host works inside one existing
 CFA project, append safe, marked guidance to that project’s instruction file:

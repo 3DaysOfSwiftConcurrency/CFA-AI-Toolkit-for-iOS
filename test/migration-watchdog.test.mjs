@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { installWatchdog, watchdogLabel, watchdogPlist } from '../mcp/cfa-migration-watchdog-install.mjs';
+import { installWatchdog, uninstallWatchdog, watchdogLabel, watchdogPlist } from '../mcp/cfa-migration-watchdog-install.mjs';
 
 test('watchdog schedule runs the local recovery command against one ledger', () => {
   const ledger = '/tmp/CFA Migration/MIGRATION_LEDGER.md';
@@ -28,4 +28,11 @@ test('watchdog installation registers a user launch agent without a manual step'
   assert.equal(path.dirname(result.plist), launchAgentsDirectory);
   assert.equal(fs.existsSync(result.plist), true);
   assert.deepEqual(calls.map(call => call[1][0]), ['bootout', 'bootstrap']);
+  const removed = uninstallWatchdog('/tmp/CFA Migration/MIGRATION_LEDGER.md', {
+    launchAgentsDirectory,
+    execute: (...args) => { calls.push(args); return { status: 0, stdout: '', stderr: '' }; }
+  });
+  assert.equal(removed.removed, true);
+  assert.equal(fs.existsSync(result.plist), false);
+  assert.equal(calls.at(-1)[1][0], 'bootout');
 });

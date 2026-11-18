@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { main as engineMain } from '../skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs';
 import { requestCodexContinuation } from './cfa-migration-engine.mjs';
+import { uninstallWatchdog } from './cfa-migration-watchdog-install.mjs';
 
 function option(args, name) {
   const index = args.indexOf(name);
@@ -13,7 +14,10 @@ function usage() {
 
 async function recover(ledger) {
   const recovery = await engineMain(['recover-continuation', ledger], { out: () => {} });
-  if (!recovery.queued) return recovery;
+  if (!recovery.queued) {
+    if (/Migration is (blocked|completed)\./.test(recovery.reason ?? '')) return { ...recovery, watchdog: uninstallWatchdog(ledger) };
+    return recovery;
+  }
   const continuation = requestCodexContinuation(recovery.state);
   await engineMain(['mark-continuation-delivery', ledger, '--token', recovery.token], { out: () => {} });
   return { ...recovery, continuation };
