@@ -267,7 +267,7 @@ starter defaults. Read the [workflow policy](architecture/project-workflow.md).
 ## Try these CFA prompts
 
 1. `Using CFA, create a new iOS app that finds where I parked my car.`
-2. `Using the CFA AI Toolkit, migrate ProjectA to Swift Concurrency and CFA.`
+2. `Using the CFA AI Toolkit, migrate ProjectA to Swift Concurrency.`
 3. `Using CFA, add a new feature to the tab bar but keep it locked under an IAP.`
 4. `Using CFA, now that we added a new feature, tidy up the code.`
 5. `Using CFA, remove the new feature and all IAP code too.`

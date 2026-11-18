@@ -14,7 +14,7 @@ configuration file or start a server.
 Then open the iOS project in a new Codex chat and say:
 
 ```text
-Using the CFA AI Toolkit, migrate ProjectA to Swift Concurrency and CFA.
+Using the CFA AI Toolkit, migrate ProjectA to Swift Concurrency.
 ```
 
 The Migration Orchestrator uses the server when it is available. Read the

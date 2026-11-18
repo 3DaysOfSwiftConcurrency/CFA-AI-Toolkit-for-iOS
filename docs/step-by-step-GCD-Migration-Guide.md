@@ -33,7 +33,7 @@ baseline; the workflow never cleans it by discarding work.
 Paste this into the new Codex chat, replacing `ProjectA` with your app name:
 
 ```text
-Using the CFA AI Toolkit, migrate ProjectA to Swift Concurrency and CFA.
+Using the CFA AI Toolkit, migrate ProjectA to Swift Concurrency.
 ```
 
 That is enough to start. If you already know boundaries that matter, add one
