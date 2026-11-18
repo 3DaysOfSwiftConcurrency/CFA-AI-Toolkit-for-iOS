@@ -26,8 +26,11 @@ export function requestCodexContinuation(state, { execute = spawnSync, codex = '
   const result = execute(codex, ['queue', '--thread', state.continuation.threadId, '--resume', '--message', continuationMessage(state)], { encoding: 'utf8' });
   const detail = (result.stderr || result.stdout || '').trim();
   if (result.error) throw Error(`Could not queue Codex continuation: ${result.error.message}`);
-  if (result.status !== 0 || /could not resume thread/i.test(detail)) throw Error(`Could not queue Codex continuation: ${detail || `codex exited ${result.status}`}`);
-  return { queued: true, threadId: state.continuation.threadId };
+  if (result.status !== 0) throw Error(`Could not queue Codex continuation: ${detail || `codex exited ${result.status}`}`);
+  if (/could not resume thread/i.test(detail) && !/already has an active writer/i.test(detail)) {
+    throw Error(`Could not queue Codex continuation: ${detail}`);
+  }
+  return { queued: true, threadId: state.continuation.threadId, resumed: !/already has an active writer/i.test(detail) };
 }
 
 async function invoke(args, { continuationLedger, queueContinuation } = {}) {

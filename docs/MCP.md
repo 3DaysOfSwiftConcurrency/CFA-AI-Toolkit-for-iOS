@@ -67,7 +67,9 @@ codex queue --thread <thread-id> --resume --message "Continue the MCP-backed CFA
 ```
 
 This resumes the same Codex chat with the ledger's current phase and next
-action. It intentionally does not queue a blocked or completed migration.
+action. If that chat is currently writing, the next action remains queued until
+the writer finishes; it is not started concurrently. It intentionally does not
+queue a blocked or completed migration.
 The host command must be available locally; if it is not, the state change is
 preserved but the tool reports that continuation could not be queued. This is a
 Codex-host integration, not a duplicate set of CFA rules in the MCP server.

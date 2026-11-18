@@ -50,7 +50,7 @@ test('Codex continuation queues only active migrations in their configured chat'
   const result = requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123' }, phase: 'fix', nextAction: 'Review the next source lead.' }, {
     execute: (...args) => { calls.push(args); return { status: 0, stdout: '', stderr: '' }; }
   });
-  assert.deepEqual(result, { queued: true, threadId: 'thread-123' });
+  assert.deepEqual(result, { queued: true, threadId: 'thread-123', resumed: true });
   assert.deepEqual(calls[0][0], 'codex');
   assert.deepEqual(calls[0][1].slice(0, 5), ['queue', '--thread', 'thread-123', '--resume', '--message']);
   assert.match(calls[0][1][5], /Do not conclude because an individual verification check is unavailable/);
@@ -58,6 +58,9 @@ test('Codex continuation queues only active migrations in their configured chat'
   assert.throws(() => requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123' }, phase: 'verify', nextAction: 'Run tests.' }, {
     execute: () => ({ status: 0, stderr: 'Warning: could not resume thread thread-123', stdout: '' })
   }), /Could not queue Codex continuation/);
+  assert.deepEqual(requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123' }, phase: 'audit', nextAction: 'Continue source review.' }, {
+    execute: () => ({ status: 0, stderr: 'Warning: message was queued, but could not resume thread thread-123: thread already has an active writer', stdout: '' })
+  }), { queued: true, threadId: 'thread-123', resumed: false });
 });
 
 test('MCP server returns current source locations as review leads without writing a ledger', async t => {
