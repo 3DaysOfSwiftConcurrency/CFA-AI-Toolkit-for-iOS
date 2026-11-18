@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { initialState, validateState } from '../skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs';
+import { auditProject, initialState, validateState } from '../skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs';
 
 const script = path.resolve('skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs');
 function project(t, name = 'cfa-migration-engine-') {
@@ -65,4 +65,15 @@ test('engine rejects unsupported completion and incomplete blockers', () => {
   assert.ok(validateState(state).some(error => error.includes('completionGate')));
   state.phase = 'blocked';
   assert.ok(validateState(state).some(error => error.includes('blocker reason')));
+});
+
+test('engine summarizes inspection evidence without treating scanner leads as verdicts', async () => {
+  const report = await auditProject('/project', {
+    inspect: async () => ({ sourceFingerprint: 'fingerprint', scope: { swiftFiles: 7 }, findings: [{ code: 'feature-owner' }, { code: 'feature-owner' }, { code: 'task-owner' }] }),
+    analyseProject: async () => ({ syntax: { status: 'available' }, compilerIndex: { status: 'not-requested' } })
+  });
+  assert.deepEqual(report, {
+    sourceFingerprint: 'fingerprint', swiftFiles: 7, findings: 3,
+    findingsByCode: { 'feature-owner': 2, 'task-owner': 1 }, syntax: 'available', compilerIndex: 'not-requested'
+  });
 });

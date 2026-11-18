@@ -12,6 +12,11 @@ Use `checkpoint` after each audit, fix, and verification checkpoint, and use
 missing core fields, a completed record without all completion-gate evidence,
 and a blocked record without an unblock condition.
 
+`audit` runs the bundled architecture inspector and migration source analysis,
+then records their source fingerprint and review-lead counts in the same state
+block. The scanner does not establish semantic CFA compliance; review the
+reported paths before treating a lead as a finding.
+
 ```sh
 node scripts/orchestrator-state.mjs init /path/to/project \
   --goal "Move the agreed app targets to CFA and Swift Concurrency" \
@@ -22,6 +27,8 @@ node scripts/orchestrator-state.mjs checkpoint /path/to/project/MIGRATION_LEDGER
 node scripts/orchestrator-state.mjs evidence /path/to/project/MIGRATION_LEDGER.md \
   --id launch-audit --revision abc123 --kind source --outcome observed \
   --summary "Recorded the source-backed launch inventory"
+node scripts/orchestrator-state.mjs audit /path/to/project \
+  --ledger /path/to/project/MIGRATION_LEDGER.md --id first-audit
 node scripts/orchestrator-state.mjs validate /path/to/project/MIGRATION_LEDGER.md
 node scripts/orchestrator-state.mjs status /path/to/project/MIGRATION_LEDGER.md
 ```

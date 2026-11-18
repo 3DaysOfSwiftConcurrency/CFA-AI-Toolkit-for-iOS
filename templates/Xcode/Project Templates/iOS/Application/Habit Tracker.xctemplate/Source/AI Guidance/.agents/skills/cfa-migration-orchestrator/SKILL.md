@@ -42,6 +42,11 @@ progress index, not a substitute for source review, builds, tests, or the
 migration evidence tool. Update it only with facts observed in the current
 project revision; validate it after each checkpoint with `validate <ledger>`.
 
+Use `audit /path/to/project --ledger /path/to/project/MIGRATION_LEDGER.md --id <id>`
+to run the bundled CFA inspector and migration source analysis. It records a
+source fingerprint and scanner summary in the ledger. Its leads require semantic
+review; it never declares CFA conformance automatically.
+
 ## Execute the loop
 
 For each slice, repeatedly:

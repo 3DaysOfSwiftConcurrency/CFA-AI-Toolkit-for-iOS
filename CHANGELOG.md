@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add an engine audit command that runs the existing CFA inspector and migration
+  source analysis, then records their fingerprint and review leads in the
+  existing ledger without claiming automatic conformance.
+
 - Store persistent CFA Migration Engine state in the existing
   `MIGRATION_LEDGER.md` instead of creating a project directory. Add safe
   checkpoint and evidence commands that preserve the rest of the ledger.

@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { inspect } from '../../cfa-architecture-review/scripts/dashboard/src/inspector.mjs';
+import { analyseProject } from '../../swift-concurrency-migration/scripts/project-analysis/project-analysis.mjs';
 
 const requiredGate = ['baseline', 'build', 'tests', 'behaviourRegression', 'primitiveInventory', 'navigatorReview', 'hybridReview', 'finalCfaAudit', 'humanArchitectureReview'];
 const phases = new Set(['audit', 'fix', 'verify', 'hybrid-review', 'final-audit', 'human-review', 'blocked', 'completed']);
@@ -56,7 +58,7 @@ function onlyOptions(args, names) {
   return true;
 }
 function usage() {
-  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text>';
+  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text>';
 }
 
 export function validateState(state) {
@@ -96,8 +98,23 @@ function checkedState(file) {
   if (errors.length) fail(errors.join('\n'));
   return state;
 }
+export async function auditProject(project, providers = {}) {
+  const inspection = await (providers.inspect ?? inspect)(project);
+  const analysis = await (providers.analyseProject ?? analyseProject)(project);
+  const findings = inspection.findings ?? [];
+  const byCode = Object.fromEntries([...findings.reduce((counts, item) =>
+    counts.set(item.code, (counts.get(item.code) ?? 0) + 1), new Map()).entries()].sort());
+  return {
+    sourceFingerprint: inspection.sourceFingerprint ?? analysis.sourceFingerprint,
+    swiftFiles: inspection.scope?.swiftFiles ?? analysis.scope?.files ?? null,
+    findings: findings.length,
+    findingsByCode: byCode,
+    syntax: analysis.syntax?.status ?? 'unavailable',
+    compilerIndex: analysis.compilerIndex?.status ?? 'unavailable'
+  };
+}
 
-export function main(args, { out = console.log } = {}) {
+export async function main(args, { out = console.log, providers = {} } = {}) {
   const [command, target, ...rest] = args;
   if (command === 'init') {
     const goal = option(rest, '--goal'), scope = option(rest, '--scope'), suppliedLedger = option(rest, '--ledger');
@@ -109,6 +126,19 @@ export function main(args, { out = console.log } = {}) {
     if (ledger.includes(start) || ledger.includes(end)) fail(`Refusing to replace existing CFA Migration Engine state: ${file}`);
     writeLedger(file, `${ledger.trimEnd()}\n\n## CFA Migration Engine\n\n${block(initialState(goal, scope, project))}\n`);
     out(file); return file;
+  }
+  if (command === 'audit') {
+    const ledgerOption = option(rest, '--ledger'), id = option(rest, '--id');
+    if (!target || !text(ledgerOption) || !text(id) || !onlyOptions(rest, ['--ledger', '--id'])) fail(usage());
+    const project = path.resolve(target), file = path.resolve(ledgerOption), state = checkedState(file);
+    const report = await auditProject(project, providers);
+    state.phase = 'audit';
+    state.nextAction = `Semantically review ${report.findings} scanner lead(s), starting with the applicable ownership, lifecycle and task-lifetime paths.`;
+    state.evidence.push({ id, revision: git(project, ['rev-parse', 'HEAD']) ?? 'unavailable', kind: 'cfa-engine-audit', outcome: 'observed', summary: `Fingerprint ${report.sourceFingerprint ?? 'unavailable'}; ${report.swiftFiles ?? 'unknown'} Swift files; ${report.findings} scanner leads; SwiftSyntax ${report.syntax}; compiler index ${report.compilerIndex}; codes ${JSON.stringify(report.findingsByCode)}.` });
+    state.attempts.push({ action: 'Ran the CFA architecture inspector and migration project analysis.', result: 'Recorded scanner leads as review candidates; scanner output is not a conformance verdict.' });
+    const errors = validateState(state);
+    if (errors.length) fail(errors.join('\n'));
+    replaceState(file, state); out(JSON.stringify(report, null, 2)); return report;
   }
   const file = target && path.resolve(target);
   if (!file || !['validate', 'status', 'checkpoint', 'evidence'].includes(command)) fail(usage());
@@ -132,5 +162,5 @@ export function main(args, { out = console.log } = {}) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  try { main(process.argv.slice(2)); } catch (error) { console.error(error.message); process.exitCode = 1; }
+  try { await main(process.argv.slice(2)); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
