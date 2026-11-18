@@ -25,6 +25,12 @@ check keeps the migration in verification. `reopen` explicitly returns a
 completed ledger to verification when later evidence or stricter rules show
 that work remains.
 
+New state records use schema version 4. Every evidence item receives the
+current source fingerprint, and every completion-gate item must match the
+fingerprint recorded at completion. `validate` also compares that fingerprint
+with the current project, so a completed ledger cannot remain valid after a
+source change.
+
 ```sh
 node scripts/orchestrator-state.mjs init /path/to/project \
   --goal "Move the agreed app targets to CFA and Swift Concurrency" \
@@ -55,5 +61,13 @@ that should be resumed after non-terminal Engine updates. The local MCP server
 reserves one tokened continuation before it calls the Codex host queue. The
 receiving agent must claim that token through MCP before acting; stale, blocked
 and completed signals do no work. This prevents a sequence of updates from
-accumulating stale prompts. The standalone ledger runner does not attempt to
-start an agent by itself.
+accumulating stale prompts.
+
+Claiming a token creates an active worker lease. The agent includes the returned
+worker token in each state-changing call and renews it with a heartbeat before
+long-running work. The watchdog uses `recover-continuation`: it does nothing
+while a worker lease is healthy, requeues an undelivered signal at a bounded
+interval, and issues a replacement token when a worker stops heartbeating.
+The old token is fenced from making further changes. Enabling continuation via
+MCP registers this watchdog as a per-ledger user launch agent, so normal host
+stops do not require a person to restart the migration.

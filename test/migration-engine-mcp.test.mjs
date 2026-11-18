@@ -39,7 +39,8 @@ test('MCP server exposes the shared CFA workflow and its migration tools', async
   ]);
   assert.deepEqual(tools.map(tool => tool.name).sort(), [
     'cfa_migration_audit', 'cfa_migration_block', 'cfa_migration_checkpoint', 'cfa_migration_claim_continuation',
-    'cfa_migration_complete', 'cfa_migration_enable_continuation', 'cfa_migration_evidence', 'cfa_migration_init', 'cfa_migration_reopen', 'cfa_migration_review_leads', 'cfa_migration_status', 'cfa_migration_validate'
+    'cfa_migration_complete', 'cfa_migration_enable_continuation', 'cfa_migration_evidence', 'cfa_migration_heartbeat_continuation',
+    'cfa_migration_init', 'cfa_migration_recover_continuation', 'cfa_migration_reopen', 'cfa_migration_review_leads', 'cfa_migration_status', 'cfa_migration_validate'
   ]);
   const specification = await client.readResource({ uri: 'cfa://migration-engine/specification' });
   assert.match(specification.contents[0].text, /Cooperative Feature Architecture/);

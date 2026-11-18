@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { inspect } from '../../cfa-architecture-review/scripts/dashboard/src/inspector.mjs';
 import { analyseProject } from '../../swift-concurrency-migration/scripts/project-analysis/project-analysis.mjs';
 
@@ -12,6 +12,8 @@ const passedGate = new Set(['build', 'tests', 'behaviourRegression']);
 const phases = new Set(['audit', 'fix', 'verify', 'hybrid-review', 'final-audit', 'human-review', 'blocked', 'completed']);
 const start = '<!-- CFA Migration Engine state: managed -->';
 const end = '<!-- /CFA Migration Engine state -->';
+const defaultLeaseSeconds = 30 * 60;
+const redeliverySeconds = 5 * 60;
 
 function fail(message) { throw Error(message); }
 function text(value) { return typeof value === 'string' && value.trim(); }
@@ -29,6 +31,27 @@ function diffCheck(project) {
   if (result.error) return { status: 'unavailable', detail: result.error.message };
   return result.status === 0 ? { status: 'passed', detail: '' } : { status: 'failed', detail: (result.stderr || result.stdout).trim() };
 }
+function sourceFingerprint(project, ledgerFile = null) {
+  let files;
+  try {
+    files = execFileSync('git', ['-C', project, 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], { encoding: 'buffer' })
+      .toString('utf8').split('\0').filter(Boolean).sort();
+  } catch {
+    files = [];
+  }
+  const ignored = ledgerFile ? path.relative(project, ledgerFile) : 'MIGRATION_LEDGER.md';
+  const hash = createHash('sha256');
+  for (const file of files) {
+    if (file === ignored) continue;
+    const absolute = path.join(project, file);
+    if (!fs.statSync(absolute, { throwIfNoEntry: false })?.isFile()) continue;
+    hash.update(file); hash.update('\0'); hash.update(fs.readFileSync(absolute)); hash.update('\0');
+  }
+  return hash.digest('hex');
+}
+function now() { return new Date().toISOString(); }
+function expiresAt(leaseSeconds) { return new Date(Date.now() + leaseSeconds * 1000).toISOString(); }
+function leaseIsExpired(active) { return !active?.expiresAt || Date.parse(active.expiresAt) <= Date.now(); }
 function extract(ledger) {
   const first = ledger.indexOf(start), last = ledger.indexOf(end);
   if (first < 0 || last < 0 || last <= first || ledger.indexOf(start, first + start.length) >= 0 || ledger.indexOf(end, last + end.length) >= 0) {
@@ -65,12 +88,28 @@ function onlyOptions(args, names) {
   return true;
 }
 function usage() {
-  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text> | continuation <ledger.md> --codex-thread <thread-id> | prepare-continuation <ledger.md> | claim-continuation <ledger.md> --token <token> | release-continuation <ledger.md> --token <token> | reopen <ledger.md> --reason <text> --next-action <text> | block <ledger.md> --reason <text> --unblock-condition <text> --next-action <text> | complete <ledger.md> --baseline <id> --build <id> --tests <id> --behaviour-regression <id> --primitive-inventory <id> --navigator-review <id> --hybrid-review <id> --final-cfa-audit <id> --human-architecture-review <id>';
+  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> [--continuation-token <token>] | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> [--continuation-token <token>] | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text> [--continuation-token <token>] | continuation <ledger.md> --codex-thread <thread-id> | prepare-continuation <ledger.md> [--continuation-token <token>] | recover-continuation <ledger.md> | mark-continuation-delivery <ledger.md> --token <token> | claim-continuation <ledger.md> --token <token> [--lease-seconds <seconds>] | heartbeat-continuation <ledger.md> --token <token> [--lease-seconds <seconds>] | release-continuation <ledger.md> --token <token> | reopen <ledger.md> --reason <text> --next-action <text> [--continuation-token <token>] | block <ledger.md> --reason <text> --unblock-condition <text> --next-action <text> [--continuation-token <token>] | complete <ledger.md> --baseline <id> --build <id> --tests <id> --behaviour-regression <id> --primitive-inventory <id> --navigator-review <id> --hybrid-review <id> --final-cfa-audit <id> --human-architecture-review <id> [--continuation-token <token>]';
+}
+function activeWorker(state, token) {
+  const active = state.continuation?.active;
+  if (!active && !state.continuation?.pending) return;
+  if (!active) fail('A migration continuation is pending and must be claimed before changing this ledger.');
+  if (active.token !== token) fail('The active migration worker lease must be supplied before changing this ledger.');
+}
+function leaseSeconds(value) {
+  const parsed = value === undefined ? defaultLeaseSeconds : Number(value);
+  if (!Number.isInteger(parsed) || parsed < 30 || parsed > 24 * 60 * 60) fail('Lease duration must be between 30 and 86400 seconds.');
+  return parsed;
+}
+function continuationReservation(state) {
+  const token = randomUUID();
+  state.continuation.pending = { token, preparedAt: now(), lastQueuedAt: null, deliveryAttempts: 0 };
+  return token;
 }
 
-export function validateState(state) {
+export function validateState(state, project = null, ledgerFile = null) {
   const errors = [];
-  if (state?.schemaVersion !== 3) errors.push('schemaVersion must be 3');
+  if (![3, 4].includes(state?.schemaVersion)) errors.push('schemaVersion must be 3 or 4');
   for (const key of ['goal', 'scope', 'phase', 'nextAction']) if (!text(state?.[key])) errors.push(`${key} must be a non-empty string`);
   if (!phases.has(state?.phase)) errors.push('phase must be a known migration phase');
   if (!state?.baseline || typeof state.baseline !== 'object') errors.push('baseline must be recorded');
@@ -83,13 +122,17 @@ export function validateState(state) {
   if (state?.continuation !== null && state?.continuation !== undefined &&
       (state.continuation?.host !== 'codex' || !text(state.continuation?.threadId) ||
        (state.continuation.pending !== undefined && state.continuation.pending !== null &&
-        !text(state.continuation.pending?.token)))) {
+        !text(state.continuation.pending?.token)) ||
+       (state.continuation.active !== undefined && state.continuation.active !== null &&
+        (!text(state.continuation.active?.token) || !text(state.continuation.active?.claimedAt) ||
+         !text(state.continuation.active?.heartbeatAt) || !text(state.continuation.active?.expiresAt))))) {
     errors.push('continuation must be null or name a Codex thread');
   }
   const evidence = Array.isArray(state?.evidence) ? state.evidence : [];
   const ids = new Set();
   for (const item of evidence) {
     if (!text(item?.id) || !text(item?.revision) || !text(item?.kind) || !text(item?.outcome) || !text(item?.summary)) errors.push('each evidence item needs id, revision, kind, outcome and summary');
+    else if (state?.schemaVersion >= 4 && !text(item?.sourceFingerprint)) errors.push('each schema 4 evidence item needs a source fingerprint');
     else if (ids.has(item.id)) errors.push(`duplicate evidence id: ${item.id}`); else ids.add(item.id);
   }
   for (const item of Array.isArray(state?.attempts) ? state.attempts : []) if (!text(item?.action) || !text(item?.result)) errors.push('each attempt needs action and result');
@@ -102,17 +145,20 @@ export function validateState(state) {
       const item = evidence.find(candidate => candidate.id === id);
       if (!text(id) || !item) errors.push(`completionGate.${key} must name recorded evidence`);
       else if (passedGate.has(key) && item.outcome !== 'passed') errors.push(`completionGate.${key} requires passed evidence`);
+      else if (state.schemaVersion >= 4 && item.sourceFingerprint !== gate.sourceFingerprint) errors.push(`completionGate.${key} must match the final source fingerprint`);
     }
+    if (state.schemaVersion >= 4 && (!gate || !text(gate.sourceFingerprint))) errors.push('completed schema 4 state needs completionGate.sourceFingerprint');
+    if (state.schemaVersion >= 4 && gate && project && gate.sourceFingerprint !== sourceFingerprint(project, ledgerFile)) errors.push('completed migration source changed after its completion evidence');
   }
   return errors;
 }
 
 export function initialState(goal, scope, project = process.cwd()) {
-  return { schemaVersion: 3, goal, scope, baseline: baseline(project), phase: 'audit', nextAction: 'Establish the baseline and select the smallest verified migration slice.', evidence: [], attempts: [], blocker: null, completionGate: null, continuation: null };
+  return { schemaVersion: 4, goal, scope, baseline: baseline(project), phase: 'audit', nextAction: 'Establish the baseline and select the smallest verified migration slice.', evidence: [], attempts: [], blocker: null, completionGate: null, continuation: null };
 }
 function checkedState(file) {
   const { state } = extract(readLedger(file));
-  const errors = validateState(state);
+  const errors = validateState(state, path.dirname(file), file);
   if (errors.length) fail(errors.join('\n'));
   return state;
 }
@@ -151,42 +197,45 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     out(file); return file;
   }
   if (command === 'audit') {
-    const ledgerOption = option(rest, '--ledger'), id = option(rest, '--id');
-    if (!target || !text(ledgerOption) || !text(id) || !onlyOptions(rest, ['--ledger', '--id'])) fail(usage());
+    const ledgerOption = option(rest, '--ledger'), id = option(rest, '--id'), continuationToken = option(rest, '--continuation-token');
+    if (!target || !text(ledgerOption) || !text(id) || !onlyOptions(rest, ['--ledger', '--id', '--continuation-token'])) fail(usage());
     const project = path.resolve(target), file = path.resolve(ledgerOption), state = checkedState(file);
+    activeWorker(state, continuationToken);
     const report = await auditProject(project, providers);
     state.phase = 'audit';
     state.nextAction = `Semantically review ${report.findings} scanner lead(s), starting with the applicable ownership, lifecycle and task-lifetime paths.`;
-    state.evidence.push({ id, revision: git(project, ['rev-parse', 'HEAD']) ?? 'unavailable', kind: 'cfa-engine-audit', outcome: 'observed', summary: `Fingerprint ${report.sourceFingerprint ?? 'unavailable'}; ${report.swiftFiles ?? 'unknown'} Swift files; ${report.findings} scanner leads; diff check ${report.diffCheck}; SwiftSyntax ${report.syntax}; compiler index ${report.compilerIndex}; codes ${JSON.stringify(report.findingsByCode)}.` });
+    state.evidence.push({ id, revision: git(project, ['rev-parse', 'HEAD']) ?? 'unavailable', sourceFingerprint: sourceFingerprint(project, file), kind: 'cfa-engine-audit', outcome: 'observed', summary: `Fingerprint ${report.sourceFingerprint ?? 'unavailable'}; ${report.swiftFiles ?? 'unknown'} Swift files; ${report.findings} scanner leads; diff check ${report.diffCheck}; SwiftSyntax ${report.syntax}; compiler index ${report.compilerIndex}; codes ${JSON.stringify(report.findingsByCode)}.` });
     state.attempts.push({ action: 'Ran the CFA architecture inspector and migration project analysis.', result: 'Recorded scanner leads as review candidates; scanner output is not a conformance verdict.' });
-    const errors = validateState(state);
+    const errors = validateState(state, project, file);
     if (errors.length) fail(errors.join('\n'));
     replaceState(file, state); out(JSON.stringify(report, null, 2)); return report;
   }
   const file = target && path.resolve(target);
-  if (!file || !['validate', 'status', 'checkpoint', 'evidence', 'continuation', 'prepare-continuation', 'claim-continuation', 'release-continuation', 'reopen', 'block', 'complete'].includes(command)) fail(usage());
+  if (!file || !['validate', 'status', 'checkpoint', 'evidence', 'continuation', 'prepare-continuation', 'recover-continuation', 'mark-continuation-delivery', 'claim-continuation', 'heartbeat-continuation', 'release-continuation', 'reopen', 'block', 'complete'].includes(command)) fail(usage());
   if (command === 'validate') { if (rest.length) fail(usage()); checkedState(file); out('Valid CFA Migration Engine state.'); return; }
   if (command === 'reopen') {
-    const reason = option(rest, '--reason'), nextAction = option(rest, '--next-action');
-    if (![reason, nextAction].every(text) || !onlyOptions(rest, ['--reason', '--next-action'])) fail(usage());
+    const reason = option(rest, '--reason'), nextAction = option(rest, '--next-action'), continuationToken = option(rest, '--continuation-token');
+    if (![reason, nextAction].every(text) || !onlyOptions(rest, ['--reason', '--next-action', '--continuation-token'])) fail(usage());
     const { state } = extract(readLedger(file));
     if (state.phase !== 'completed') fail('Only a completed migration can be reopened.');
-    state.phase = 'verify'; state.nextAction = nextAction; state.blocker = null; state.completionGate = null;
-    if (state.continuation) state.continuation.pending = null;
+    activeWorker(state, continuationToken);
+    state.schemaVersion = 4; state.phase = 'verify'; state.nextAction = nextAction; state.blocker = null; state.completionGate = null;
+    if (state.continuation) { state.continuation.pending = null; state.continuation.active = null; }
     state.attempts.push({ action: 'Reopened completed migration.', result: reason });
-    const errors = validateState(state);
+    const errors = validateState(state, path.dirname(file), file);
     if (errors.length) fail(errors.join('\n'));
     replaceState(file, state); out('Reopened migration in verify phase.'); return state;
   }
   if (command === 'block') {
-    const reason = option(rest, '--reason'), unblockCondition = option(rest, '--unblock-condition'), nextAction = option(rest, '--next-action');
-    if (![reason, unblockCondition, nextAction].every(text) || !onlyOptions(rest, ['--reason', '--unblock-condition', '--next-action'])) fail(usage());
+    const reason = option(rest, '--reason'), unblockCondition = option(rest, '--unblock-condition'), nextAction = option(rest, '--next-action'), continuationToken = option(rest, '--continuation-token');
+    if (![reason, unblockCondition, nextAction].every(text) || !onlyOptions(rest, ['--reason', '--unblock-condition', '--next-action', '--continuation-token'])) fail(usage());
     const { state } = extract(readLedger(file));
+    if (state.continuation?.active) activeWorker(state, continuationToken);
     state.phase = 'blocked'; state.nextAction = nextAction; state.blocker = { reason, unblockCondition };
     state.completionGate = null;
-    if (state.continuation) state.continuation.pending = null;
+    if (state.continuation) { state.continuation.pending = null; state.continuation.active = null; }
     state.attempts.push({ action: 'Recorded a migration blocker.', result: reason });
-    const errors = validateState(state);
+    const errors = validateState(state, path.dirname(file), file);
     if (errors.length) fail(errors.join('\n'));
     replaceState(file, state); out('Recorded blocked checkpoint.'); return state;
   }
@@ -196,36 +245,86 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     out(JSON.stringify({ goal: state.goal, scope: state.scope, baseline: state.baseline, phase: state.phase, nextAction: state.nextAction, evidence: state.evidence.length, attempts: state.attempts.length, continuation: state.continuation ?? null }, null, 2)); return state;
   }
   if (command === 'checkpoint') {
-    const phase = option(rest, '--phase'), nextAction = option(rest, '--next-action'), action = option(rest, '--action'), result = option(rest, '--result');
+    const phase = option(rest, '--phase'), nextAction = option(rest, '--next-action'), action = option(rest, '--action'), result = option(rest, '--result'), continuationToken = option(rest, '--continuation-token');
     const checkpointPhases = new Set(['audit', 'fix', 'verify', 'hybrid-review', 'final-audit', 'human-review']);
-    if (!text(phase) || !checkpointPhases.has(phase) || !text(nextAction) || !text(action) || !text(result) || !onlyOptions(rest, ['--phase', '--next-action', '--action', '--result'])) fail(usage());
+    if (!text(phase) || !checkpointPhases.has(phase) || !text(nextAction) || !text(action) || !text(result) || !onlyOptions(rest, ['--phase', '--next-action', '--action', '--result', '--continuation-token'])) fail(usage());
+    activeWorker(state, continuationToken);
     state.phase = phase; state.nextAction = nextAction; state.blocker = null; state.completionGate = null;
     state.attempts.push({ action, result });
-    const errors = validateState(state);
+    const errors = validateState(state, path.dirname(file), file);
     if (errors.length) fail(errors.join('\n'));
     replaceState(file, state); out(`Updated ${phase} checkpoint.`); return state;
   }
   if (command === 'continuation') {
     const threadId = option(rest, '--codex-thread');
     if (!text(threadId) || !onlyOptions(rest, ['--codex-thread'])) fail(usage());
-    state.continuation = { host: 'codex', threadId, pending: null };
+    state.continuation = { host: 'codex', threadId, pending: null, active: null };
     state.attempts.push({ action: 'Enabled Codex continuation.', result: `Nonterminal checkpoints queue thread ${threadId} to continue.` });
     replaceState(file, state); out('Enabled Codex continuation.'); return state;
   }
   if (command === 'prepare-continuation') {
-    if (rest.length) fail(usage());
+    const continuationToken = option(rest, '--continuation-token');
+    if (!onlyOptions(rest, ['--continuation-token'])) fail(usage());
     if (!state.continuation) { const result = { queued: false, reason: 'No Codex continuation is configured.' }; out(JSON.stringify(result)); return result; }
     if (state.phase === 'blocked' || state.phase === 'completed') { const result = { queued: false, reason: `Migration is ${state.phase}.` }; out(JSON.stringify(result)); return result; }
+    if (state.continuation.active) {
+      if (state.continuation.active.token !== continuationToken) {
+        const result = { queued: false, reason: 'The active migration worker lease must finish, heartbeat, or expire before another continuation is queued.' };
+        out(JSON.stringify(result)); return result;
+      }
+      state.continuation.active = null;
+    }
     if (state.continuation.pending) { const result = { queued: false, reason: 'A continuation is already pending.', token: state.continuation.pending.token }; out(JSON.stringify(result)); return result; }
-    const token = randomUUID();
-    state.continuation.pending = { token };
+    const token = continuationReservation(state);
     replaceState(file, state);
     const result = { queued: true, token, state };
     out(JSON.stringify(result)); return result;
   }
-  if (command === 'claim-continuation' || command === 'release-continuation') {
+  if (command === 'recover-continuation') {
+    if (rest.length) fail(usage());
+    if (!state.continuation) { const result = { queued: false, reason: 'No Codex continuation is configured.' }; out(JSON.stringify(result)); return result; }
+    if (state.phase === 'blocked' || state.phase === 'completed') { const result = { queued: false, reason: `Migration is ${state.phase}.` }; out(JSON.stringify(result)); return result; }
+    if (state.continuation.active && !leaseIsExpired(state.continuation.active)) {
+      const result = { queued: false, reason: 'An active migration worker lease is still healthy.', active: state.continuation.active };
+      out(JSON.stringify(result)); return result;
+    }
+    if (state.continuation.active) {
+      state.attempts.push({ action: 'Recovered an expired Codex continuation lease.', result: 'The previous migration worker stopped heartbeating before recording another checkpoint.' });
+      state.continuation.active = null;
+    }
+    if (!state.continuation.pending) continuationReservation(state);
+    const lastQueuedAt = state.continuation.pending.lastQueuedAt;
+    if (lastQueuedAt && Date.parse(lastQueuedAt) > Date.now() - redeliverySeconds * 1000) {
+      const result = { queued: false, reason: 'The pending migration continuation was queued recently.', pending: state.continuation.pending };
+      out(JSON.stringify(result)); return result;
+    }
+    replaceState(file, state);
+    const result = { queued: true, token: state.continuation.pending.token, state };
+    out(JSON.stringify(result)); return result;
+  }
+  if (command === 'mark-continuation-delivery') {
     const token = option(rest, '--token');
     if (!text(token) || !onlyOptions(rest, ['--token'])) fail(usage());
+    if (state.continuation?.pending?.token !== token) fail('Only the current pending continuation can be marked as delivered.');
+    state.continuation.pending.lastQueuedAt = now();
+    state.continuation.pending.deliveryAttempts = Number(state.continuation.pending.deliveryAttempts ?? 0) + 1;
+    replaceState(file, state);
+    const result = { delivered: true, pending: state.continuation.pending };
+    out(JSON.stringify(result)); return result;
+  }
+  if (command === 'heartbeat-continuation') {
+    const token = option(rest, '--token'), seconds = option(rest, '--lease-seconds');
+    if (!text(token) || !onlyOptions(rest, ['--token', '--lease-seconds'])) fail(usage());
+    const duration = leaseSeconds(seconds);
+    if (!state.continuation?.active || state.continuation.active.token !== token) fail('Only the active migration worker can heartbeat this ledger.');
+    state.continuation.active.heartbeatAt = now(); state.continuation.active.expiresAt = expiresAt(duration);
+    replaceState(file, state);
+    const result = { heartbeated: true, active: state.continuation.active };
+    out(JSON.stringify(result)); return result;
+  }
+  if (command === 'claim-continuation' || command === 'release-continuation') {
+    const token = option(rest, '--token'), seconds = option(rest, '--lease-seconds');
+    if (!text(token) || !onlyOptions(rest, command === 'claim-continuation' ? ['--token', '--lease-seconds'] : ['--token'])) fail(usage());
     if (state.phase === 'blocked') {
       const result = { claimed: false, reason: 'Migration is blocked.', blocker: state.blocker, nextAction: state.nextAction };
       out(JSON.stringify(result)); return result;
@@ -243,26 +342,37 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
       const result = { claimed: false, reason: 'Continuation is stale or has already been claimed.' };
       out(JSON.stringify(result)); return result;
     }
-    state.continuation.pending = null;
+    if (command === 'claim-continuation') {
+      const claimedAt = now();
+      state.continuation.pending = null;
+      const duration = leaseSeconds(seconds);
+      state.continuation.active = { token, claimedAt, heartbeatAt: claimedAt, expiresAt: expiresAt(duration) };
+    } else {
+      state.continuation.pending = null;
+    }
     state.attempts.push({ action: command === 'claim-continuation' ? 'Claimed Codex continuation.' : 'Released Codex continuation reservation.', result: command === 'claim-continuation' ? 'The host signal matches the current ledger state.' : 'The host queue did not accept the reserved signal.' });
     replaceState(file, state);
-    const result = command === 'claim-continuation' ? { claimed: true, state } : { released: true };
+    const result = command === 'claim-continuation' ? { claimed: true, workerToken: token, leaseSeconds: leaseSeconds(seconds), state } : { released: true };
     out(JSON.stringify(result)); return result;
   }
   if (command === 'complete') {
     const flags = ['--baseline', '--build', '--tests', '--behaviour-regression', '--primitive-inventory', '--navigator-review', '--hybrid-review', '--final-cfa-audit', '--human-architecture-review'];
-    if (!onlyOptions(rest, flags)) fail(usage());
+    const continuationToken = option(rest, '--continuation-token');
+    if (!onlyOptions(rest, [...flags, '--continuation-token'])) fail(usage());
+    activeWorker(state, continuationToken);
     const completionGate = { baseline: option(rest, '--baseline'), build: option(rest, '--build'), tests: option(rest, '--tests'), behaviourRegression: option(rest, '--behaviour-regression'), primitiveInventory: option(rest, '--primitive-inventory'), navigatorReview: option(rest, '--navigator-review'), hybridReview: option(rest, '--hybrid-review'), finalCfaAudit: option(rest, '--final-cfa-audit'), humanArchitectureReview: option(rest, '--human-architecture-review') };
     if (!Object.values(completionGate).every(text)) fail(usage());
+    if (state.schemaVersion >= 4) completionGate.sourceFingerprint = sourceFingerprint(path.dirname(file), file);
     state.phase = 'completed'; state.nextAction = 'Migration completion evidence is recorded.'; state.blocker = null; state.completionGate = completionGate;
-    if (state.continuation) state.continuation.pending = null;
-    const errors = validateState(state); if (errors.length) fail(errors.join('\n'));
+    if (state.continuation) { state.continuation.pending = null; state.continuation.active = null; }
+    const errors = validateState(state, path.dirname(file), file); if (errors.length) fail(errors.join('\n'));
     replaceState(file, state); out('Recorded completed migration checkpoint.'); return state;
   }
-  const id = option(rest, '--id'), revision = option(rest, '--revision'), kind = option(rest, '--kind'), outcome = option(rest, '--outcome'), summary = option(rest, '--summary');
-  if (![id, revision, kind, outcome, summary].every(text) || !onlyOptions(rest, ['--id', '--revision', '--kind', '--outcome', '--summary'])) fail(usage());
-  state.evidence.push({ id, revision, kind, outcome, summary });
-  const errors = validateState(state);
+  const id = option(rest, '--id'), revision = option(rest, '--revision'), kind = option(rest, '--kind'), outcome = option(rest, '--outcome'), summary = option(rest, '--summary'), continuationToken = option(rest, '--continuation-token');
+  if (![id, revision, kind, outcome, summary].every(text) || !onlyOptions(rest, ['--id', '--revision', '--kind', '--outcome', '--summary', '--continuation-token'])) fail(usage());
+  activeWorker(state, continuationToken);
+  state.evidence.push({ id, revision, sourceFingerprint: sourceFingerprint(path.dirname(file), file), kind, outcome, summary });
+  const errors = validateState(state, path.dirname(file), file);
   if (errors.length) fail(errors.join('\n'));
   replaceState(file, state); out(`Recorded evidence ${id}.`); return state;
 }

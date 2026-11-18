@@ -120,6 +120,10 @@ test('engine records blocked and completed states only with their required evide
     nextAction: 'No further migration work is required. The required completion evidence is recorded.'
   });
   assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
+  fs.writeFileSync(path.join(directory, 'baseline.txt'), 'changed after verification');
+  const changed = spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' });
+  assert.notEqual(changed.status, 0);
+  assert.match(changed.stderr, /source changed after its completion evidence/);
 });
 
 test('engine refuses completed state when build, tests, or behaviour evidence is limited', () => {
@@ -161,8 +165,36 @@ test('engine reserves and claims one continuation signal at a time', t => {
   assert.equal(stale.claimed, false);
   const claimed = JSON.parse(spawnSync(process.execPath, [script, 'claim-continuation', ledger, '--token', prepared.token], { encoding: 'utf8' }).stdout);
   assert.equal(claimed.claimed, true);
-  const next = JSON.parse(spawnSync(process.execPath, [script, 'prepare-continuation', ledger], { encoding: 'utf8' }).stdout);
+  const next = JSON.parse(spawnSync(process.execPath, [script, 'prepare-continuation', ledger, '--continuation-token', claimed.workerToken], { encoding: 'utf8' }).stdout);
   assert.equal(next.queued, true);
+});
+
+test('engine recovers an expired worker lease without allowing the former worker to write', t => {
+  const directory = project(t, 'cfa-migration-engine-lease-recovery-');
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  assert.equal(spawnSync(process.execPath, [script, 'init', directory, '--goal', 'Migrate app', '--scope', 'App target']).status, 0);
+  assert.equal(spawnSync(process.execPath, [script, 'continuation', ledger, '--codex-thread', 'thread-123']).status, 0);
+  const pending = JSON.parse(spawnSync(process.execPath, [script, 'prepare-continuation', ledger], { encoding: 'utf8' }).stdout);
+  const claimed = JSON.parse(spawnSync(process.execPath, [script, 'claim-continuation', ledger, '--token', pending.token, '--lease-seconds', '30'], { encoding: 'utf8' }).stdout);
+  const unleased = spawnSync(process.execPath, [script, 'checkpoint', ledger, '--phase', 'audit', '--next-action', 'Review source.', '--action', 'Tried to update.', '--result', 'Should be fenced.'], { encoding: 'utf8' });
+  assert.notEqual(unleased.status, 0);
+  const expired = fs.readFileSync(ledger, 'utf8').replace(/"expiresAt": "[^"]+"/, '"expiresAt": "1970-01-01T00:00:00.000Z"');
+  fs.writeFileSync(ledger, expired);
+  const recovery = JSON.parse(spawnSync(process.execPath, [script, 'recover-continuation', ledger], { encoding: 'utf8' }).stdout);
+  assert.equal(recovery.queued, true);
+  assert.notEqual(recovery.token, claimed.workerToken);
+  assert.equal(spawnSync(process.execPath, [script, 'mark-continuation-delivery', ledger, '--token', recovery.token], { encoding: 'utf8' }).status, 0);
+  const recentRecovery = JSON.parse(spawnSync(process.execPath, [script, 'recover-continuation', ledger], { encoding: 'utf8' }).stdout);
+  assert.equal(recentRecovery.queued, false);
+  assert.match(recentRecovery.reason, /queued recently/);
+  const formerWorker = spawnSync(process.execPath, [script, 'checkpoint', ledger, '--phase', 'audit', '--next-action', 'Review source.', '--action', 'Former worker update.', '--result', 'Must be rejected.', '--continuation-token', claimed.workerToken], { encoding: 'utf8' });
+  assert.notEqual(formerWorker.status, 0);
+  const replacement = JSON.parse(spawnSync(process.execPath, [script, 'claim-continuation', ledger, '--token', recovery.token], { encoding: 'utf8' }).stdout);
+  const heartbeat = JSON.parse(spawnSync(process.execPath, [script, 'heartbeat-continuation', ledger, '--token', replacement.workerToken], { encoding: 'utf8' }).stdout);
+  assert.equal(heartbeat.heartbeated, true);
+  const healthy = JSON.parse(spawnSync(process.execPath, [script, 'recover-continuation', ledger], { encoding: 'utf8' }).stdout);
+  assert.equal(healthy.queued, false);
+  assert.match(healthy.reason, /healthy/);
 });
 
 test('a queued continuation reports a later blocker instead of a stale token', t => {

@@ -73,6 +73,20 @@ For each slice, repeatedly:
 After a correction, audit again. Do not mark an item resolved merely because a
 file changed; tie it to verification at the current revision.
 
+### Unattended continuation
+
+When the MCP migration interface enables continuation, it starts a local
+watchdog automatically. The watchdog checks the ledger every minute, redelivers
+an unclaimed continuation at a bounded interval, and replaces a worker that
+stops heartbeating after its lease expires. No developer action is needed to
+resume ordinary migration work.
+
+Claimed continuations return a `workerToken`. Include it as
+`continuationToken` in every state-changing MCP migration call. Before a build,
+test, download or other operation that may run longer than the active lease,
+call `cfa_migration_heartbeat_continuation`. This fences an abandoned worker so
+it cannot write after a replacement has resumed the migration.
+
 ## Recover from stalls
 
 When an attempt produces no new evidence or repeats the same failed action,
@@ -114,6 +128,10 @@ inspection, hybrid implementation review, final CFA audit and the required
 human architecture review. The completion gate remains authoritative. If any
 required check cannot run, report the migration as continuing or blocked as
 appropriate; do not call it complete.
+
+For new Engine records, required completion evidence is bound to the final
+source fingerprint. Any source change after completion invalidates the ledger
+until the migration is reopened and reverified.
 
 For the record format and command details, read
 [orchestrator state reference](references/orchestrator-state.md).
