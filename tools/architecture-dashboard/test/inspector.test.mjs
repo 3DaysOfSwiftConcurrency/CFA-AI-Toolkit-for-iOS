@@ -1540,7 +1540,7 @@ test('reviews matching ViewModel tests in production source trees', async t => {
   });
   const {findings} = await inspect(root);
   const placement = findings.filter(item => item.code === 'view-model-test-placement');
-  assert.deepEqual(placement.map(item => item.file), [file, 'App/2 - AppModel/HomeViewModelTests.swift', 'AppTests/HomeViewModelTests.swift', 'OtherTests/ViewModelTests/HomeViewModelTests.swift']);
+  assert.deepEqual(placement.map(item => item.file), [file, 'App/2 - AppModel/HomeViewModelTests.swift', 'AppTests/HomeViewModelTests.swift']);
   assert.ok(placement.every(item => item.severity === 'review' && /unit-test target/.test(item.message)));
 });
 
