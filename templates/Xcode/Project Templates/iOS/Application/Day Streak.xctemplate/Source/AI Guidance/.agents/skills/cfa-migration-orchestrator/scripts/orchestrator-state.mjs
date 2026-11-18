@@ -3,10 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { randomUUID } from 'node:crypto';
 import { inspect } from '../../cfa-architecture-review/scripts/dashboard/src/inspector.mjs';
 import { analyseProject } from '../../swift-concurrency-migration/scripts/project-analysis/project-analysis.mjs';
 
 const requiredGate = ['baseline', 'build', 'tests', 'behaviourRegression', 'primitiveInventory', 'navigatorReview', 'hybridReview', 'finalCfaAudit', 'humanArchitectureReview'];
+const passedGate = new Set(['build', 'tests', 'behaviourRegression']);
 const phases = new Set(['audit', 'fix', 'verify', 'hybrid-review', 'final-audit', 'human-review', 'blocked', 'completed']);
 const start = '<!-- CFA Migration Engine state: managed -->';
 const end = '<!-- /CFA Migration Engine state -->';
@@ -63,7 +65,7 @@ function onlyOptions(args, names) {
   return true;
 }
 function usage() {
-  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text> | continuation <ledger.md> --codex-thread <thread-id> | block <ledger.md> --reason <text> --unblock-condition <text> --next-action <text> | complete <ledger.md> --baseline <id> --build <id> --tests <id> --behaviour-regression <id> --primitive-inventory <id> --navigator-review <id> --hybrid-review <id> --final-cfa-audit <id> --human-architecture-review <id>';
+  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text> | continuation <ledger.md> --codex-thread <thread-id> | prepare-continuation <ledger.md> | claim-continuation <ledger.md> --token <token> | release-continuation <ledger.md> --token <token> | reopen <ledger.md> --reason <text> --next-action <text> | block <ledger.md> --reason <text> --unblock-condition <text> --next-action <text> | complete <ledger.md> --baseline <id> --build <id> --tests <id> --behaviour-regression <id> --primitive-inventory <id> --navigator-review <id> --hybrid-review <id> --final-cfa-audit <id> --human-architecture-review <id>';
 }
 
 export function validateState(state) {
@@ -79,7 +81,9 @@ export function validateState(state) {
   if (!Array.isArray(state?.evidence)) errors.push('evidence must be an array');
   if (!Array.isArray(state?.attempts)) errors.push('attempts must be an array');
   if (state?.continuation !== null && state?.continuation !== undefined &&
-      (state.continuation?.host !== 'codex' || !text(state.continuation?.threadId))) {
+      (state.continuation?.host !== 'codex' || !text(state.continuation?.threadId) ||
+       (state.continuation.pending !== undefined && state.continuation.pending !== null &&
+        !text(state.continuation.pending?.token)))) {
     errors.push('continuation must be null or name a Codex thread');
   }
   const evidence = Array.isArray(state?.evidence) ? state.evidence : [];
@@ -93,7 +97,12 @@ export function validateState(state) {
   if (state?.phase === 'completed') {
     const gate = state.completionGate;
     if (!gate || typeof gate !== 'object') errors.push('completed state needs completionGate');
-    else for (const key of requiredGate) if (!text(gate[key]) || !ids.has(gate[key])) errors.push(`completionGate.${key} must name recorded evidence`);
+    else for (const key of requiredGate) {
+      const id = gate[key];
+      const item = evidence.find(candidate => candidate.id === id);
+      if (!text(id) || !item) errors.push(`completionGate.${key} must name recorded evidence`);
+      else if (passedGate.has(key) && item.outcome !== 'passed') errors.push(`completionGate.${key} requires passed evidence`);
+    }
   }
   return errors;
 }
@@ -155,8 +164,20 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     replaceState(file, state); out(JSON.stringify(report, null, 2)); return report;
   }
   const file = target && path.resolve(target);
-  if (!file || !['validate', 'status', 'checkpoint', 'evidence', 'continuation', 'block', 'complete'].includes(command)) fail(usage());
+  if (!file || !['validate', 'status', 'checkpoint', 'evidence', 'continuation', 'prepare-continuation', 'claim-continuation', 'release-continuation', 'reopen', 'block', 'complete'].includes(command)) fail(usage());
   if (command === 'validate') { if (rest.length) fail(usage()); checkedState(file); out('Valid CFA Migration Engine state.'); return; }
+  if (command === 'reopen') {
+    const reason = option(rest, '--reason'), nextAction = option(rest, '--next-action');
+    if (![reason, nextAction].every(text) || !onlyOptions(rest, ['--reason', '--next-action'])) fail(usage());
+    const { state } = extract(readLedger(file));
+    if (state.phase !== 'completed') fail('Only a completed migration can be reopened.');
+    state.phase = 'verify'; state.nextAction = nextAction; state.blocker = null; state.completionGate = null;
+    if (state.continuation) state.continuation.pending = null;
+    state.attempts.push({ action: 'Reopened completed migration.', result: reason });
+    const errors = validateState(state);
+    if (errors.length) fail(errors.join('\n'));
+    replaceState(file, state); out('Reopened migration in verify phase.'); return state;
+  }
   const state = checkedState(file);
   if (command === 'status') {
     if (rest.length) fail(usage());
@@ -166,14 +187,39 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     const phase = option(rest, '--phase'), nextAction = option(rest, '--next-action'), action = option(rest, '--action'), result = option(rest, '--result');
     if (!text(phase) || !phases.has(phase) || !text(nextAction) || !text(action) || !text(result) || !onlyOptions(rest, ['--phase', '--next-action', '--action', '--result'])) fail(usage());
     state.phase = phase; state.nextAction = nextAction; if (phase !== 'blocked') state.blocker = null;
+    if (phase !== 'completed') state.completionGate = null;
     state.attempts.push({ action, result }); replaceState(file, state); out(`Updated ${phase} checkpoint.`); return state;
   }
   if (command === 'continuation') {
     const threadId = option(rest, '--codex-thread');
     if (!text(threadId) || !onlyOptions(rest, ['--codex-thread'])) fail(usage());
-    state.continuation = { host: 'codex', threadId };
+    state.continuation = { host: 'codex', threadId, pending: null };
     state.attempts.push({ action: 'Enabled Codex continuation.', result: `Nonterminal checkpoints queue thread ${threadId} to continue.` });
     replaceState(file, state); out('Enabled Codex continuation.'); return state;
+  }
+  if (command === 'prepare-continuation') {
+    if (rest.length) fail(usage());
+    if (!state.continuation) { const result = { queued: false, reason: 'No Codex continuation is configured.' }; out(JSON.stringify(result)); return result; }
+    if (state.phase === 'blocked' || state.phase === 'completed') { const result = { queued: false, reason: `Migration is ${state.phase}.` }; out(JSON.stringify(result)); return result; }
+    if (state.continuation.pending) { const result = { queued: false, reason: 'A continuation is already pending.', token: state.continuation.pending.token }; out(JSON.stringify(result)); return result; }
+    const token = randomUUID();
+    state.continuation.pending = { token };
+    replaceState(file, state);
+    const result = { queued: true, token, state };
+    out(JSON.stringify(result)); return result;
+  }
+  if (command === 'claim-continuation' || command === 'release-continuation') {
+    const token = option(rest, '--token');
+    if (!text(token) || !onlyOptions(rest, ['--token'])) fail(usage());
+    if (!state.continuation?.pending || state.continuation.pending.token !== token) {
+      const result = { claimed: false, reason: state.phase === 'completed' ? 'Migration is completed.' : 'Continuation is stale or has already been claimed.' };
+      out(JSON.stringify(result)); return result;
+    }
+    state.continuation.pending = null;
+    state.attempts.push({ action: command === 'claim-continuation' ? 'Claimed Codex continuation.' : 'Released Codex continuation reservation.', result: command === 'claim-continuation' ? 'The host signal matches the current ledger state.' : 'The host queue did not accept the reserved signal.' });
+    replaceState(file, state);
+    const result = command === 'claim-continuation' ? { claimed: true, state } : { released: true };
+    out(JSON.stringify(result)); return result;
   }
   if (command === 'block') {
     const reason = option(rest, '--reason'), unblockCondition = option(rest, '--unblock-condition'), nextAction = option(rest, '--next-action');
@@ -188,6 +234,7 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     const completionGate = { baseline: option(rest, '--baseline'), build: option(rest, '--build'), tests: option(rest, '--tests'), behaviourRegression: option(rest, '--behaviour-regression'), primitiveInventory: option(rest, '--primitive-inventory'), navigatorReview: option(rest, '--navigator-review'), hybridReview: option(rest, '--hybrid-review'), finalCfaAudit: option(rest, '--final-cfa-audit'), humanArchitectureReview: option(rest, '--human-architecture-review') };
     if (!Object.values(completionGate).every(text)) fail(usage());
     state.phase = 'completed'; state.nextAction = 'Migration completion evidence is recorded.'; state.blocker = null; state.completionGate = completionGate;
+    if (state.continuation) state.continuation.pending = null;
     const errors = validateState(state); if (errors.length) fail(errors.join('\n'));
     replaceState(file, state); out('Recorded completed migration checkpoint.'); return state;
   }

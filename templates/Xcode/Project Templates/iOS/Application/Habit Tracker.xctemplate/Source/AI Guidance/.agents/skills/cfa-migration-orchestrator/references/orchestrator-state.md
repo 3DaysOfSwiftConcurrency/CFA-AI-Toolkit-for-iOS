@@ -19,8 +19,11 @@ compliance; review the reported paths before treating a lead as a finding.
 
 `block` requires the concrete reason, next action and exact unblocking condition.
 `complete` accepts every named CFA completion-gate evidence ID and refuses to
-write a completed state until each ID is recorded. It checks the ledger's
-internal evidence links, not the truth of the evidence itself.
+write a completed state until each ID is recorded. Build, tests and behaviour
+regression evidence must have outcome `passed`; a limitation or unavailable
+check keeps the migration in verification. `reopen` explicitly returns a
+completed ledger to verification when later evidence or stricter rules show
+that work remains.
 
 ```sh
 node scripts/orchestrator-state.mjs init /path/to/project \
@@ -36,6 +39,8 @@ node scripts/orchestrator-state.mjs audit /path/to/project \
   --ledger /path/to/project/MIGRATION_LEDGER.md --id first-audit
 node scripts/orchestrator-state.mjs continuation /path/to/project/MIGRATION_LEDGER.md \
   --codex-thread <current-codex-thread-id>
+node scripts/orchestrator-state.mjs reopen /path/to/project/MIGRATION_LEDGER.md \
+  --reason "The full test gate is limited" --next-action "Run the full test suite"
 node scripts/orchestrator-state.mjs validate /path/to/project/MIGRATION_LEDGER.md
 node scripts/orchestrator-state.mjs status /path/to/project/MIGRATION_LEDGER.md
 ```
@@ -47,5 +52,8 @@ the ledger is internally consistent, not that its claims are true.
 
 `continuation` is optional state for a Codex host. It records the Codex thread
 that should be resumed after non-terminal Engine updates. The local MCP server
-uses this state to call the Codex host queue; the standalone ledger runner does
-not attempt to start an agent by itself.
+reserves one tokened continuation before it calls the Codex host queue. The
+receiving agent must claim that token through MCP before acting; stale, blocked
+and completed signals do no work. This prevents a sequence of updates from
+accumulating stale prompts. The standalone ledger runner does not attempt to
+start an agent by itself.

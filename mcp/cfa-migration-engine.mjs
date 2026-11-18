@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { z } from 'zod';
-import { main as engineMain, readState } from '../skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs';
+import { main as engineMain } from '../skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs';
 import { inspect } from '../skills/cfa-architecture-review/scripts/dashboard/src/inspector.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -17,12 +17,14 @@ function text(value) {
 }
 
 function continuationMessage(state) {
-  return `Continue the MCP-backed CFA migration immediately. The ledger is in ${state.phase} with next action: ${state.nextAction} Do not conclude because an individual verification check is unavailable. Continue every independent audit, fix and verification action until the ledger is completed or a genuine user decision is required.`;
+  const token = state.continuation?.pending?.token;
+  return `A CFA migration continuation is ready with token ${token}. This is a wake-up signal, not the current migration state. First call cfa_migration_claim_continuation with this token and the ledger path. If it is stale, blocked, or completed, stop without performing work. If claimed, read the returned current ledger state and continue every independent audit, fix, and verification action until the ledger is completed or a genuine user decision is required.`;
 }
 
 export function requestCodexContinuation(state, { execute = spawnSync, codex = 'codex' } = {}) {
   if (!state?.continuation) return { queued: false, reason: 'No Codex continuation is configured.' };
   if (state.phase === 'blocked' || state.phase === 'completed') return { queued: false, reason: `Migration is ${state.phase}.` };
+  if (!state.continuation.pending?.token) return { queued: false, reason: 'No continuation reservation is pending.' };
   const result = execute(codex, ['queue', '--thread', state.continuation.threadId, '--resume', '--message', continuationMessage(state)], { encoding: 'utf8' });
   const detail = (result.stderr || result.stdout || '').trim();
   if (result.error) throw Error(`Could not queue Codex continuation: ${result.error.message}`);
@@ -33,12 +35,23 @@ export function requestCodexContinuation(state, { execute = spawnSync, codex = '
   return { queued: true, threadId: state.continuation.threadId, resumed: !/already has an active writer/i.test(detail) };
 }
 
+async function queueNextContinuation(ledger, queueContinuation) {
+  const reservation = await engineMain(['prepare-continuation', ledger], { out: () => {} });
+  if (!reservation.queued) return reservation;
+  try {
+    return queueContinuation(reservation.state);
+  } catch (error) {
+    await engineMain(['release-continuation', ledger, '--token', reservation.token], { out: () => {} });
+    throw error;
+  }
+}
+
 async function invoke(args, { continuationLedger, queueContinuation } = {}) {
   const output = [];
   try {
     const value = await engineMain(args, { out: line => output.push(String(line)) });
     if (continuationLedger) {
-      const continuation = queueContinuation(readState(continuationLedger));
+      const continuation = await queueNextContinuation(continuationLedger, queueContinuation);
       if (continuation.queued) return text({ result: value ?? output.join('\n'), continuation });
     }
     return text(value ?? output.join('\n'));
@@ -94,6 +107,14 @@ export function createMigrationEngineServer({ queueContinuation = requestCodexCo
     title: 'Validate migration ledger', description: 'Check the ledger state is internally consistent. This does not certify semantic CFA compliance.',
     inputSchema: z.object({ ledger })
   }, ({ ledger: ledgerFile }) => invoke(['validate', ledgerFile]));
+  server.registerTool('cfa_migration_claim_continuation', {
+    title: 'Claim a CFA migration continuation', description: 'Claim one reserved host continuation and return the current ledger state. Stale or terminal signals do no work.',
+    inputSchema: z.object({ ledger, token: nonEmpty })
+  }, ({ ledger: ledgerFile, token }) => invoke(['claim-continuation', ledgerFile, '--token', token]));
+  server.registerTool('cfa_migration_reopen', {
+    title: 'Reopen a completed CFA migration', description: 'Move a completed ledger back to verification when new evidence or stricter completion rules show work remains.',
+    inputSchema: z.object({ ledger, reason: nonEmpty, nextAction: nonEmpty })
+  }, ({ ledger: ledgerFile, reason, nextAction }) => invoke(['reopen', ledgerFile, '--reason', reason, '--next-action', nextAction], { continuationLedger: ledgerFile, queueContinuation }));
   server.registerTool('cfa_migration_checkpoint', {
     title: 'Record migration checkpoint', description: 'Record an audit, fix, verification, review or completion-phase checkpoint in the existing ledger.',
     inputSchema: z.object({ ledger, phase: z.enum(['audit', 'fix', 'verify', 'hybrid-review', 'final-audit', 'human-review', 'blocked', 'completed']), nextAction: nonEmpty, action: nonEmpty, result: nonEmpty })

@@ -94,6 +94,49 @@ test('engine records blocked and completed states only with their required evide
   assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
 });
 
+test('engine refuses completed state when build, tests, or behaviour evidence is limited', () => {
+  const state = initialState('Migrate app', 'App target');
+  const ids = ['baseline', 'build', 'tests', 'behaviour-regression', 'primitive-inventory', 'navigator-review', 'hybrid-review', 'final-cfa-audit', 'human-architecture-review'];
+  state.evidence = ids.map(id => ({ id, revision: 'abc123', kind: 'check', outcome: id === 'tests' ? 'passed-with-limitation' : 'passed', summary: id }));
+  state.phase = 'completed';
+  state.completionGate = { baseline: 'baseline', build: 'build', tests: 'tests', behaviourRegression: 'behaviour-regression', primitiveInventory: 'primitive-inventory', navigatorReview: 'navigator-review', hybridReview: 'hybrid-review', finalCfaAudit: 'final-cfa-audit', humanArchitectureReview: 'human-architecture-review' };
+  assert.ok(validateState(state).includes('completionGate.tests requires passed evidence'));
+});
+
+test('engine safely reopens a legacy completed ledger with limited verification', t => {
+  const directory = project(t, 'cfa-migration-engine-reopen-');
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  assert.equal(spawnSync(process.execPath, [script, 'init', directory, '--goal', 'Migrate app', '--scope', 'App target']).status, 0);
+  const ids = ['baseline', 'build', 'tests', 'behaviour-regression', 'primitive-inventory', 'navigator-review', 'hybrid-review', 'final-cfa-audit', 'human-architecture-review'];
+  for (const id of ids) assert.equal(spawnSync(process.execPath, [script, 'evidence', ledger, '--id', id, '--revision', 'abc123', '--kind', 'check', '--outcome', 'passed', '--summary', id]).status, 0);
+  const flags = ['--baseline', '--build', '--tests', '--behaviour-regression', '--primitive-inventory', '--navigator-review', '--hybrid-review', '--final-cfa-audit', '--human-architecture-review'];
+  assert.equal(spawnSync(process.execPath, [script, 'complete', ledger, ...flags.flatMap((flag, index) => [flag, ids[index]])]).status, 0);
+  const contents = fs.readFileSync(ledger, 'utf8').replace('"outcome": "passed",\n      "summary": "tests"', '"outcome": "passed-with-limitation",\n      "summary": "tests"');
+  fs.writeFileSync(ledger, contents);
+  assert.notEqual(spawnSync(process.execPath, [script, 'validate', ledger]).status, 0);
+  assert.equal(spawnSync(process.execPath, [script, 'reopen', ledger, '--reason', 'The final test gate is limited.', '--next-action', 'Run the full test suite.']).status, 0);
+  const status = spawnSync(process.execPath, [script, 'status', ledger], { encoding: 'utf8' });
+  assert.match(status.stdout, /"phase": "verify"/);
+  assert.equal(spawnSync(process.execPath, [script, 'validate', ledger]).status, 0);
+});
+
+test('engine reserves and claims one continuation signal at a time', t => {
+  const directory = project(t, 'cfa-migration-engine-continuation-claim-');
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  assert.equal(spawnSync(process.execPath, [script, 'init', directory, '--goal', 'Migrate app', '--scope', 'App target']).status, 0);
+  assert.equal(spawnSync(process.execPath, [script, 'continuation', ledger, '--codex-thread', 'thread-123']).status, 0);
+  const prepared = JSON.parse(spawnSync(process.execPath, [script, 'prepare-continuation', ledger], { encoding: 'utf8' }).stdout);
+  assert.equal(prepared.queued, true);
+  const duplicate = JSON.parse(spawnSync(process.execPath, [script, 'prepare-continuation', ledger], { encoding: 'utf8' }).stdout);
+  assert.deepEqual(duplicate, { queued: false, reason: 'A continuation is already pending.', token: prepared.token });
+  const stale = JSON.parse(spawnSync(process.execPath, [script, 'claim-continuation', ledger, '--token', 'stale-token'], { encoding: 'utf8' }).stdout);
+  assert.equal(stale.claimed, false);
+  const claimed = JSON.parse(spawnSync(process.execPath, [script, 'claim-continuation', ledger, '--token', prepared.token], { encoding: 'utf8' }).stdout);
+  assert.equal(claimed.claimed, true);
+  const next = JSON.parse(spawnSync(process.execPath, [script, 'prepare-continuation', ledger], { encoding: 'utf8' }).stdout);
+  assert.equal(next.queued, true);
+});
+
 test('engine summarizes inspection evidence without treating scanner leads as verdicts', async () => {
   const report = await auditProject('/project', {
     inspect: async () => ({ sourceFingerprint: 'fingerprint', scope: { swiftFiles: 7 }, findings: [{ code: 'feature-owner' }, { code: 'feature-owner' }, { code: 'task-owner' }] }),
