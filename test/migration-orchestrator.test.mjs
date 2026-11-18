@@ -46,6 +46,17 @@ test('engine records checkpoints and evidence in the same ledger', t => {
   assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
 });
 
+test('engine stores a validated Codex continuation target in the existing ledger', t => {
+  const directory = project(t, 'cfa-migration-engine-continuation-');
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  assert.equal(spawnSync(process.execPath, [script, 'init', directory, '--goal', 'Migrate app', '--scope', 'App target']).status, 0);
+  const result = spawnSync(process.execPath, [script, 'continuation', ledger, '--codex-thread', 'thread-123'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const status = spawnSync(process.execPath, [script, 'status', ledger], { encoding: 'utf8' });
+  assert.match(status.stdout, /"threadId": "thread-123"/);
+  assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
+});
+
 test('engine preserves existing ledgers and rejects invalid requests', t => {
   const directory = project(t, 'cfa-migration-engine-guard-');
   const ledger = path.join(directory, 'MIGRATION_LEDGER.md');

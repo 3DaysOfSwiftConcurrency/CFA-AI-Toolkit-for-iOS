@@ -34,6 +34,8 @@ node scripts/orchestrator-state.mjs evidence /path/to/project/MIGRATION_LEDGER.m
   --summary "Recorded the source-backed launch inventory"
 node scripts/orchestrator-state.mjs audit /path/to/project \
   --ledger /path/to/project/MIGRATION_LEDGER.md --id first-audit
+node scripts/orchestrator-state.mjs continuation /path/to/project/MIGRATION_LEDGER.md \
+  --codex-thread <current-codex-thread-id>
 node scripts/orchestrator-state.mjs validate /path/to/project/MIGRATION_LEDGER.md
 node scripts/orchestrator-state.mjs status /path/to/project/MIGRATION_LEDGER.md
 ```
@@ -42,3 +44,8 @@ For `completed`, `completionGate` must identify evidence IDs for: baseline,
 build, tests, behaviour regression, primitive inventory, navigator review,
 hybrid review, final CFA audit and human architecture review. Validation proves
 the ledger is internally consistent, not that its claims are true.
+
+`continuation` is optional state for a Codex host. It records the Codex thread
+that should be resumed after non-terminal Engine updates. The local MCP server
+uses this state to call the Codex host queue; the standalone ledger runner does
+not attempt to start an agent by itself.

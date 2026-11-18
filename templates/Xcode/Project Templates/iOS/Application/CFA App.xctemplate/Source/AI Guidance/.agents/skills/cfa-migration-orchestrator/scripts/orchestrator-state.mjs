@@ -63,7 +63,7 @@ function onlyOptions(args, names) {
   return true;
 }
 function usage() {
-  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text> | block <ledger.md> --reason <text> --unblock-condition <text> --next-action <text> | complete <ledger.md> --baseline <id> --build <id> --tests <id> --behaviour-regression <id> --primitive-inventory <id> --navigator-review <id> --hybrid-review <id> --final-cfa-audit <id> --human-architecture-review <id>';
+  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text> | continuation <ledger.md> --codex-thread <thread-id> | block <ledger.md> --reason <text> --unblock-condition <text> --next-action <text> | complete <ledger.md> --baseline <id> --build <id> --tests <id> --behaviour-regression <id> --primitive-inventory <id> --navigator-review <id> --hybrid-review <id> --final-cfa-audit <id> --human-architecture-review <id>';
 }
 
 export function validateState(state) {
@@ -78,6 +78,10 @@ export function validateState(state) {
   }
   if (!Array.isArray(state?.evidence)) errors.push('evidence must be an array');
   if (!Array.isArray(state?.attempts)) errors.push('attempts must be an array');
+  if (state?.continuation !== null && state?.continuation !== undefined &&
+      (state.continuation?.host !== 'codex' || !text(state.continuation?.threadId))) {
+    errors.push('continuation must be null or name a Codex thread');
+  }
   const evidence = Array.isArray(state?.evidence) ? state.evidence : [];
   const ids = new Set();
   for (const item of evidence) {
@@ -95,13 +99,16 @@ export function validateState(state) {
 }
 
 export function initialState(goal, scope, project = process.cwd()) {
-  return { schemaVersion: 3, goal, scope, baseline: baseline(project), phase: 'audit', nextAction: 'Establish the baseline and select the smallest verified migration slice.', evidence: [], attempts: [], blocker: null, completionGate: null };
+  return { schemaVersion: 3, goal, scope, baseline: baseline(project), phase: 'audit', nextAction: 'Establish the baseline and select the smallest verified migration slice.', evidence: [], attempts: [], blocker: null, completionGate: null, continuation: null };
 }
 function checkedState(file) {
   const { state } = extract(readLedger(file));
   const errors = validateState(state);
   if (errors.length) fail(errors.join('\n'));
   return state;
+}
+export function readState(file) {
+  return checkedState(file);
 }
 export async function auditProject(project, providers = {}) {
   const inspection = await (providers.inspect ?? inspect)(project);
@@ -148,18 +155,25 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     replaceState(file, state); out(JSON.stringify(report, null, 2)); return report;
   }
   const file = target && path.resolve(target);
-  if (!file || !['validate', 'status', 'checkpoint', 'evidence', 'block', 'complete'].includes(command)) fail(usage());
+  if (!file || !['validate', 'status', 'checkpoint', 'evidence', 'continuation', 'block', 'complete'].includes(command)) fail(usage());
   if (command === 'validate') { if (rest.length) fail(usage()); checkedState(file); out('Valid CFA Migration Engine state.'); return; }
   const state = checkedState(file);
   if (command === 'status') {
     if (rest.length) fail(usage());
-    out(JSON.stringify({ goal: state.goal, scope: state.scope, baseline: state.baseline, phase: state.phase, nextAction: state.nextAction, evidence: state.evidence.length, attempts: state.attempts.length }, null, 2)); return state;
+    out(JSON.stringify({ goal: state.goal, scope: state.scope, baseline: state.baseline, phase: state.phase, nextAction: state.nextAction, evidence: state.evidence.length, attempts: state.attempts.length, continuation: state.continuation ?? null }, null, 2)); return state;
   }
   if (command === 'checkpoint') {
     const phase = option(rest, '--phase'), nextAction = option(rest, '--next-action'), action = option(rest, '--action'), result = option(rest, '--result');
     if (!text(phase) || !phases.has(phase) || !text(nextAction) || !text(action) || !text(result) || !onlyOptions(rest, ['--phase', '--next-action', '--action', '--result'])) fail(usage());
     state.phase = phase; state.nextAction = nextAction; if (phase !== 'blocked') state.blocker = null;
     state.attempts.push({ action, result }); replaceState(file, state); out(`Updated ${phase} checkpoint.`); return state;
+  }
+  if (command === 'continuation') {
+    const threadId = option(rest, '--codex-thread');
+    if (!text(threadId) || !onlyOptions(rest, ['--codex-thread'])) fail(usage());
+    state.continuation = { host: 'codex', threadId };
+    state.attempts.push({ action: 'Enabled Codex continuation.', result: `Nonterminal checkpoints queue thread ${threadId} to continue.` });
+    replaceState(file, state); out('Enabled Codex continuation.'); return state;
   }
   if (command === 'block') {
     const reason = option(rest, '--reason'), unblockCondition = option(rest, '--unblock-condition'), nextAction = option(rest, '--next-action');

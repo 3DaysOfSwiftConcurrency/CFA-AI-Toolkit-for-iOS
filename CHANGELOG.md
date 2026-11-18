@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add a Codex-hosted continuation target to the existing migration ledger and
+  an MCP tool that queues the same Codex thread after every successful
+  non-terminal Engine update. The MCP server continues to read shared CFA
+  rules; the host bridge supplies persistence across agent turns.
+
 - Add a local stdio MCP server for the CFA Migration Engine. Its eight tools call
   the existing ledger runner, while MCP resources read the shared migration workflow
   and canonical CFA specification instead of duplicating architecture rules.

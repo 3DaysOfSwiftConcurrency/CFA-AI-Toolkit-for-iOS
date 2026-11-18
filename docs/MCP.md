@@ -3,12 +3,13 @@
 The CFA Migration Engine can run as a local MCP server. It exposes the existing
 ledger-based Engine; it does not independently implement CFA rules.
 
-The server provides eight tools:
+The server provides ten tools:
 
 - `cfa_migration_init`, `cfa_migration_audit`, `cfa_migration_review_leads`,
   `cfa_migration_status` and `cfa_migration_validate`
 - `cfa_migration_checkpoint`, `cfa_migration_evidence`,
   `cfa_migration_block` and `cfa_migration_complete`
+- `cfa_migration_enable_continuation`
 
 It also exposes the shared workflow, canonical CFA specification and Engine state
 reference as read-only MCP resources. The tools use the same
@@ -52,3 +53,21 @@ write-oriented tool is called. It refuses to replace an existing Engine state bl
 It does not modify Swift source, run an Xcode build, execute a test suite or declare
 scanner leads to be CFA violations. Those actions and judgments remain explicit work
 performed by the agent and recorded as evidence.
+
+## Codex-hosted continuation
+
+MCP by itself is a request/response protocol: it cannot keep an agent running
+after the host has ended a turn. When the server is used locally by Codex, call
+`cfa_migration_enable_continuation` with the current Codex thread ID. The
+Engine stores that target in the existing ledger and, after each successful
+non-terminal audit, checkpoint or evidence update, invokes:
+
+```sh
+codex queue --thread <thread-id> --resume --message "Continue the MCP-backed CFA migration…"
+```
+
+This resumes the same Codex chat with the ledger's current phase and next
+action. It intentionally does not queue a blocked or completed migration.
+The host command must be available locally; if it is not, the state change is
+preserved but the tool reports that continuation could not be queued. This is a
+Codex-host integration, not a duplicate set of CFA rules in the MCP server.

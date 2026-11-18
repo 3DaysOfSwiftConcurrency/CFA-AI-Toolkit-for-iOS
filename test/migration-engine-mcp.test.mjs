@@ -6,6 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
+import { requestCodexContinuation } from '../mcp/cfa-migration-engine.mjs';
 
 const server = path.resolve('mcp/cfa-migration-engine.mjs');
 function project(t) {
@@ -38,10 +39,22 @@ test('MCP server exposes the shared CFA workflow and its migration tools', async
   ]);
   assert.deepEqual(tools.map(tool => tool.name).sort(), [
     'cfa_migration_audit', 'cfa_migration_block', 'cfa_migration_checkpoint', 'cfa_migration_complete',
-    'cfa_migration_evidence', 'cfa_migration_init', 'cfa_migration_review_leads', 'cfa_migration_status', 'cfa_migration_validate'
+    'cfa_migration_enable_continuation', 'cfa_migration_evidence', 'cfa_migration_init', 'cfa_migration_review_leads', 'cfa_migration_status', 'cfa_migration_validate'
   ]);
   const specification = await client.readResource({ uri: 'cfa://migration-engine/specification' });
   assert.match(specification.contents[0].text, /Cooperative Feature Architecture/);
+});
+
+test('Codex continuation queues only active migrations in their configured chat', () => {
+  const calls = [];
+  const result = requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123' }, phase: 'fix', nextAction: 'Review the next source lead.' }, {
+    execute: (...args) => { calls.push(args); return { status: 0, stdout: '', stderr: '' }; }
+  });
+  assert.deepEqual(result, { queued: true, threadId: 'thread-123' });
+  assert.deepEqual(calls[0][0], 'codex');
+  assert.deepEqual(calls[0][1].slice(0, 5), ['queue', '--thread', 'thread-123', '--resume', '--message']);
+  assert.match(calls[0][1][5], /Do not conclude because an individual verification check is unavailable/);
+  assert.deepEqual(requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123' }, phase: 'completed', nextAction: 'Done.' }), { queued: false, reason: 'Migration is completed.' });
 });
 
 test('MCP server returns current source locations as review leads without writing a ledger', async t => {
