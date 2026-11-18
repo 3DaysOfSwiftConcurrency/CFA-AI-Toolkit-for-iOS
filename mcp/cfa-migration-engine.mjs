@@ -117,7 +117,7 @@ export function createMigrationEngineServer({ queueContinuation = requestCodexCo
   }, ({ ledger: ledgerFile, reason, nextAction }) => invoke(['reopen', ledgerFile, '--reason', reason, '--next-action', nextAction], { continuationLedger: ledgerFile, queueContinuation }));
   server.registerTool('cfa_migration_checkpoint', {
     title: 'Record migration checkpoint', description: 'Record an audit, fix, verification, review or completion-phase checkpoint in the existing ledger.',
-    inputSchema: z.object({ ledger, phase: z.enum(['audit', 'fix', 'verify', 'hybrid-review', 'final-audit', 'human-review', 'blocked', 'completed']), nextAction: nonEmpty, action: nonEmpty, result: nonEmpty })
+    inputSchema: z.object({ ledger, phase: z.enum(['audit', 'fix', 'verify', 'hybrid-review', 'final-audit', 'human-review']), nextAction: nonEmpty, action: nonEmpty, result: nonEmpty })
   }, ({ ledger: ledgerFile, phase, nextAction, action, result }) => invoke(['checkpoint', ledgerFile, '--phase', phase, '--next-action', nextAction, '--action', action, '--result', result], { continuationLedger: ledgerFile, queueContinuation }));
   server.registerTool('cfa_migration_evidence', {
     title: 'Record migration evidence', description: 'Append a source, build, test, behaviour or review fact to the existing migration ledger.',

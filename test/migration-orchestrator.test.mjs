@@ -46,6 +46,27 @@ test('engine records checkpoints and evidence in the same ledger', t => {
   assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
 });
 
+test('generic checkpoints cannot create an invalid blocked state', t => {
+  const directory = project(t, 'cfa-migration-engine-blocked-checkpoint-');
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  assert.equal(spawnSync(process.execPath, [script, 'init', directory, '--goal', 'Migrate app', '--scope', 'App target']).status, 0);
+  const blocked = spawnSync(process.execPath, [script, 'checkpoint', ledger, '--phase', 'blocked', '--next-action', 'Await approval.', '--action', 'Found a blocker.', '--result', 'Needs a decision.'], { encoding: 'utf8' });
+  assert.notEqual(blocked.status, 0);
+  assert.match(blocked.stderr, /Usage:/);
+  assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
+});
+
+test('block repairs an interrupted blocked checkpoint', t => {
+  const directory = project(t, 'cfa-migration-engine-repair-block-');
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  assert.equal(spawnSync(process.execPath, [script, 'init', directory, '--goal', 'Migrate app', '--scope', 'App target']).status, 0);
+  const content = fs.readFileSync(ledger, 'utf8').replace('"phase": "audit"', '"phase": "blocked"');
+  fs.writeFileSync(ledger, content);
+  assert.notEqual(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync(process.execPath, [script, 'block', ledger, '--reason', 'Simulator service stalled.', '--unblock-condition', 'User approves restart.', '--next-action', 'Restart and retry.'], { encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
+});
+
 test('engine stores a validated Codex continuation target in the existing ledger', t => {
   const directory = project(t, 'cfa-migration-engine-continuation-');
   const ledger = path.join(directory, 'MIGRATION_LEDGER.md');

@@ -178,6 +178,18 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     if (errors.length) fail(errors.join('\n'));
     replaceState(file, state); out('Reopened migration in verify phase.'); return state;
   }
+  if (command === 'block') {
+    const reason = option(rest, '--reason'), unblockCondition = option(rest, '--unblock-condition'), nextAction = option(rest, '--next-action');
+    if (![reason, unblockCondition, nextAction].every(text) || !onlyOptions(rest, ['--reason', '--unblock-condition', '--next-action'])) fail(usage());
+    const { state } = extract(readLedger(file));
+    state.phase = 'blocked'; state.nextAction = nextAction; state.blocker = { reason, unblockCondition };
+    state.completionGate = null;
+    if (state.continuation) state.continuation.pending = null;
+    state.attempts.push({ action: 'Recorded a migration blocker.', result: reason });
+    const errors = validateState(state);
+    if (errors.length) fail(errors.join('\n'));
+    replaceState(file, state); out('Recorded blocked checkpoint.'); return state;
+  }
   const state = checkedState(file);
   if (command === 'status') {
     if (rest.length) fail(usage());
@@ -185,10 +197,13 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
   }
   if (command === 'checkpoint') {
     const phase = option(rest, '--phase'), nextAction = option(rest, '--next-action'), action = option(rest, '--action'), result = option(rest, '--result');
-    if (!text(phase) || !phases.has(phase) || !text(nextAction) || !text(action) || !text(result) || !onlyOptions(rest, ['--phase', '--next-action', '--action', '--result'])) fail(usage());
-    state.phase = phase; state.nextAction = nextAction; if (phase !== 'blocked') state.blocker = null;
-    if (phase !== 'completed') state.completionGate = null;
-    state.attempts.push({ action, result }); replaceState(file, state); out(`Updated ${phase} checkpoint.`); return state;
+    const checkpointPhases = new Set(['audit', 'fix', 'verify', 'hybrid-review', 'final-audit', 'human-review']);
+    if (!text(phase) || !checkpointPhases.has(phase) || !text(nextAction) || !text(action) || !text(result) || !onlyOptions(rest, ['--phase', '--next-action', '--action', '--result'])) fail(usage());
+    state.phase = phase; state.nextAction = nextAction; state.blocker = null; state.completionGate = null;
+    state.attempts.push({ action, result });
+    const errors = validateState(state);
+    if (errors.length) fail(errors.join('\n'));
+    replaceState(file, state); out(`Updated ${phase} checkpoint.`); return state;
   }
   if (command === 'continuation') {
     const threadId = option(rest, '--codex-thread');
@@ -220,13 +235,6 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     replaceState(file, state);
     const result = command === 'claim-continuation' ? { claimed: true, state } : { released: true };
     out(JSON.stringify(result)); return result;
-  }
-  if (command === 'block') {
-    const reason = option(rest, '--reason'), unblockCondition = option(rest, '--unblock-condition'), nextAction = option(rest, '--next-action');
-    if (![reason, unblockCondition, nextAction].every(text) || !onlyOptions(rest, ['--reason', '--unblock-condition', '--next-action'])) fail(usage());
-    state.phase = 'blocked'; state.nextAction = nextAction; state.blocker = { reason, unblockCondition };
-    state.attempts.push({ action: 'Recorded a migration blocker.', result: reason });
-    replaceState(file, state); out('Recorded blocked checkpoint.'); return state;
   }
   if (command === 'complete') {
     const flags = ['--baseline', '--build', '--tests', '--behaviour-regression', '--primitive-inventory', '--navigator-review', '--hybrid-review', '--final-cfa-audit', '--human-architecture-review'];
