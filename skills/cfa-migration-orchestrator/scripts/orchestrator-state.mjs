@@ -63,7 +63,7 @@ function onlyOptions(args, names) {
   return true;
 }
 function usage() {
-  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text>';
+  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text> | block <ledger.md> --reason <text> --unblock-condition <text> --next-action <text> | complete <ledger.md> --baseline <id> --build <id> --tests <id> --behaviour-regression <id> --primitive-inventory <id> --navigator-review <id> --hybrid-review <id> --final-cfa-audit <id> --human-architecture-review <id>';
 }
 
 export function validateState(state) {
@@ -148,7 +148,7 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     replaceState(file, state); out(JSON.stringify(report, null, 2)); return report;
   }
   const file = target && path.resolve(target);
-  if (!file || !['validate', 'status', 'checkpoint', 'evidence'].includes(command)) fail(usage());
+  if (!file || !['validate', 'status', 'checkpoint', 'evidence', 'block', 'complete'].includes(command)) fail(usage());
   if (command === 'validate') { if (rest.length) fail(usage()); checkedState(file); out('Valid CFA Migration Engine state.'); return; }
   const state = checkedState(file);
   if (command === 'status') {
@@ -158,7 +158,24 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
   if (command === 'checkpoint') {
     const phase = option(rest, '--phase'), nextAction = option(rest, '--next-action'), action = option(rest, '--action'), result = option(rest, '--result');
     if (!text(phase) || !phases.has(phase) || !text(nextAction) || !text(action) || !text(result) || !onlyOptions(rest, ['--phase', '--next-action', '--action', '--result'])) fail(usage());
-    state.phase = phase; state.nextAction = nextAction; state.attempts.push({ action, result }); replaceState(file, state); out(`Updated ${phase} checkpoint.`); return state;
+    state.phase = phase; state.nextAction = nextAction; if (phase !== 'blocked') state.blocker = null;
+    state.attempts.push({ action, result }); replaceState(file, state); out(`Updated ${phase} checkpoint.`); return state;
+  }
+  if (command === 'block') {
+    const reason = option(rest, '--reason'), unblockCondition = option(rest, '--unblock-condition'), nextAction = option(rest, '--next-action');
+    if (![reason, unblockCondition, nextAction].every(text) || !onlyOptions(rest, ['--reason', '--unblock-condition', '--next-action'])) fail(usage());
+    state.phase = 'blocked'; state.nextAction = nextAction; state.blocker = { reason, unblockCondition };
+    state.attempts.push({ action: 'Recorded a migration blocker.', result: reason });
+    replaceState(file, state); out('Recorded blocked checkpoint.'); return state;
+  }
+  if (command === 'complete') {
+    const flags = ['--baseline', '--build', '--tests', '--behaviour-regression', '--primitive-inventory', '--navigator-review', '--hybrid-review', '--final-cfa-audit', '--human-architecture-review'];
+    if (!onlyOptions(rest, flags)) fail(usage());
+    const completionGate = { baseline: option(rest, '--baseline'), build: option(rest, '--build'), tests: option(rest, '--tests'), behaviourRegression: option(rest, '--behaviour-regression'), primitiveInventory: option(rest, '--primitive-inventory'), navigatorReview: option(rest, '--navigator-review'), hybridReview: option(rest, '--hybrid-review'), finalCfaAudit: option(rest, '--final-cfa-audit'), humanArchitectureReview: option(rest, '--human-architecture-review') };
+    if (!Object.values(completionGate).every(text)) fail(usage());
+    state.phase = 'completed'; state.nextAction = 'Migration completion evidence is recorded.'; state.blocker = null; state.completionGate = completionGate;
+    const errors = validateState(state); if (errors.length) fail(errors.join('\n'));
+    replaceState(file, state); out('Recorded completed migration checkpoint.'); return state;
   }
   const id = option(rest, '--id'), revision = option(rest, '--revision'), kind = option(rest, '--kind'), outcome = option(rest, '--outcome'), summary = option(rest, '--summary');
   if (![id, revision, kind, outcome, summary].every(text) || !onlyOptions(rest, ['--id', '--revision', '--kind', '--outcome', '--summary'])) fail(usage());

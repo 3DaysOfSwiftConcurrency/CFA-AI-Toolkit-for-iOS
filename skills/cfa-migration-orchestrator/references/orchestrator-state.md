@@ -17,6 +17,11 @@ then records their source fingerprint, working-diff result and review-lead
 counts in the same state block. The scanner does not establish semantic CFA
 compliance; review the reported paths before treating a lead as a finding.
 
+`block` requires the concrete reason, next action and exact unblocking condition.
+`complete` accepts every named CFA completion-gate evidence ID and refuses to
+write a completed state until each ID is recorded. It checks the ledger's
+internal evidence links, not the truth of the evidence itself.
+
 ```sh
 node scripts/orchestrator-state.mjs init /path/to/project \
   --goal "Move the agreed app targets to CFA and Swift Concurrency" \

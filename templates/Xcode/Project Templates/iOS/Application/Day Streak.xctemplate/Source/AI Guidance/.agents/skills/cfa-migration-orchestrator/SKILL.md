@@ -47,6 +47,10 @@ to run the bundled CFA inspector and migration source analysis. It records a
 source fingerprint, working-diff check and scanner summary in the ledger. Its
 leads require semantic review; it never declares CFA conformance automatically.
 
+Use `block` only when the ledger records the precise external condition that
+prevents all remaining work. Use `complete` only at the final revision with
+all named completion-gate evidence IDs; the command refuses a partial gate.
+
 ## Execute the loop
 
 For each slice, repeatedly:

@@ -7,6 +7,8 @@
   existing ledger without claiming automatic conformance.
 - Record the current Git diff check alongside each engine audit so existing
   changes stay visible in the acceptance record.
+- Add explicit, validated blocked and completed engine states. Completion now
+  requires every named CFA gate evidence ID in the existing ledger.
 
 - Store persistent CFA Migration Engine state in the existing
   `MIGRATION_LEDGER.md` instead of creating a project directory. Add safe

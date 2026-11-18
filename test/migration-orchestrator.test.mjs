@@ -67,6 +67,22 @@ test('engine rejects unsupported completion and incomplete blockers', () => {
   assert.ok(validateState(state).some(error => error.includes('blocker reason')));
 });
 
+test('engine records blocked and completed states only with their required evidence', t => {
+  const directory = project(t, 'cfa-migration-engine-completion-');
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  assert.equal(spawnSync(process.execPath, [script, 'init', directory, '--goal', 'Migrate app', '--scope', 'App target']).status, 0);
+  assert.equal(spawnSync(process.execPath, [script, 'block', ledger, '--reason', 'Simulator unavailable.', '--unblock-condition', 'Simulator service recovers.', '--next-action', 'Continue source review.'], { encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
+  assert.equal(spawnSync(process.execPath, [script, 'checkpoint', ledger, '--phase', 'audit', '--next-action', 'Resume audit.', '--action', 'Resumed after service recovery.', '--result', 'Source review continues.'], { encoding: 'utf8' }).status, 0);
+  const ids = ['baseline', 'build', 'tests', 'behaviour-regression', 'primitive-inventory', 'navigator-review', 'hybrid-review', 'final-cfa-audit', 'human-architecture-review'];
+  for (const id of ids) assert.equal(spawnSync(process.execPath, [script, 'evidence', ledger, '--id', id, '--revision', 'abc123', '--kind', 'check', '--outcome', 'passed', '--summary', id], { encoding: 'utf8' }).status, 0);
+  const flags = ['--baseline', '--build', '--tests', '--behaviour-regression', '--primitive-inventory', '--navigator-review', '--hybrid-review', '--final-cfa-audit', '--human-architecture-review'];
+  assert.equal(spawnSync(process.execPath, [script, 'complete', ledger, ...flags.flatMap((flag, index) => [flag, ids[index]])], { encoding: 'utf8' }).status, 0);
+  const status = spawnSync(process.execPath, [script, 'status', ledger], { encoding: 'utf8' });
+  assert.match(status.stdout, /"phase": "completed"/);
+  assert.equal(spawnSync(process.execPath, [script, 'validate', ledger], { encoding: 'utf8' }).status, 0);
+});
+
 test('engine summarizes inspection evidence without treating scanner leads as verdicts', async () => {
   const report = await auditProject('/project', {
     inspect: async () => ({ sourceFingerprint: 'fingerprint', scope: { swiftFiles: 7 }, findings: [{ code: 'feature-owner' }, { code: 'feature-owner' }, { code: 'task-owner' }] }),
