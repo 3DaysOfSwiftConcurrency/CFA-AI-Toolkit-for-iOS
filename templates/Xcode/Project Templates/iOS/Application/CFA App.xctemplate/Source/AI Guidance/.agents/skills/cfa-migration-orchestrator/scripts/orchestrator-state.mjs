@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 const requiredGate = ['baseline', 'build', 'tests', 'behaviourRegression', 'primitiveInventory', 'navigatorReview', 'hybridReview', 'finalCfaAudit', 'humanArchitectureReview'];
@@ -13,8 +14,13 @@ function read(file) {
 function text(value) { return typeof value === 'string' && value.trim(); }
 export function validateState(state) {
   const errors = [];
-  if (state?.schemaVersion !== 1) errors.push('schemaVersion must be 1');
+  if (state?.schemaVersion !== 2) errors.push('schemaVersion must be 2');
   for (const key of ['goal', 'scope', 'phase', 'nextAction']) if (!text(state?.[key])) errors.push(`${key} must be a non-empty string`);
+  if (!state?.baseline || typeof state.baseline !== 'object') errors.push('baseline must be recorded');
+  else {
+    if (state.baseline.revision !== null && !text(state.baseline.revision)) errors.push('baseline.revision must be a revision or null');
+    if (typeof state.baseline.dirty !== 'boolean') errors.push('baseline.dirty must be a boolean');
+  }
   if (!Array.isArray(state?.evidence)) errors.push('evidence must be an array');
   if (!Array.isArray(state?.attempts)) errors.push('attempts must be an array');
   const evidence = Array.isArray(state?.evidence) ? state.evidence : [];
@@ -37,8 +43,22 @@ export function validateState(state) {
   }
   return errors;
 }
-export function initialState(goal, scope) {
-  return { schemaVersion: 1, goal, scope, phase: 'audit', nextAction: 'Establish the baseline and select the smallest verified migration slice.', evidence: [], attempts: [], blocker: null, completionGate: null };
+function git(project, args) {
+  try { return execFileSync('git', ['-C', project, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); }
+  catch { return null; }
+}
+function baseline(project) {
+  const revision = git(project, ['rev-parse', 'HEAD']);
+  const status = git(project, ['status', '--porcelain']);
+  return { revision, dirty: status === null ? false : status.length > 0 };
+}
+export function initialState(goal, scope, project = process.cwd()) {
+  return { schemaVersion: 2, goal, scope, baseline: baseline(project), phase: 'audit', nextAction: 'Establish the baseline and select the smallest verified migration slice.', evidence: [], attempts: [], blocker: null, completionGate: null };
+}
+function write(file, value) {
+  const temporary = path.join(path.dirname(file), `.${path.basename(file)}.${process.pid}.tmp`);
+  fs.writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
+  fs.renameSync(temporary, file);
 }
 function usage() { return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--out <file>] | validate <record> | status <record>'; }
 function arg(args, name) { const i = args.indexOf(name); return i < 0 ? undefined : args[i + 1]; }
@@ -47,10 +67,12 @@ function main(args) {
   if (command === 'init') {
     const goal = arg(args, '--goal'), scope = arg(args, '--scope');
     if (!target || !text(goal) || !text(scope)) fail(usage());
+    const project = path.resolve(target);
+    if (!fs.statSync(project, { throwIfNoEntry: false })?.isDirectory()) fail(`Project directory does not exist: ${project}`);
     const file = path.resolve(arg(args, '--out') ?? path.join(target, '.cfa', 'migration-orchestrator.json'));
     if (fs.existsSync(file)) fail(`Refusing to overwrite existing state record: ${file}`);
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, `${JSON.stringify(initialState(goal, scope), null, 2)}\n`);
+    write(file, initialState(goal, scope, project));
     console.log(file);
     return;
   }

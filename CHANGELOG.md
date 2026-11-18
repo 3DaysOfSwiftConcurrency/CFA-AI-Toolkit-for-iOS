@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Record a Git revision and dirty-worktree baseline in new CFA migration
+  orchestrator state files, use atomic state writes, and reject a missing project
+  before creating a checkpoint.
+
 ## 0.5.0 — 2026-11-18
 
 - Add CFA Migration Orchestrator: a dedicated whole-migration workflow with a

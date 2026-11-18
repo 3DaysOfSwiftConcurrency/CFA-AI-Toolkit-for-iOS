@@ -3,8 +3,9 @@
 The state record makes a migration resumable without treating a prose plan as
 progress. It is deliberately small and project-local.
 
-`init` creates a record with a goal, scope, `audit` phase, an empty evidence
-list and a required next action. Use a normal editor to append factual evidence
+`init` atomically creates a record with a goal, scope, Git revision and dirty-tree
+baseline (when Git is available), `audit` phase, an empty evidence list and a
+required next action. Use a normal editor to append factual evidence
 or attempts after each audit, fix, and verification checkpoint. Each evidence
 item needs an identifier, revision, kind, outcome and summary. Each attempt
 needs an action and result. `validate` rejects duplicate identifiers, missing
