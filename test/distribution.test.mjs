@@ -29,6 +29,19 @@ test('release packages the CFA Migration Engine MCP server and its pinned runtim
  assert.ok(fs.existsSync(path.join(source,'package-lock.json')));
 });
 
+test('source archive inventory retains the CFA Migration Engine MCP source and lockfile', () => {
+ const script=path.join(root,'scripts/release.py');
+ const result=spawnSync('python3',['-c',`import importlib.util, json, sys
+spec=importlib.util.spec_from_file_location('cfa_release',sys.argv[1])
+module=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+print(json.dumps(module.SOURCE_PARTS))`,script],{encoding:'utf8'});
+ assert.equal(result.status,0,result.stderr);
+ const parts=JSON.parse(result.stdout);
+ assert.ok(parts.includes('mcp'));
+ assert.ok(parts.includes('package-lock.json'));
+});
+
 test('portable installation guidance distinguishes releases from source checkouts', () => {
  const readme=fs.readFileSync(path.join(root,'README.md'),'utf8');
  const installation=fs.readFileSync(path.join(root,'docs/INSTALLATION.md'),'utf8');
