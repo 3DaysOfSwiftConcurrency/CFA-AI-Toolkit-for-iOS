@@ -20,16 +20,21 @@ test('public architecture map uses the canonical CFA folder names', () => {
  assert.doesNotMatch(readme,/│   └── Networking & Data Storage|    ├── ViewModelTests\n/);
 });
 
-test('release packages the CFA Migration Engine MCP server and its pinned runtime manifest', t => {
+test('release packages the CFA Migration Engine MCP server with its automatic Codex configuration', t => {
  const {source}=release(t);
  assert.ok(fs.existsSync(path.join(source,'mcp/cfa-migration-engine.mjs')));
  const manifest=json(path.join(source,'package.json'));
  assert.equal(manifest.dependencies['@modelcontextprotocol/server'],'2.4.0');
  assert.equal(manifest.dependencies.zod,'4.6.7');
  assert.ok(fs.existsSync(path.join(source,'package-lock.json')));
+  const codex=json(path.join(source,'.codex-plugin/plugin.json'));
+  assert.equal(codex.mcpServers,'./mcp.json');
+  assert.equal(codex.requires_local_executor,true);
+  const mcp=json(path.join(source,'mcp.json')).mcpServers['cfa-migration-engine'];
+  assert.deepEqual(mcp,{type:'stdio',command:'node',args:['${PLUGIN_ROOT}/mcp/cfa-migration-engine.mjs'],cwd:'${PLUGIN_ROOT}'});
 });
 
-test('source archive inventory retains the CFA Migration Engine MCP source and lockfile', () => {
+test('source archive inventory retains the CFA Migration Engine MCP source, configuration and lockfile', () => {
  const script=path.join(root,'scripts/release.py');
  const result=spawnSync('python3',['-c',`import importlib.util, json, sys
 spec=importlib.util.spec_from_file_location('cfa_release',sys.argv[1])
@@ -39,7 +44,25 @@ print(json.dumps(module.SOURCE_PARTS))`,script],{encoding:'utf8'});
  assert.equal(result.status,0,result.stderr);
  const parts=JSON.parse(result.stdout);
  assert.ok(parts.includes('mcp'));
+  assert.ok(parts.includes('mcp.json'));
  assert.ok(parts.includes('package-lock.json'));
+});
+
+test('release staging installs the local MCP runtime before checksums are created', t => {
+ const directory=sandbox(t);
+ let installed=false;
+ const source=stageRelease(path.join(directory,'ios-app-development-cfa'),root,{
+  includeMcpRuntime:true,
+  installRuntime: output => {
+   installed=true;
+   const marker=path.join(output,'node_modules','cfa-migration-runtime','.installed');
+   fs.mkdirSync(path.dirname(marker),{recursive:true});
+   fs.writeFileSync(marker,'bundled\n');
+  }
+ });
+ assert.equal(installed,true);
+ assert.equal(fs.readFileSync(path.join(source,'node_modules','cfa-migration-runtime','.installed'),'utf8'),'bundled\n');
+ assert.ok(json(path.join(source,'checksums.json'))['node_modules/cfa-migration-runtime/.installed']);
 });
 
 test('portable installation guidance distinguishes releases from source checkouts', () => {

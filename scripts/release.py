@@ -11,7 +11,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent.parent
 EXCLUSIONS = json.loads((ROOT / 'scripts/release-exclusions.json').read_text())
 SOURCE_PARTS = ['.codex-plugin', '.github', 'mcp', 'readme-images', 'architecture', 'skills', 'tools', 'scripts', 'test', 'evals', 'examples', 'templates', 'starter-apps', 'docs',
-                'README.md', 'BENEFITS.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', 'CFA-ENGINEERING-PHILOSOPHY.md', '.gitignore', 'Install.command', 'Install Xcode Template.command', 'package.json', 'package-lock.json', 'plugin.json']
+                'README.md', 'BENEFITS.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', 'CFA-ENGINEERING-PHILOSOPHY.md', '.gitignore', 'Install.command', 'Install Xcode Template.command', 'package.json', 'package-lock.json', 'plugin.json', 'mcp.json']
 
 def is_release_path(relative):
     return (not any(part in EXCLUSIONS['directoryNames'] for part in relative.parts)
@@ -76,7 +76,9 @@ def main():
     manifest = json.loads((ROOT / '.codex-plugin/plugin.json').read_text())
     name, version = manifest['name'], manifest['version']
     package = out / name
-    run(args.node, 'scripts/build.mjs', str(package))
+    # The plugin archive carries the local MCP runtime so the end user installs
+    # one toolkit package rather than separately running npm in a terminal.
+    run(args.node, 'scripts/build.mjs', str(package), '--include-mcp-runtime')
     plugin_zip = out / f'{name}-{version}-plugin.zip'
     archive(plugin_zip, [(p.relative_to(package).as_posix(), p) for p in package.rglob('*') if p.is_file()], name)
     sources = []

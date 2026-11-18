@@ -2,6 +2,14 @@
 
 ## 0.6.0 — 2026-11-18
 
+- Bundle the local Migration Engine and its production runtime with the normal
+  Codex plugin installation. Add the plugin MCP declaration so users install
+  once and begin with one migration prompt—no separate `npm` command, MCP
+  configuration file or manual server startup.
+- Replace the implementation-led migration instructions with a three-step
+  developer journey and copyable prompts. Document that migration findings can
+  surface genuine bugs and product-design decisions that need evidence and a
+  deliberate choice.
 - Add a self-healing Codex continuation mode for the CFA Migration Engine.
   Claimed workers hold renewable leases; a per-ledger macOS watchdog redelivers
   an unclaimed signal, replaces an expired worker, fences the former token, and

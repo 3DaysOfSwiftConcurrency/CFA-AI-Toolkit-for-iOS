@@ -1,94 +1,81 @@
 # CFA Migration Engine MCP server
 
-The CFA Migration Engine can run as a local MCP server. It exposes the existing
-ledger-based Engine; it does not independently implement CFA rules.
+The CFA Migration Engine is bundled with the CFA AI Toolkit for iOS. It gives an
+agent durable migration state, audit tools and self-healing Codex continuation
+without maintaining a second copy of the CFA rules.
+
+## Codex users: nothing extra to configure
+
+Install the plugin release once by double-clicking `Install.command`. The
+installer registers the bundled local MCP server and the release already carries
+the server's production runtime. You do **not** run `npm ci`, edit an MCP
+configuration file or start a server.
+
+Then open the iOS project in a new Codex chat and say:
+
+```text
+Using the CFA AI Toolkit, migrate ProjectA to Swift Concurrency and CFA.
+```
+
+The Migration Orchestrator uses the server when it is available. Read the
+[numbered GCD migration guide](step-by-step-GCD-Migration-Guide.md) for the
+complete user journey, or [Migrate an existing iOS app with CFA](MIGRATION-GUIDE.md)
+for an already structured app that needs a compliance pass.
+
+## What the bundled server provides
 
 The server provides fourteen tools:
 
 - `cfa_migration_init`, `cfa_migration_audit`, `cfa_migration_review_leads`,
   `cfa_migration_status` and `cfa_migration_validate`
 - `cfa_migration_checkpoint`, `cfa_migration_evidence`,
-  `cfa_migration_block`, `cfa_migration_reopen` and `cfa_migration_complete`
+  `cfa_migration_block`, `cfa_migration_reopen` and
+  `cfa_migration_complete`
 - `cfa_migration_claim_continuation`,
   `cfa_migration_enable_continuation`,
   `cfa_migration_heartbeat_continuation` and
   `cfa_migration_recover_continuation`
 
-It also exposes the shared workflow, canonical CFA specification and Engine state
-reference as read-only MCP resources. The tools use the same
-`MIGRATION_LEDGER.md` state block as the local runner, so an MCP client and Codex
-can safely resume the same authorised migration.
+It also exposes the shared workflow, canonical CFA specification and Engine
+state reference as read-only resources. The tools use the selected project's
+existing `MIGRATION_LEDGER.md`, so an MCP client and Codex can resume the same
+authorised migration.
 
-## Install the local runtime
+The local server uses standard input/output. It opens no network port and does
+not send project source to a CFA service.
 
-From an extracted CFA toolkit release, run this once:
+## Self-healing Codex continuation
 
-```sh
-npm ci --omit=dev
-```
+For a whole-app migration on macOS Codex, the agent enables continuation after
+it records the scope. The Engine creates a per-ledger watchdog and queues the
+same Codex chat after each safe non-terminal update. A claimed worker has a
+time-bounded lease and renews it before long work. If an agent stops, the lease
+expires or a signal goes unclaimed, the watchdog safely resumes the current
+ledger action. It removes itself when the migration becomes blocked or
+completed.
 
-This installs the pinned MCP server runtime locally. The server itself is stdio-only:
-it opens no network port and sends no project source to a CFA service.
+This requires a powered-on Mac, a local Codex host with `codex queue` support,
+and the normal permissions to work in the selected repository. It cannot make a
+product decision, work while the Mac is off, or bypass required source review,
+builds and tests.
 
-## Client configuration
+## Another MCP client
 
-Configure an MCP-capable client to start Node with the absolute path to the server:
+A non-Codex MCP client can start the included server from the extracted plugin
+folder using this standard-input/output configuration:
 
 ```json
 {
   "mcpServers": {
     "cfa-migration-engine": {
       "command": "node",
-      "args": ["/absolute/path/to/ios-app-development-cfa/mcp/cfa-migration-engine.mjs"]
+      "args": ["/absolute/path/to/ios-app-development-cfa/mcp/cfa-migration-engine.mjs"],
+      "cwd": "/absolute/path/to/ios-app-development-cfa"
     }
   }
 }
 ```
 
-Keep the server inside the same extracted toolkit directory where you ran `npm ci`.
-That keeps the server, its shared CFA specification and its pinned MCP runtime at the
-same version. Restart the client after changing its MCP configuration.
-
-## Scope and safeguards
-
-The server only changes the selected project's existing `MIGRATION_LEDGER.md` when a
-write-oriented tool is called. It refuses to replace an existing Engine state block.
-It does not modify Swift source, run an Xcode build, execute a test suite or declare
-scanner leads to be CFA violations. Those actions and judgments remain explicit work
-performed by the agent and recorded as evidence.
-
-## Self-healing Codex continuation
-
-MCP by itself is a request/response protocol: it cannot keep an agent running
-after the host has ended a turn. When the server is used locally by Codex, call
-`cfa_migration_enable_continuation` with the current Codex thread ID. The
-Engine stores that target in the existing ledger, installs one macOS user
-watchdog for that ledger, and queues the Codex chat after each successful
-non-terminal migration update:
-
-```sh
-codex queue --thread <thread-id> --resume --message "Continue the MCP-backed CFA migration…"
-```
-
-This resumes the same Codex chat with the ledger's current phase and next
-action. Claiming the signal creates a time-bounded worker lease. State-changing
-calls carry the returned token; a heartbeat renews it before long work. If the
-agent or host stops, the watchdog detects the expired lease, fences the old
-worker, and safely queues a replacement signal. It also redelivers an
-unclaimed signal at a bounded interval.
-
-The watchdog is a per-ledger macOS `LaunchAgent` under the current user's
-`Library/LaunchAgents` directory. It removes itself when the ledger becomes
-blocked or completed. It does not run builds, alter source, or bypass a genuine
-product decision: it only restores the safe next migration action.
-
-This unattended mode requires macOS, a local Codex host with `codex queue`
-support, and a machine that remains powered on. The ordinary ledger and audit
-tools remain usable from any supported MCP client. This is a Codex-host
-integration, not a duplicate set of CFA rules in the MCP server.
-
-For copyable start, continuation and recovery prompts, use the
-[step-by-step GCD migration guide](step-by-step-GCD-Migration-Guide.md) or,
-for an already structured app, [Migrate an existing iOS app with CFA](MIGRATION-GUIDE.md).
-Both guides explain how newly exposed defects and product-design decisions are
-recorded and resolved deliberately rather than silently carried forward.
+This is the only case where a developer configures the server manually. The
+plugin release includes its production dependencies; keep its folder intact and
+use the Node.js version that installed the toolkit.

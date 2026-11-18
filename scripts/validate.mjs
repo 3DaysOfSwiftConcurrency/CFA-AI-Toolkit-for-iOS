@@ -152,6 +152,7 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
   const packageManifest=fs.existsSync(packageFile) ? json(packageFile) : undefined;
   const packageLock=path.join(base,'package-lock.json');
   const mcpServer=path.join(base,'mcp/cfa-migration-engine.mjs');
+  const mcpConfiguration=path.join(base,'mcp.json');
   const dashboardManifest=json(path.join(base,'skills/cfa-architecture-review/scripts/dashboard/package.json'));
   const requiredPortableKeywords=['swift','swiftui','ios','swift-concurrency','architecture','cfa'];
   if(portable.$schema!=='https://agent-plugins.org/schemas/1.0.0/plugin.schema.json' ||
@@ -166,8 +167,15 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
         packageManifest.license!==manifest.license || packageManifest.description!==productDescription))) {
     throw Error('Plugin and package identity must use the current CFA AI Toolkit for iOS metadata.');
   }
+  const mcpConfig=fs.existsSync(mcpConfiguration) ? json(mcpConfiguration) : undefined;
   if (!packageManifest || packageManifest.dependencies?.['@modelcontextprotocol/server'] !== '2.4.0' || packageManifest.dependencies?.zod !== '4.6.7' ||
-      packageManifest.devDependencies?.['@modelcontextprotocol/client'] !== '2.4.0' || !fs.existsSync(packageLock) || !fs.existsSync(mcpServer)) {
+      packageManifest.devDependencies?.['@modelcontextprotocol/client'] !== '2.4.0' || !fs.existsSync(packageLock) || !fs.existsSync(mcpServer) ||
+      manifest.mcpServers!=='./mcp.json' || manifest.requires_local_executor!==true ||
+      mcpConfig?.$schema!=='https://agent-plugins.org/schemas/1.0.0/mcp.schema.json' ||
+      mcpConfig.mcpServers?.['cfa-migration-engine']?.type!=='stdio' ||
+      mcpConfig.mcpServers?.['cfa-migration-engine']?.command!=='node' ||
+      JSON.stringify(mcpConfig.mcpServers?.['cfa-migration-engine']?.args)!==JSON.stringify(['${PLUGIN_ROOT}/mcp/cfa-migration-engine.mjs']) ||
+      mcpConfig.mcpServers?.['cfa-migration-engine']?.cwd!=='${PLUGIN_ROOT}') {
     throw Error('Missing or inconsistent CFA Migration Engine MCP server package.');
   }
   if(dashboardManifest.name!=='cfa-architecture-dashboard' || dashboardManifest.version!==manifest.version ||

@@ -6,6 +6,8 @@
     "name": "3 Days of Swift Concurrency"
   },
   "skills": "./skills/",
+  "mcpServers": "./mcp.json",
+  "requires_local_executor": true,
   "interface": {
     "displayName": "CFA AI Toolkit for iOS",
     "shortDescription": "Build and modernise iOS apps with Swift Concurrency",

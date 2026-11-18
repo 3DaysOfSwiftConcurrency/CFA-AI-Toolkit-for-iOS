@@ -27,8 +27,15 @@ evidence that this app is complete.
 
 Before changing code, state the authorised migration scope, affected targets,
 behaviour contract, non-goals, final evidence required, and the next smallest
-feature-sized slice. Initialise the CFA Migration Engine inside the project's
-existing migration ledger with:
+feature-sized slice. When the CFA Migration Engine MCP tools are available, use
+them as the authoritative interface: read the ledger status, initialise or
+resume its existing ledger, then enable continuation for the current Codex chat
+after scope is recorded. The normal CFA Toolkit plugin installation already
+provides that server; do not ask the developer to install a runtime, edit MCP
+configuration, or start a server.
+
+For a portable skill host without the MCP tools, initialise the CFA Migration
+Engine inside the project's existing migration ledger with:
 
 ```sh
 node /path/to/cfa-migration-orchestrator/scripts/orchestrator-state.mjs init \

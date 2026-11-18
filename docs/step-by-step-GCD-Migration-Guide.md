@@ -1,164 +1,94 @@
 # Step-by-step GCD migration guide
 
-This guide is for an existing iOS app that still has Grand Central Dispatch,
-`OperationQueue`, callback-style APIs, delegate completion routes or other
-pre-Swift-Concurrency code. It uses the CFA Migration Engine and its local MCP
-server to make the work durable and, on a supported Codex/macOS host,
-continuable without repeatedly prompting a developer.
+This guide is for an existing iOS app that still uses Grand Central Dispatch,
+`OperationQueue`, callbacks or delegate completion routes.
 
-Do not use this guide to claim that an existing CFA-structured app is a fresh
-legacy migration. For that case, use the [general migration guide](MIGRATION-GUIDE.md)
-and ask for a CFA compliance audit instead.
+There is one visible setup: install the CFA AI Toolkit. You do **not** configure
+an MCP server, start a server, edit a configuration file or run `npm ci`.
+The toolkit installer includes the CFA Migration Engine and Codex starts it when
+a migration needs it.
 
-## 1. Create and protect the migration branch
+## 1. Install the CFA AI Toolkit once
 
-Create or switch to the branch intended for the migration. Commit work that is
-ready to preserve if that fits the team's normal practice; uncommitted changes
-are also allowed, and the Engine records them as its baseline.
+1. Download the CFA AI Toolkit plugin release and extract the ZIP.
+2. Double-click `Install.command` in the extracted folder.
+3. Wait for the installer to say that installation is complete.
+4. Open a new Codex chat.
 
-Choose the app, test, extension and device targets that are in scope. State
-important behaviour that must remain true, such as sign-in, purchases, saved
-data, deep links, notifications and background refresh.
+The installer verifies the release, installs the toolkit and registers its
+bundled local Migration Engine. It may open Terminal while it performs those
+steps, but you do not need to type a command there.
 
-## 2. Prepare one migration machine
+## 2. Open the existing iOS project
 
-Install the toolkit, then configure the local server according to
-[MCP setup](MCP.md). In the extracted toolkit release, install its local runtime:
+Open Codex with the repository for the app you want to migrate. For example,
+open the `ProjectA` folder—not a copied project and not a new empty folder.
 
-```sh
-npm ci --omit=dev
-```
+If your team normally uses a migration branch, open that branch first. Existing
+committed or uncommitted work is preserved and recorded as the migration
+baseline; the workflow never cleans it by discarding work.
 
-For unattended continuation, use a macOS machine with a local Codex host that
-supports `codex queue`. Keep it powered on and reserve Xcode and its simulators
-for the migration. The workflow may restart ordinary Xcode/CoreSimulator
-services after a stalled check; it will not erase simulator content, delete
-Derived Data, change signing credentials or remove files without permission.
+## 3. Paste one prompt
 
-## 3. Open Codex in the existing repository
-
-Start a Codex chat whose working folder is the existing iOS repository. Do not
-clone the app into a new folder for the migration. The Engine adds its managed
-state to the existing `MIGRATION_LEDGER.md`, alongside any project migration
-notes already there.
-
-## 4. Paste the start prompt
-
-Replace the bracketed parts, then paste this message into the Codex chat:
+Paste this into the new Codex chat, replacing `ProjectA` with your app name:
 
 ```text
-Use the installed CFA Migration Engine MCP server and the CFA Migration
-Orchestrator to migrate this existing iOS project from legacy GCD, callbacks and
-OperationQueue paths to Swift Concurrency and CFA.
-
-Goal: [describe the authorised migration outcome].
-Scope: [list the app, tests, extensions and device targets; list exclusions].
-Preserve existing work and product behaviour. Do not create a duplicate project
-or a new migration directory. Use this project's existing MIGRATION_LEDGER.md.
-
-First inspect the repository, current CFA specification, existing migration
-ledger, target membership, legacy-concurrency inventory and build/test baseline.
-Record the scope and initialise or resume the ledger. Then audit, make the
-smallest coherent fixes and verify them at each current revision. Enable
-host-enforced MCP continuation after scope is recorded. Continue every
-independent audit, fix and verification action without waiting for another
-prompt, until the evidence-backed completion gate is met or a genuine product
-decision prevents all remaining meaningful work.
+Using the CFA AI Toolkit, migrate ProjectA to Swift Concurrency and CFA.
 ```
 
-## 5. Expect an evidence-first audit
+That is enough to start. If you already know boundaries that matter, add one
+plain sentence, for example: “Include the iOS app and unit tests, but do not
+change the Widget extension.”
 
-The first pass maps the current code and records facts before broad changes:
+## 4. What the migration does next
 
-1. Existing GCD, callback, delegate, timer, lock and `OperationQueue` routes.
-2. Feature ownership, state ownership, task lifetime and cancellation behaviour.
-3. Xcode navigator structure, target membership, deployment targets and current
-   build/test evidence.
-4. Existing product behaviour that a migration must preserve.
+The agent first inspects the project, existing migration notes, targets, test
+baseline and current concurrency routes. It then uses the bundled CFA Migration
+Engine to maintain the existing `MIGRATION_LEDGER.md`.
 
-Scanner results are leads for source review, not automatic CFA violations. The
-agent should trace each relevant route before calling it a defect or changing
-it.
+For a whole-app migration on macOS Codex, it enables self-healing continuation.
+That means the Engine can resume safe work after a stopped agent or an expired
+worker lease. It records progress in the ledger; it does not make a duplicate
+project or a second migration folder.
 
-## 6. Let the Engine continue safe work
+While the migration is active, the Mac is reserved for that migration's Xcode
+and Simulator work. The workflow may restart ordinary Xcode/CoreSimulator
+services to recover a stalled check. It does not erase simulator content, delete
+Derived Data, change signing credentials or discard app work.
 
-After continuation is enabled, a per-ledger watchdog resumes the same Codex chat
-after safe, non-terminal updates. A claimed worker receives a lease; it must
-renew the lease before a long build or test. If the agent stops, the lease
-expires, or a queued wake-up is not claimed, the Engine safely redelivers the
-current action.
+## 5. Expect useful discoveries
 
-You should not need to paste repetitive “continue” messages. The status and
-ledger determine the current action; a continuation token only wakes a worker
-and is never a substitute for reading current state.
+A concurrency migration often reveals bugs that had been hidden by timing,
+callbacks or unclear ownership. That is useful: the goal is not to blindly
+preserve every accidental behaviour.
 
-## 7. Handle bugs and product decisions deliberately
+- A confirmed in-scope bug with clear intended behaviour can be fixed and
+  covered by a regression test.
+- A user-facing behaviour with no clear product authority is a design decision.
+  The agent explains what it found, the options and its recommendation, then
+  asks for your choice.
+- A suspected problem is investigated with source tracing or a focused check;
+  the agent does not change behaviour by guesswork.
 
-Concurrency migrations frequently expose bugs that had been hidden by timing or
-ambiguous ownership. That is one of the most useful outcomes of the work.
+The agent continues every other independent migration action while one decision
+is pending. It asks you only when the decision prevents meaningful remaining
+work.
 
-- If evidence shows a clear, in-scope defect and the intended behaviour is
-  known, fix it and add a regression check where practical.
-- If the code's current behaviour affects a user-facing product rule but there
-  is no authority for the desired outcome, the agent must show the evidence,
-  options and recommendation, then ask for a decision.
-- If the evidence is incomplete, the agent must investigate; it must not guess,
-  silently preserve a confirmed defect or silently redesign the product.
+## 6. Know when it is really complete
 
-Use this response prompt when the agent presents a decision:
+A converted file or a green focused test is not a completed app migration. The
+Engine completes only after the final revision has recorded the agreed behaviour
+baseline, CFA audit, legacy-concurrency inventory, target/navigator review,
+applicable builds and tests, and human architecture review.
 
-```text
-Treat this as a migration design decision. Record the current observed
-behaviour, evidence, user impact, options and your recommendation. Keep
-working on all independent migration slices. Do not mark the migration blocked
-unless this decision prevents every remaining meaningful action.
-```
-
-## 8. Recover only when needed
-
-The watchdog normally handles a stopped worker. If you want a manual status
-check, paste this into the same chat:
-
-```text
-Read the current CFA Migration Engine ledger and MCP status for this project.
-If an active continuation exists, claim it first and use the returned current
-ledger state. Continue independent work only when claimed. If the state is
-blocked, completed or stale, do not perform migration work; explain the
-recorded condition and evidence.
-```
-
-A blocked state means there is a precise recorded condition that prevents all
-safe remaining work—not merely one unavailable simulator, signing profile or
-focused test. The agent must continue source review, other checks and other
-safe fixes before reporting that condition.
-
-## 9. Review the completion report
-
-Do not treat a green focused test, a single converted feature or a clean scanner
-as whole-app completion. The final report must be tied to the final revision and
-include:
-
-1. The before/after navigator and Feature ownership map.
-2. The final inventory of legacy concurrency paths, including intentional
-   retained boundaries and reasons.
-3. Final CFA audit and hybrid implementation review.
-4. Passing applicable builds, tests and behaviour checks for every scoped target.
-5. Required human architecture review.
-6. A completion ledger whose evidence matches the final source fingerprint.
-
-Only then is the migration eligible for the Engine's completion message:
+Its completion message is:
 
 ```text
 🎉 The migration to Swift Concurrency using CFA is complete.
 ```
 
-## 10. Start the next change normally
-
-Completion does not freeze the app. It proves the recorded migration scope at
-that source revision. A later source change needs normal review and verification;
-a material change to the completed migration scope reopens the associated
-completion evidence.
-
-For the precise completion criteria, see the
+For the detailed completion evidence, read the
 [migration completion gate](../architecture/cfa-change-gate.md#migration-progress-and-completion-language).
+For an already CFA-structured app that needs a compliance pass rather than a
+legacy conversion, use [Migrate an existing iOS app with CFA](MIGRATION-GUIDE.md).
 

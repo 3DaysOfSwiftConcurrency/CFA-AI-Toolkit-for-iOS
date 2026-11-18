@@ -121,9 +121,11 @@ CFA AI Toolkit for iOS instructions available to your AI coding tool.
 
 For an MCP-capable client, the toolkit also includes a local CFA Migration Engine
 server. It exposes the existing ledger workflow and shared CFA rules rather than a
-second rules implementation. On macOS with Codex, its optional continuation mode
-can recover an interrupted migration through a leased, watchdog-backed workflow;
-see [MCP setup](docs/MCP.md). For the copyable migration prompts and the
+second rules implementation. In the Codex plugin release, it is installed and
+configured with the toolkit; there is no separate MCP setup or `npm` command for
+the developer. On macOS with Codex, its optional continuation mode can recover
+an interrupted migration through a leased, watchdog-backed workflow; see
+[MCP setup](docs/MCP.md). For the copyable migration prompts and the
 evidence-based completion path, read [Migrate an existing iOS app with CFA](docs/MIGRATION-GUIDE.md).
 
 ## Xcode Templates and Starter Apps
@@ -265,7 +267,7 @@ starter defaults. Read the [workflow policy](architecture/project-workflow.md).
 ## Try these CFA prompts
 
 1. `Using CFA, create a new iOS app that finds where I parked my car.`
-2. `Using CFA, migrate this legacy GCD codebase to Swift Concurrency.`
+2. `Using the CFA AI Toolkit, migrate ProjectA to Swift Concurrency and CFA.`
 3. `Using CFA, add a new feature to the tab bar but keep it locked under an IAP.`
 4. `Using CFA, now that we added a new feature, tidy up the code.`
 5. `Using CFA, remove the new feature and all IAP code too.`

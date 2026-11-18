@@ -15,6 +15,11 @@ continuation protocol around the existing `MIGRATION_LEDGER.md`:
 - completion evidence is bound to the final source fingerprint, and ledger
   writes are serialized.
 
+The normal Codex plugin installation now also bundles and registers the local
+Migration Engine. A developer installs the toolkit once, opens the existing
+project and starts with one prompt; they do not separately run `npm ci`, edit an
+MCP configuration file or start a server.
+
 The engine was accepted against the already CFA-structured Kickstarter iOS
 application. It recorded a final semantic CFA audit and human architecture
 review, then ran the Library-iOS suite on its required iPad mini (A17 Pro),

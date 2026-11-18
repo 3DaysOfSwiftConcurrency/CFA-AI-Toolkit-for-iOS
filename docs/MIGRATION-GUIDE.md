@@ -1,108 +1,75 @@
 # Migrate an existing iOS app with CFA
 
-Use this guide to take an existing iOS app through a CFA and Swift Concurrency
-migration. It is appropriate both for a legacy app and for an already
-CFA-structured app that needs a verified compliance pass.
+Use this guide when the app already has the expected CFA file structure and the
+remaining work is verified CFA compliance—not a fresh legacy GCD conversion.
+For a legacy codebase, follow the [step-by-step GCD migration guide](step-by-step-GCD-Migration-Guide.md).
 
-The CFA Migration Engine records progress in the project's existing
-`MIGRATION_LEDGER.md`. It does not make a copy of the project or create a
-second migration directory.
+There is no separate MCP setup for a Codex user. Installing the CFA AI Toolkit
+installs its Migration Engine too. The developer only installs the toolkit once,
+opens the existing project and gives Codex one prompt.
 
-## Choose the right guide
+## 1. Install the CFA AI Toolkit once
 
-- For a legacy GCD, `OperationQueue`, delegate or callback codebase, follow the
-  numbered [step-by-step GCD migration guide](step-by-step-GCD-Migration-Guide.md).
-- For an already CFA-structured project whose remaining work is compliance,
-  start the same process but say explicitly that this is a compliance audit,
-  not a fresh legacy-to-CFA conversion.
+1. Download and extract the CFA AI Toolkit plugin release.
+2. Double-click `Install.command`.
+3. Wait for installation to complete, then open a new Codex chat.
 
-## Prepare the machine
+The installer verifies the release, installs the toolkit and registers the
+bundled Migration Engine. It may use Terminal internally, but you do not type an
+`npm` command, configure a server or edit an MCP file.
 
-1. Use the migration branch and preserve work already present. The Engine
-   records a dirty baseline; it never discards changes to make itself clean.
-2. Identify every app, test, extension and device target in scope, the minimum
-   OS, and behaviour that must remain intact: purchases, stored data, deep
-   links, notifications and background work.
-3. Configure the local MCP server using [MCP setup](MCP.md). On macOS, run
-   `npm ci --omit=dev` in the extracted toolkit release first.
-4. Reserve the Mac for the migration. It may restart normal Xcode and
-   CoreSimulator services to recover a stalled verification, so do not use it
-   for parallel iOS development while the migration runs.
+## 2. Open the existing project
 
-## Start an existing CFA compliance migration
+Open Codex with the repository you want to audit. Use its intended migration
+branch if your team has one. Existing committed and uncommitted work is
+preserved and recorded as the baseline.
 
-Open Codex with the iOS repository as its working folder and paste this prompt,
-replacing the bracketed details:
+## 3. Paste one prompt
+
+Replace `ProjectA` with the app name and paste this into the chat:
 
 ```text
-Use the installed CFA Migration Engine MCP server and CFA Migration
-Orchestrator to bring this existing iOS project into verified CFA compliance.
-
-Scope: [targets, boundaries and excluded areas]. Preserve existing work and
-product behaviour. This project already has its expected CFA file structure;
-this is not a fresh legacy-to-CFA conversion. Do not create a duplicate project
-or a new migration directory: use this project's existing MIGRATION_LEDGER.md.
-
-Inspect the repository, ledger, CFA specification, target membership and test
-baseline first. Then audit, correct and verify each applicable CFA requirement
-until the completion gate is met or a genuine product decision is required.
-Enable MCP continuation after recording the scope. Continue independent work
-without waiting for another prompt.
+Using the CFA AI Toolkit, bring ProjectA into verified CFA compliance.
 ```
 
-## Enable uninterrupted continuation
+If useful, add a sentence naming target boundaries or an explicit non-goal.
 
-The startup prompt authorises the agent to enable continuation after it records
-the scope. The Engine installs a per-ledger macOS watchdog, queues the same
-Codex chat after a safe non-terminal update, and replaces a stopped worker only
-after its lease expires. Old workers are fenced from writing over replacements.
+## 4. What happens next
 
-The mechanism needs macOS, a local Codex host with `codex queue` support, and a
-powered-on machine. It recovers stopped agents, expired worker leases and
-undelivered continuation signals. It cannot operate while the Mac is off,
-resolve unavailable credentials, or invent a product decision.
+The agent checks the current project, CFA specification, existing ledger, target
+membership and test baseline. It uses the bundled CFA Migration Engine to update
+the existing `MIGRATION_LEDGER.md`; it does not create a duplicate project or
+migration folder.
 
-## Treat discoveries as product-quality evidence
+On macOS Codex it enables self-healing continuation for the whole-app workflow.
+The Engine can replace a stopped worker after its lease expires and safely
+continue from the ledger. The machine is reserved for the migration's Xcode and
+Simulator work. Routine Xcode/CoreSimulator recovery is allowed; erasing
+simulators, deleting Derived Data, changing signing credentials and discarding
+work are not.
 
-A migration often exposes a bug previously hidden by timing, callbacks or
-unclear ownership. That is useful evidence, not a reason to bury the issue.
+## 5. Treat findings as useful evidence
 
-| Finding | Appropriate action |
-| --- | --- |
-| Confirmed in-scope defect with clear intended behaviour | Fix it, add regression coverage where practical and record the evidence. |
-| Existing behaviour has no clear authority, or changing it affects payment, privacy, data, navigation or compatibility | Preserve it for now, explain the evidence, options and recommendation, then ask for a product decision. |
-| Suspected issue without enough evidence | Trace source, run a focused test or controlled check. Do not change behaviour by guesswork. |
+A compliance audit may expose a real defect or a behaviour nobody had explicitly
+decided. The migration does not hide that discovery.
 
-When a decision is needed, use this prompt:
+- Fix a confirmed, in-scope defect when its intended behaviour is clear.
+- Ask for a decision when changing a user-facing product rule, payment, privacy,
+  stored data, navigation or compatibility promise.
+- Investigate a suspicion before changing code.
 
-```text
-Record this as a migration design decision. Explain the observed current
-behaviour, evidence, user/product impact, viable options and your
-recommendation. Do not silently preserve a confirmed defect or silently change
-a product rule. Continue every other independent migration action while this
-decision is pending; block only if it prevents all remaining meaningful work.
-```
+The agent records evidence, options and its recommendation, and continues
+independent work while a decision is pending. It marks the migration blocked only
+when that decision or an external condition prevents every remaining meaningful
+action.
 
-## If the chat or agent stops
+## 6. Completion has evidence
 
-Normally, the watchdog redelivers the current continuation. To check manually,
-paste this into the same chat:
+Completion applies only to the final revision after the required CFA audit,
+legacy-primitives inventory, target/navigator review, applicable builds/tests,
+behaviour checks and human architecture review are recorded. Later source
+changes require fresh verification.
 
-```text
-Read the current CFA Migration Engine ledger and MCP status. If there is a
-current continuation, claim it first and obey the returned state. If it is
-active, continue independent audit, fix and verification actions. If it is
-blocked, completed or stale, do not perform migration work; explain the
-recorded condition instead.
-```
-
-The ledger, not an old continuation token, is the source of truth.
-
-## What completion means
-
-Completion requires evidence at the final revision: the agreed behaviour
-baseline, target and navigator review, legacy-primitives inventory, final CFA
-audit, applicable builds/tests and the required human architecture review.
-Evidence is tied to a source fingerprint; later source changes need renewed
-verification. Read the full [migration completion gate](../architecture/cfa-change-gate.md#migration-progress-and-completion-language).
+See the full [migration completion gate](../architecture/cfa-change-gate.md#migration-progress-and-completion-language)
+for the detailed evidence list.
 
