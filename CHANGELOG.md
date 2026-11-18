@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Store persistent CFA Migration Engine state in the existing
+  `MIGRATION_LEDGER.md` instead of creating a project directory. Add safe
+  checkpoint and evidence commands that preserve the rest of the ledger.
+
 - Record a Git revision and dirty-worktree baseline in new CFA migration
   orchestrator state files, use atomic state writes, and reject a missing project
   before creating a checkpoint.

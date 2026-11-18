@@ -27,19 +27,20 @@ evidence that this app is complete.
 
 Before changing code, state the authorised migration scope, affected targets,
 behaviour contract, non-goals, final evidence required, and the next smallest
-feature-sized slice. Initialise a local state record in the migrated project
-(not the toolkit or application source) with:
+feature-sized slice. Initialise the CFA Migration Engine inside the project's
+existing migration ledger with:
 
 ```sh
 node /path/to/cfa-migration-orchestrator/scripts/orchestrator-state.mjs init \
   /path/to/project --goal "<authorised migration goal>" --scope "<targets and boundaries>"
 ```
 
-The default record is `.cfa/migration-orchestrator.json`. It is a progress and
-evidence index, not a substitute for source review, builds, tests, or the
-migration evidence tool. Keep it out of shipped application targets. Update it
-only with facts observed in the current project revision; validate it after
-each checkpoint with `validate <record>`.
+The default ledger is `MIGRATION_LEDGER.md`; the command refuses to create a
+new folder or overwrite an existing Engine block. It stores a managed JSON
+state block alongside the project's existing migration evidence. This is a
+progress index, not a substitute for source review, builds, tests, or the
+migration evidence tool. Update it only with facts observed in the current
+project revision; validate it after each checkpoint with `validate <ledger>`.
 
 ## Execute the loop
 

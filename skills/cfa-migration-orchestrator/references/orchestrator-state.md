@@ -1,23 +1,29 @@
 # Orchestrator state record
 
-The state record makes a migration resumable without treating a prose plan as
-progress. It is deliberately small and project-local.
+The Engine state makes a migration resumable without treating a prose plan as
+progress. It is deliberately small and is stored in the project's existing
+`MIGRATION_LEDGER.md`, not in a new folder.
 
-`init` atomically creates a record with a goal, scope, Git revision and dirty-tree
-baseline (when Git is available), `audit` phase, an empty evidence list and a
-required next action. Use a normal editor to append factual evidence
-or attempts after each audit, fix, and verification checkpoint. Each evidence
-item needs an identifier, revision, kind, outcome and summary. Each attempt
-needs an action and result. `validate` rejects duplicate identifiers, missing
-core fields, a completed record without all completion-gate evidence, and a
-blocked record without an unblock condition.
+`init` atomically appends one managed state block with a goal, scope, Git revision
+and dirty-tree baseline (when Git is available), `audit` phase, an empty evidence
+list and a required next action. It refuses to replace an existing state block.
+Use `checkpoint` after each audit, fix, and verification checkpoint, and use
+`evidence` to append observed facts. `validate` rejects duplicate identifiers,
+missing core fields, a completed record without all completion-gate evidence,
+and a blocked record without an unblock condition.
 
 ```sh
 node scripts/orchestrator-state.mjs init /path/to/project \
   --goal "Move the agreed app targets to CFA and Swift Concurrency" \
   --scope "Main app and widget; preserve existing behaviour"
-node scripts/orchestrator-state.mjs validate /path/to/project/.cfa/migration-orchestrator.json
-node scripts/orchestrator-state.mjs status /path/to/project/.cfa/migration-orchestrator.json
+node scripts/orchestrator-state.mjs checkpoint /path/to/project/MIGRATION_LEDGER.md \
+  --phase audit --next-action "Trace the launch owner" \
+  --action "Ran the initial source audit" --result "Selected launch as the first slice"
+node scripts/orchestrator-state.mjs evidence /path/to/project/MIGRATION_LEDGER.md \
+  --id launch-audit --revision abc123 --kind source --outcome observed \
+  --summary "Recorded the source-backed launch inventory"
+node scripts/orchestrator-state.mjs validate /path/to/project/MIGRATION_LEDGER.md
+node scripts/orchestrator-state.mjs status /path/to/project/MIGRATION_LEDGER.md
 ```
 
 For `completed`, `completionGate` must identify evidence IDs for: baseline,
