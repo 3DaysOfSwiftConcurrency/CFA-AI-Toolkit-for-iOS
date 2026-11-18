@@ -3,6 +3,7 @@ export const cfaSkills = [
   'cfa-feature-work',
   'cfa-architecture-adoption',
   'swift-concurrency-migration',
+  'cfa-migration-orchestrator',
   'cfa-architecture-review',
   'cfa-codebase-tidy',
   'cfa-unit-tests'

@@ -7,8 +7,8 @@ import { specTopics } from './spec-topics.mjs';
 import { cfaSkills, skills } from './skill-names.mjs';
 export { cfaSkills, skills } from './skill-names.mjs';
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const referenceFeatureSkills = ['cfa-app-creation', 'cfa-feature-work', 'cfa-architecture-adoption', 'swift-concurrency-migration'];
-export const behaviourContractSkills = ['cfa-feature-work', 'cfa-architecture-adoption', 'swift-concurrency-migration', 'cfa-codebase-tidy', 'cfa-unit-tests'];
+export const referenceFeatureSkills = ['cfa-app-creation', 'cfa-feature-work', 'cfa-architecture-adoption', 'swift-concurrency-migration', 'cfa-migration-orchestrator'];
+export const behaviourContractSkills = ['cfa-feature-work', 'cfa-architecture-adoption', 'swift-concurrency-migration', 'cfa-migration-orchestrator', 'cfa-codebase-tidy', 'cfa-unit-tests'];
 export const explanationFiles = ['guide.md', 'catalogue.json',
   ...JSON.parse(fs.readFileSync(path.join(root, 'architecture/explanations/catalogue.json'), 'utf8')).topics.map(topic => topic.note)];
 export const iconSkills = ['cfa-app-creation', 'cfa-architecture-adoption', 'swift-concurrency-migration', 'cfa-codebase-tidy'];

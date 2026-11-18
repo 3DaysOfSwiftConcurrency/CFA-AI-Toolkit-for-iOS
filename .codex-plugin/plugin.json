@@ -1,6 +1,6 @@
 {
   "name": "ios-app-development-cfa",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "CFA AI Toolkit for iOS: AI skills and tools to build, modernise, test and maintain SwiftUI apps with Swift Concurrency.",
   "author": {
     "name": "3 Days of Swift Concurrency"
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "CFA AI Toolkit for iOS",
     "shortDescription": "Build and modernise iOS apps with Swift Concurrency",
-    "longDescription": "Eight skills for iOS app creation, feature work, CFA adoption, Legacy GCD migration, architecture review, codebase tidying, unit tests and Swift code quality. Includes a local evidence dashboard. Created by 3DaysOfSwiftConcurrency.com.",
+    "longDescription": "Nine skills for iOS app creation, feature work, CFA adoption, Legacy GCD migration, migration orchestration, architecture review, codebase tidying, unit tests and Swift code quality. Includes a local evidence dashboard. Created by 3DaysOfSwiftConcurrency.com.",
     "developerName": "3 Days of Swift Concurrency",
     "category": "Productivity",
     "logo": "./readme-images/CFA-Toolkit-AppIcon.png",
@@ -23,6 +23,7 @@
       "Adopt CFA in this existing app.",
       "Add a feature to this CFA app.",
       "Migrate this legacy GCD app to CFA and Swift Concurrency.",
+      "Orchestrate this CFA and Swift Concurrency migration through completion.",
       "Review this app\u2019s CFA architecture and generate its dashboard."
     ]
   },

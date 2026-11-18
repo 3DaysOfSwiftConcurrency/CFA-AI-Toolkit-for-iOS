@@ -24,8 +24,8 @@ Keep `architecture/ai-project-guidance.md` as the integration contract for
 portable project instructions and editor adapters; those adapters must point
 back to the canonical rules rather than duplicating them.
 
-The toolkit ships eight skills. Keep the seven project workflows distinct: app creation, CFA feature work, architecture
-adoption, Legacy GCD migration, read-only architecture review, iterative CFA
+The toolkit ships nine skills. Keep the eight project workflows distinct: app creation, CFA feature work, architecture
+adoption, Legacy GCD migration, migration orchestration, read-only architecture review, iterative CFA
 codebase tidying, and CFA unit tests. Swift Code Quality provides guidance
 across those workflows and follows the active task scope. Legacy GCD migration
 preserves product behaviour while moving the implementation to CFA and Swift

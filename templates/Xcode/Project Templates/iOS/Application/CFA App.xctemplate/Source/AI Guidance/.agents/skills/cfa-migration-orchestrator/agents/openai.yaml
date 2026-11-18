@@ -1,0 +1,4 @@
+interface:
+  display_name: "CFA Migration Orchestrator"
+  short_description: "Drive CFA migrations through verified completion"
+  default_prompt: "Use $cfa-migration-orchestrator to complete this authorised CFA and Swift Concurrency migration."

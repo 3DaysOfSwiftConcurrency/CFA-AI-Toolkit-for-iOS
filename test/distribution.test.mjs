@@ -26,7 +26,7 @@ test('portable installation guidance distinguishes releases from source checkout
  for(const text of [readme,installation]) {
   assert.match(text,/extracted plugin release/);
   assert.match(text,/source checkout[\s\S]{0,200}intentionally (?:has no|does not\s+contain)/);
-  assert.match(text,/copy [^\n]{0,80}eight [^\n]{0,30}folders\s+manually/);
+  assert.match(text,/copy [^\n]{0,80}nine [^\n]{0,30}folders\s+manually/);
  }
 });
 
@@ -240,7 +240,7 @@ test('standalone release carries scanner dependencies and scans outside the sour
  const {dir,source}=release(t); const destination=path.join(dir,'customer');
  const result=install({source,destination,mode:'skills'});
  assert.equal(result.status,'installed');
- assert.equal(result.paths.length,8);
+ assert.equal(result.paths.length,9);
  for(const installed of result.paths) assert.ok(fs.existsSync(path.join(installed,'SKILL.md')));
  const tidy=path.join(destination,'.agents/skills/cfa-codebase-tidy');
  assert.ok(result.paths.includes(tidy));
@@ -306,7 +306,7 @@ test('portable installation accepts an explicit host skill directory',t=>{
  const {dir,source}=release(t); const destination=path.join(dir,'customer');
  const skillsDirectory=path.join(destination,'.claude','skills');
  const result=install({source,destination,mode:'skills',skillsDirectory});
- assert.equal(result.paths.length,8);
+ assert.equal(result.paths.length,9);
  assert.ok(result.paths.every(item=>item.startsWith(skillsDirectory+path.sep)));
  assert.ok(fs.existsSync(path.join(skillsDirectory,'cfa-feature-work','SKILL.md')));
  assert.ok(fs.existsSync(path.join(skillsDirectory,'cfa-unit-tests','SKILL.md')));

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.5.0 — 2026-11-18
+
+- Add CFA Migration Orchestrator: a dedicated whole-migration workflow with a
+  persisted, validated project-local goal/evidence record; audit→fix→verify
+  loops; cross-skill coordination; stall recovery; and explicit completion and
+  blocker criteria. It does not mistake a continuation instruction for progress.
+
 - Align all eight skill workflows, shared explanations and review tooling with
   the current CFA rules for Feature ownership, MainActor isolation, service
   placement, task lifetimes, screen construction and migration completion.
