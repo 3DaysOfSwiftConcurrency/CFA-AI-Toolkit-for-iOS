@@ -38,10 +38,19 @@ test('MCP server exposes the shared CFA workflow and its migration tools', async
   ]);
   assert.deepEqual(tools.map(tool => tool.name).sort(), [
     'cfa_migration_audit', 'cfa_migration_block', 'cfa_migration_checkpoint', 'cfa_migration_complete',
-    'cfa_migration_evidence', 'cfa_migration_init', 'cfa_migration_status', 'cfa_migration_validate'
+    'cfa_migration_evidence', 'cfa_migration_init', 'cfa_migration_review_leads', 'cfa_migration_status', 'cfa_migration_validate'
   ]);
   const specification = await client.readResource({ uri: 'cfa://migration-engine/specification' });
   assert.match(specification.contents[0].text, /Cooperative Feature Architecture/);
+});
+
+test('MCP server returns current source locations as review leads without writing a ledger', async t => {
+  const directory = project(t);
+  const client = await connected(t);
+  const result = await client.callTool({ name: 'cfa_migration_review_leads', arguments: { project: directory } });
+  assert.equal(result.isError, undefined, JSON.stringify(result));
+  assert.match(result.content[0].text, /app-model-missing/);
+  assert.equal(fs.readFileSync(path.join(directory, 'MIGRATION_LEDGER.md'), 'utf8'), '# Migration ledger\n');
 });
 
 test('MCP server runs the existing engine without creating a second ledger format', async t => {

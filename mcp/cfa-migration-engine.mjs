@@ -6,6 +6,7 @@ import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { z } from 'zod';
 import { main as engineMain } from '../skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs';
+import { inspect } from '../skills/cfa-architecture-review/scripts/dashboard/src/inspector.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packageManifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -51,6 +52,18 @@ export function createMigrationEngineServer() {
     title: 'Audit a CFA migration', description: 'Run the shared inspector and migration analysis, then record review leads in the existing ledger. Scanner output is not a compliance verdict.',
     inputSchema: z.object({ project: nonEmpty, ledger, evidenceId: nonEmpty })
   }, ({ project, ledger: ledgerFile, evidenceId }) => invoke(['audit', project, '--ledger', ledgerFile, '--id', evidenceId]));
+  server.registerTool('cfa_migration_review_leads', {
+    title: 'List CFA review leads', description: 'Read the shared CFA inspector’s current source locations and messages without writing to the project. Leads require semantic review; they are not conformance verdicts.',
+    inputSchema: z.object({ project: nonEmpty, code: nonEmpty.optional() })
+  }, async ({ project, code }) => {
+    try {
+      const report = await inspect(project);
+      const leads = (report.findings ?? []).filter(finding => !code || finding.code === code);
+      return text({ sourceFingerprint: report.sourceFingerprint, findings: leads });
+    } catch (error) {
+      return { isError: true, content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }] };
+    }
+  });
   server.registerTool('cfa_migration_status', {
     title: 'Read migration status', description: 'Read the current migration goal, phase, baseline and next action from a validated ledger.',
     inputSchema: z.object({ ledger })

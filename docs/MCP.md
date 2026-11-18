@@ -5,8 +5,8 @@ ledger-based Engine; it does not independently implement CFA rules.
 
 The server provides eight tools:
 
-- `cfa_migration_init`, `cfa_migration_audit`, `cfa_migration_status` and
-  `cfa_migration_validate`
+- `cfa_migration_init`, `cfa_migration_audit`, `cfa_migration_review_leads`,
+  `cfa_migration_status` and `cfa_migration_validate`
 - `cfa_migration_checkpoint`, `cfa_migration_evidence`,
   `cfa_migration_block` and `cfa_migration_complete`
 
