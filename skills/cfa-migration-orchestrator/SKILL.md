@@ -140,5 +140,13 @@ For new Engine records, required completion evidence is bound to the final
 source fingerprint. Any source change after completion invalidates the ledger
 until the migration is reopened and reverified.
 
+After completion has been recorded and reported, offer the developer an
+optional, separate `$enhanced-code-readability` programme: a verified,
+feature-by-feature pass that makes the code easier to understand without
+changing its behaviour. Do not silently start that work, reopen the completed
+migration ledger, or treat readability as missing migration evidence. Start it
+only if the developer opts in, and keep its progress separate from the
+migration record.
+
 For the record format and command details, read
 [orchestrator state reference](references/orchestrator-state.md).

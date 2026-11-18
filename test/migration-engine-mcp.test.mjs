@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
-import { requestCodexContinuation } from '../mcp/cfa-migration-engine.mjs';
+import { postMigrationReadabilityOffer, requestCodexContinuation } from '../mcp/cfa-migration-engine.mjs';
 
 const server = path.resolve('mcp/cfa-migration-engine.mjs');
 function project(t) {
@@ -33,6 +33,7 @@ test('MCP server exposes the shared CFA workflow and its migration tools', async
   const client = await connected(t);
   const [{ resources }, { tools }] = await Promise.all([client.listResources(), client.listTools()]);
   assert.deepEqual(resources.map(resource => resource.uri).sort(), [
+    'cfa://migration-engine/post-migration-readability',
     'cfa://migration-engine/specification',
     'cfa://migration-engine/state-reference',
     'cfa://migration-engine/workflow'
@@ -44,6 +45,8 @@ test('MCP server exposes the shared CFA workflow and its migration tools', async
   ]);
   const specification = await client.readResource({ uri: 'cfa://migration-engine/specification' });
   assert.match(specification.contents[0].text, /Cooperative Feature Architecture/);
+  const readability = await client.readResource({ uri: 'cfa://migration-engine/post-migration-readability' });
+  assert.match(readability.contents[0].text, /eight-year-old code-book rule/i);
 });
 
 test('Codex continuation queues only active migrations in their configured chat', () => {
@@ -59,7 +62,8 @@ test('Codex continuation queues only active migrations in their configured chat'
   assert.deepEqual(requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123', pending: { token: 'token-123' } }, phase: 'completed', nextAction: 'Done.' }), {
     queued: false,
     status: 'completed',
-    reason: '🎉 The migration to Swift Concurrency using CFA is complete.'
+    reason: '🎉 The migration to Swift Concurrency using CFA is complete. Would you like a feature-by-feature readability pass now?',
+    postMigrationReadability: postMigrationReadabilityOffer
   });
   assert.throws(() => requestCodexContinuation({ continuation: { host: 'codex', threadId: 'thread-123', pending: { token: 'token-123' } }, phase: 'verify', nextAction: 'Run tests.' }, {
     execute: () => ({ status: 0, stderr: 'Warning: could not resume thread thread-123', stdout: '' })
@@ -93,4 +97,27 @@ test('MCP server runs the existing engine without creating a second ledger forma
   assert.match(contents, /CFA Migration Engine state: managed/);
   assert.match(contents, /"id": "mcp-audit"/);
   assert.equal(fs.existsSync(path.join(directory, '.cfa')), false);
+});
+
+test('MCP completion offers readability without reopening a completed migration', async t => {
+  const directory = project(t);
+  const client = await connected(t);
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  const initialized = await client.callTool({ name: 'cfa_migration_init', arguments: { project: directory, goal: 'Migrate the app', scope: 'Main app target' } });
+  assert.equal(initialized.isError, undefined, JSON.stringify(initialized));
+  const ids = ['baseline', 'build', 'tests', 'behaviour-regression', 'primitive-inventory', 'navigator-review', 'hybrid-review', 'final-cfa-audit', 'human-architecture-review'];
+  for (const id of ids) {
+    const evidence = await client.callTool({ name: 'cfa_migration_evidence', arguments: { ledger, id, revision: 'mcp-complete', kind: 'check', outcome: 'passed', summary: id } });
+    assert.equal(evidence.isError, undefined, JSON.stringify(evidence));
+  }
+  const completed = await client.callTool({ name: 'cfa_migration_complete', arguments: {
+    ledger,
+    baseline: 'baseline', build: 'build', tests: 'tests', behaviourRegression: 'behaviour-regression',
+    primitiveInventory: 'primitive-inventory', navigatorReview: 'navigator-review', hybridReview: 'hybrid-review',
+    finalCfaAudit: 'final-cfa-audit', humanArchitectureReview: 'human-architecture-review'
+  } });
+  assert.equal(completed.isError, undefined, JSON.stringify(completed));
+  assert.deepEqual(completed.structuredContent.postMigrationReadability, postMigrationReadabilityOffer);
+  const status = await client.callTool({ name: 'cfa_migration_status', arguments: { ledger } });
+  assert.match(status.content[0].text, /"phase": "completed"/);
 });

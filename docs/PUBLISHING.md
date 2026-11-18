@@ -30,7 +30,7 @@ search ranking. CFA is an architectural method, not an AI runtime.
 
 ## What is ready locally
 
-The source, plugin manifest, nine self-contained skills, scanner, tests, installer,
+The source, plugin manifest, ten self-contained skills, scanner, tests, installer,
 MIT licence and reproducible ZIP builder live together in this repository. The
 scanner has no npm dependencies. The skills include their own references and tools.
 No Trend checkout is required. Download users need Node.js 20+; maintainers also

@@ -22,6 +22,13 @@ function continuationMessage(state) {
   return `A CFA migration continuation is ready with token ${token}. This is a wake-up signal, not the current migration state. First call cfa_migration_claim_continuation with this token and the ledger path. If it is stale, blocked, or completed, stop without performing work. If claimed, use the returned workerToken as continuationToken in every state-changing CFA migration call. Heartbeat before an operation likely to exceed the active lease. Continue every independent audit, fix, and verification action until the ledger is completed or a genuine user decision is required.`;
 }
 
+export const postMigrationReadabilityOffer = Object.freeze({
+  status: 'optional',
+  skill: '$enhanced-code-readability',
+  prompt: '🎉 The migration to Swift Concurrency using CFA is complete. Would you like a feature-by-feature readability pass now?',
+  note: 'This behaviour-preserving maintenance pass is separate from the completed migration and does not reopen its ledger.'
+});
+
 export function requestCodexContinuation(state, { execute = spawnSync, codex = 'codex' } = {}) {
   if (!state?.continuation) return { queued: false, reason: 'No Codex continuation is configured.' };
   if (state.phase === 'blocked') return { queued: false, reason: 'Migration is blocked.' };
@@ -29,7 +36,8 @@ export function requestCodexContinuation(state, { execute = spawnSync, codex = '
     return {
       queued: false,
       status: 'completed',
-      reason: '🎉 The migration to Swift Concurrency using CFA is complete.'
+      reason: postMigrationReadabilityOffer.prompt,
+      postMigrationReadability: postMigrationReadabilityOffer
     };
   }
   if (!state.continuation.pending?.token) return { queued: false, reason: 'No continuation reservation is pending.' };
@@ -68,7 +76,7 @@ async function recoverContinuation(ledger, queueContinuation) {
   }
 }
 
-async function invoke(args, { continuationLedger, continuationToken, queueContinuation } = {}) {
+async function invoke(args, { continuationLedger, continuationToken, queueContinuation, includePostMigrationReadability = false } = {}) {
   const output = [];
   try {
     const value = await engineMain(args, { out: line => output.push(String(line)) });
@@ -76,7 +84,8 @@ async function invoke(args, { continuationLedger, continuationToken, queueContin
       const continuation = await queueNextContinuation(continuationLedger, continuationToken, queueContinuation);
       if (continuation.queued) return text({ result: value ?? output.join('\n'), continuation });
     }
-    return text(value ?? output.join('\n'));
+    const result = value ?? output.join('\n');
+    return text(includePostMigrationReadability ? { result, postMigrationReadability: postMigrationReadabilityOffer } : result);
   } catch (error) {
     return { isError: true, content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }] };
   }
@@ -101,6 +110,9 @@ export function createMigrationEngineServer({ queueContinuation = requestCodexCo
   server.registerResource('cfa-migration-engine-reference', 'cfa://migration-engine/state-reference', {
     title: 'CFA Migration Engine state reference', mimeType: 'text/markdown', description: 'Ledger state and completion-gate semantics.'
   }, async uri => ({ contents: [{ uri: uri.href, mimeType: 'text/markdown', text: readShared('skills/cfa-migration-orchestrator/references/orchestrator-state.md') }] }));
+  server.registerResource('cfa-migration-post-completion-readability', 'cfa://migration-engine/post-migration-readability', {
+    title: 'Optional post-migration readability pass', mimeType: 'text/markdown', description: 'The shared, opt-in readability workflow offered only after a completed migration.'
+  }, async uri => ({ contents: [{ uri: uri.href, mimeType: 'text/markdown', text: readShared('skills/enhanced-code-readability/SKILL.md') }] }));
 
   server.registerTool('cfa_migration_init', {
     title: 'Initialize CFA migration', description: 'Append the Engine state block to an existing migration ledger without replacing any existing engine state.',
@@ -175,9 +187,9 @@ export function createMigrationEngineServer({ queueContinuation = requestCodexCo
     inputSchema: z.object({ ledger, reason: nonEmpty, unblockCondition: nonEmpty, nextAction: nonEmpty, continuationToken })
   }, ({ ledger: ledgerFile, reason, unblockCondition, nextAction, continuationToken: token }) => invoke(['block', ledgerFile, '--reason', reason, '--unblock-condition', unblockCondition, '--next-action', nextAction, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: ledgerFile, continuationToken: token, queueContinuation }));
   server.registerTool('cfa_migration_complete', {
-    title: 'Record completed CFA migration', description: 'Close a migration only when every named completion-gate evidence ID already exists in the ledger.',
+    title: 'Record completed CFA migration', description: 'Close a migration only when every named completion-gate evidence ID already exists in the ledger, then return an optional separate readability follow-up.',
     inputSchema: z.object({ ledger, baseline: nonEmpty, build: nonEmpty, tests: nonEmpty, behaviourRegression: nonEmpty, primitiveInventory: nonEmpty, navigatorReview: nonEmpty, hybridReview: nonEmpty, finalCfaAudit: nonEmpty, humanArchitectureReview: nonEmpty, continuationToken })
-  }, ({ ledger: ledgerFile, baseline, build, tests, behaviourRegression, primitiveInventory, navigatorReview, hybridReview, finalCfaAudit, humanArchitectureReview, continuationToken: token }) => invoke(['complete', ledgerFile, '--baseline', baseline, '--build', build, '--tests', tests, '--behaviour-regression', behaviourRegression, '--primitive-inventory', primitiveInventory, '--navigator-review', navigatorReview, '--hybrid-review', hybridReview, '--final-cfa-audit', finalCfaAudit, '--human-architecture-review', humanArchitectureReview, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: ledgerFile, continuationToken: token, queueContinuation }));
+  }, ({ ledger: ledgerFile, baseline, build, tests, behaviourRegression, primitiveInventory, navigatorReview, hybridReview, finalCfaAudit, humanArchitectureReview, continuationToken: token }) => invoke(['complete', ledgerFile, '--baseline', baseline, '--build', build, '--tests', tests, '--behaviour-regression', behaviourRegression, '--primitive-inventory', primitiveInventory, '--navigator-review', navigatorReview, '--hybrid-review', hybridReview, '--final-cfa-audit', finalCfaAudit, '--human-architecture-review', humanArchitectureReview, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: ledgerFile, continuationToken: token, queueContinuation, includePostMigrationReadability: true }));
   return server;
 }
 
