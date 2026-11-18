@@ -1031,7 +1031,7 @@ export async function inspect(project) {
     const stateIdentifierContinuation = String.raw`${stateIdentifierHead}\p{M}\p{N}\p{Emoji_Modifier}\u200D`;
     const stateIdentifier = `[${stateIdentifierHead}][${stateIdentifierContinuation}]*`;
     const statePropertyNamePattern = '(?:`(' + stateIdentifier + ')`|(' + stateIdentifier + '))';
-    const stateTypePattern = `(?:SwiftUI\\s*\\.\\s*)?State`;
+    const stateTypePattern = `(?:SwiftUI\\s*\\.\\s*)?(?:State|StateObject)`;
     const statePattern = new RegExp(`@${stateTypePattern}\\s+private\\s+var\\s+${statePropertyNamePattern}(?:\\s*:\\s*${viewModelTypePattern})?\\s*=\\s*${viewModelTypePattern}(?:\\s*\\.\\s*init)?\\s*\\(\\s*\\)(?!\\s*\\.)`, 'u');
     const typedStatePattern = new RegExp(`@${stateTypePattern}\\s+private\\s+var\\s+${statePropertyNamePattern}\\s*:\\s*${viewModelTypePattern}\\s*=\\s*\\.init\\s*\\(\\s*\\)(?!\\s*\\.)`, 'u');
     const inlineState = statePattern.exec(members) ?? typedStatePattern.exec(members);

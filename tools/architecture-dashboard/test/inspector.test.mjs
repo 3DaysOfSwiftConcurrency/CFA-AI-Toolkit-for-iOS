@@ -1398,6 +1398,16 @@ test('reports missing ownership and tests without pretending to verify semantics
   assert.match(report.limitations.join(' '), /not type-check/);
 });
 
+test('recognizes private StateObject ViewModel ownership', async t => {
+  const root = await fixture(t, {
+    'Application/1 - View/Views/Chat/ChatView.swift': 'import SwiftUI\\nstruct ChatView: View { @StateObject private var viewModel: ChatViewModel; init() { self._viewModel = StateObject(wrappedValue: ChatViewModel()) }; var body: some View { Text("Hi") } }',
+    'Application/1 - View/Views/Chat/ChatViewModel.swift': 'final class ChatViewModel { init() {} }',
+    'ApplicationTests/ViewModelTests/ChatViewModelTests.swift': 'struct ChatViewModelTests {}'
+  });
+  const findings = (await inspect(root)).findings;
+  assert.ok(!findings.some(item => item.code === 'view-model-ownership'));
+});
+
 test('ignores fake dependencies in comments and strings and flags unresolved properties', async t => {
   const root = await fixture(t, {
     'Application/1 - View/Views/Chat/ChatView.swift': 'import SwiftUI\nstruct ChatView: View { @State private var viewModel = ChatViewModel(); var body: some View { Text("AppModel.shared.fakeFeature") } }',
