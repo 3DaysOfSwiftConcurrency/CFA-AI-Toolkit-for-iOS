@@ -158,6 +158,22 @@ test('engine reserves and claims one continuation signal at a time', t => {
   assert.equal(next.queued, true);
 });
 
+test('a queued continuation reports a later blocker instead of a stale token', t => {
+  const directory = project(t, 'cfa-migration-engine-blocked-continuation-');
+  const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
+  assert.equal(spawnSync(process.execPath, [script, 'init', directory, '--goal', 'Migrate app', '--scope', 'App target']).status, 0);
+  assert.equal(spawnSync(process.execPath, [script, 'continuation', ledger, '--codex-thread', 'thread-123']).status, 0);
+  const prepared = JSON.parse(spawnSync(process.execPath, [script, 'prepare-continuation', ledger], { encoding: 'utf8' }).stdout);
+  assert.equal(spawnSync(process.execPath, [script, 'block', ledger, '--reason', 'Xcode test service is stalled.', '--unblock-condition', 'User approves restart.', '--next-action', 'Restart and retry.']).status, 0);
+  const claim = JSON.parse(spawnSync(process.execPath, [script, 'claim-continuation', ledger, '--token', prepared.token], { encoding: 'utf8' }).stdout);
+  assert.deepEqual(claim, {
+    claimed: false,
+    reason: 'Migration is blocked.',
+    blocker: { reason: 'Xcode test service is stalled.', unblockCondition: 'User approves restart.' },
+    nextAction: 'Restart and retry.'
+  });
+});
+
 test('engine summarizes inspection evidence without treating scanner leads as verdicts', async () => {
   const report = await auditProject('/project', {
     inspect: async () => ({ sourceFingerprint: 'fingerprint', scope: { swiftFiles: 7 }, findings: [{ code: 'feature-owner' }, { code: 'feature-owner' }, { code: 'task-owner' }] }),

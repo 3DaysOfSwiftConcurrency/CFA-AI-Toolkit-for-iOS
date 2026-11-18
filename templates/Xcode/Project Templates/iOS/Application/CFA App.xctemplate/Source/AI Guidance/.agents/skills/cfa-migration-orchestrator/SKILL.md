@@ -89,6 +89,22 @@ prevents every remaining meaningful in-scope action. Name the blocker, evidence,
 impact, and the exact condition that unblocks it. Never convert uncertainty
 into invented behaviour.
 
+### Migration-owned Xcode environment
+
+During an active migration, treat Xcode and all iOS simulators on the migration
+machine as migration-owned. The machine is not available for parallel iOS
+development while the migration is running. When a build or test service stalls,
+the migration may shut down booted simulators, restart the CoreSimulator/Xcode
+test environment, boot the selected verification device, wait for it to finish
+booting, and retry the affected verification without asking the developer. Record
+the recovery and its result in the existing ledger.
+
+This authority is limited to routine recovery of Xcode and simulator processes.
+Do not erase simulator devices, reset simulator content, delete Derived Data,
+change signing credentials, or remove user files without explicit authorisation.
+Only record a simulator/service blocker after the routine recovery path and all
+independent migration work have been exhausted.
+
 ## Finish accurately
 
 Mark the state `completed` only after the final revision has the required

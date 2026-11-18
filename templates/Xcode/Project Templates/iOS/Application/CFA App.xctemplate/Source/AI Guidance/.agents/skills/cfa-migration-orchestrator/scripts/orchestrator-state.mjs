@@ -226,8 +226,16 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
   if (command === 'claim-continuation' || command === 'release-continuation') {
     const token = option(rest, '--token');
     if (!text(token) || !onlyOptions(rest, ['--token'])) fail(usage());
+    if (state.phase === 'blocked') {
+      const result = { claimed: false, reason: 'Migration is blocked.', blocker: state.blocker, nextAction: state.nextAction };
+      out(JSON.stringify(result)); return result;
+    }
+    if (state.phase === 'completed') {
+      const result = { claimed: false, reason: 'Migration is completed.', nextAction: state.nextAction };
+      out(JSON.stringify(result)); return result;
+    }
     if (!state.continuation?.pending || state.continuation.pending.token !== token) {
-      const result = { claimed: false, reason: state.phase === 'completed' ? 'Migration is completed.' : 'Continuation is stale or has already been claimed.' };
+      const result = { claimed: false, reason: 'Continuation is stale or has already been claimed.' };
       out(JSON.stringify(result)); return result;
     }
     state.continuation.pending = null;
