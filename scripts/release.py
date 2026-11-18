@@ -69,7 +69,10 @@ def main():
     tests = (sorted(ROOT.glob('test/*.test.mjs'))
              + sorted(ROOT.glob('tools/architecture-dashboard/test/*.test.mjs'))
              + [ROOT / 'tools/swift-syntax-prototype/test.mjs'])
-    run(args.node, '--test', *(str(test) for test in tests))
+    # Several release checks synchronise the same portable template copies.
+    # Match the supported npm test command so those deterministic checks do not
+    # race one another while a release is being built.
+    run(args.node, '--test', '--test-concurrency=1', *(str(test) for test in tests))
     manifest = json.loads((ROOT / '.codex-plugin/plugin.json').read_text())
     name, version = manifest['name'], manifest['version']
     package = out / name
