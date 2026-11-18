@@ -24,3 +24,8 @@ The unattended continuation mode requires macOS, a local Codex host with
 `codex queue` support, and a powered-on machine. It does not bypass source
 review, required builds/tests, or a genuine product decision. Other MCP clients
 can use the same ledger and audit tools without enabling the Codex watchdog.
+
+The release also includes a [numbered GCD migration guide](step-by-step-GCD-Migration-Guide.md)
+and a [CFA compliance migration guide](MIGRATION-GUIDE.md), with copyable
+prompts and clear handling for bugs and product decisions discovered during an
+audit.

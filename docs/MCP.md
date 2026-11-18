@@ -86,3 +86,9 @@ This unattended mode requires macOS, a local Codex host with `codex queue`
 support, and a machine that remains powered on. The ordinary ledger and audit
 tools remain usable from any supported MCP client. This is a Codex-host
 integration, not a duplicate set of CFA rules in the MCP server.
+
+For copyable start, continuation and recovery prompts, use the
+[step-by-step GCD migration guide](step-by-step-GCD-Migration-Guide.md) or,
+for an already structured app, [Migrate an existing iOS app with CFA](MIGRATION-GUIDE.md).
+Both guides explain how newly exposed defects and product-design decisions are
+recorded and resolved deliberately rather than silently carried forward.

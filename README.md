@@ -81,7 +81,7 @@ provides guidance for AI-written code, has fewer moving parts, and gives a
 developer a visible path from SwiftUI to each implemented feature and the shared
 state it owns.
 
-# CFA AI Toolkit for iOS — 8 AI Skills + Inspector
+# CFA AI Toolkit for iOS — 9 AI Skills + Inspector
 
 **CFA AI Toolkit for iOS is a free, open-source collection of nine AI skills and one
 tool.** It teaches an AI coding tool how to create, change, tidy, test, migrate
@@ -123,7 +123,8 @@ For an MCP-capable client, the toolkit also includes a local CFA Migration Engin
 server. It exposes the existing ledger workflow and shared CFA rules rather than a
 second rules implementation. On macOS with Codex, its optional continuation mode
 can recover an interrupted migration through a leased, watchdog-backed workflow;
-see [MCP setup](docs/MCP.md).
+see [MCP setup](docs/MCP.md). For the copyable migration prompts and the
+evidence-based completion path, read [Migrate an existing iOS app with CFA](docs/MIGRATION-GUIDE.md).
 
 ## Xcode Templates and Starter Apps
 
@@ -271,6 +272,13 @@ starter defaults. Read the [workflow policy](architecture/project-workflow.md).
 6. `Using CFA, make sure each exposed feature is unit tested, for all features.`
 7. `Using CFA, analyse our use of Swift Concurrency: do we have race conditions that could result in unexpected behaviour?`
 8. `Using CFA, add colour themes to the application.`
+
+For a whole existing-app migration, use the dedicated
+[step-by-step GCD migration guide](docs/step-by-step-GCD-Migration-Guide.md)
+or the [CFA migration guide](docs/MIGRATION-GUIDE.md) for an already
+CFA-structured app. They include the start, continuation and recovery prompts,
+and explain how to handle a bug or genuine product-design decision exposed
+during the audit.
 
 Saying **“Using CFA”** makes your intention clear. Once your AI tool reliably
 finds installed skills, a normal iOS request can use CFA too. If it does not,
