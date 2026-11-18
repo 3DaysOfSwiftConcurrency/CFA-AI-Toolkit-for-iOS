@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { inspect } from '../../cfa-architecture-review/scripts/dashboard/src/inspector.mjs';
 import { analyseProject } from '../../swift-concurrency-migration/scripts/project-analysis/project-analysis.mjs';
@@ -21,6 +21,11 @@ function baseline(project) {
   const revision = git(project, ['rev-parse', 'HEAD']);
   const status = git(project, ['status', '--porcelain']);
   return { revision, dirty: status === null ? false : status.length > 0 };
+}
+function diffCheck(project) {
+  const result = spawnSync('git', ['-C', project, 'diff', '--check'], { encoding: 'utf8' });
+  if (result.error) return { status: 'unavailable', detail: result.error.message };
+  return result.status === 0 ? { status: 'passed', detail: '' } : { status: 'failed', detail: (result.stderr || result.stdout).trim() };
 }
 function extract(ledger) {
   const first = ledger.indexOf(start), last = ledger.indexOf(end);
@@ -102,6 +107,7 @@ export async function auditProject(project, providers = {}) {
   const inspection = await (providers.inspect ?? inspect)(project);
   const analysis = await (providers.analyseProject ?? analyseProject)(project);
   const findings = inspection.findings ?? [];
+  const diff = (providers.diffCheck ?? diffCheck)(project);
   const byCode = Object.fromEntries([...findings.reduce((counts, item) =>
     counts.set(item.code, (counts.get(item.code) ?? 0) + 1), new Map()).entries()].sort());
   return {
@@ -110,7 +116,8 @@ export async function auditProject(project, providers = {}) {
     findings: findings.length,
     findingsByCode: byCode,
     syntax: analysis.syntax?.status ?? 'unavailable',
-    compilerIndex: analysis.compilerIndex?.status ?? 'unavailable'
+    compilerIndex: analysis.compilerIndex?.status ?? 'unavailable',
+    diffCheck: diff.status
   };
 }
 
@@ -134,7 +141,7 @@ export async function main(args, { out = console.log, providers = {} } = {}) {
     const report = await auditProject(project, providers);
     state.phase = 'audit';
     state.nextAction = `Semantically review ${report.findings} scanner lead(s), starting with the applicable ownership, lifecycle and task-lifetime paths.`;
-    state.evidence.push({ id, revision: git(project, ['rev-parse', 'HEAD']) ?? 'unavailable', kind: 'cfa-engine-audit', outcome: 'observed', summary: `Fingerprint ${report.sourceFingerprint ?? 'unavailable'}; ${report.swiftFiles ?? 'unknown'} Swift files; ${report.findings} scanner leads; SwiftSyntax ${report.syntax}; compiler index ${report.compilerIndex}; codes ${JSON.stringify(report.findingsByCode)}.` });
+    state.evidence.push({ id, revision: git(project, ['rev-parse', 'HEAD']) ?? 'unavailable', kind: 'cfa-engine-audit', outcome: 'observed', summary: `Fingerprint ${report.sourceFingerprint ?? 'unavailable'}; ${report.swiftFiles ?? 'unknown'} Swift files; ${report.findings} scanner leads; diff check ${report.diffCheck}; SwiftSyntax ${report.syntax}; compiler index ${report.compilerIndex}; codes ${JSON.stringify(report.findingsByCode)}.` });
     state.attempts.push({ action: 'Ran the CFA architecture inspector and migration project analysis.', result: 'Recorded scanner leads as review candidates; scanner output is not a conformance verdict.' });
     const errors = validateState(state);
     if (errors.length) fail(errors.join('\n'));

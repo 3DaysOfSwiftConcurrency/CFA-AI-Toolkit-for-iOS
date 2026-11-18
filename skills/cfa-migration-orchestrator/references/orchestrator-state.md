@@ -13,9 +13,9 @@ missing core fields, a completed record without all completion-gate evidence,
 and a blocked record without an unblock condition.
 
 `audit` runs the bundled architecture inspector and migration source analysis,
-then records their source fingerprint and review-lead counts in the same state
-block. The scanner does not establish semantic CFA compliance; review the
-reported paths before treating a lead as a finding.
+then records their source fingerprint, working-diff result and review-lead
+counts in the same state block. The scanner does not establish semantic CFA
+compliance; review the reported paths before treating a lead as a finding.
 
 ```sh
 node scripts/orchestrator-state.mjs init /path/to/project \

@@ -70,10 +70,11 @@ test('engine rejects unsupported completion and incomplete blockers', () => {
 test('engine summarizes inspection evidence without treating scanner leads as verdicts', async () => {
   const report = await auditProject('/project', {
     inspect: async () => ({ sourceFingerprint: 'fingerprint', scope: { swiftFiles: 7 }, findings: [{ code: 'feature-owner' }, { code: 'feature-owner' }, { code: 'task-owner' }] }),
-    analyseProject: async () => ({ syntax: { status: 'available' }, compilerIndex: { status: 'not-requested' } })
+    analyseProject: async () => ({ syntax: { status: 'available' }, compilerIndex: { status: 'not-requested' } }),
+    diffCheck: () => ({ status: 'passed' })
   });
   assert.deepEqual(report, {
     sourceFingerprint: 'fingerprint', swiftFiles: 7, findings: 3,
-    findingsByCode: { 'feature-owner': 2, 'task-owner': 1 }, syntax: 'available', compilerIndex: 'not-requested'
+    findingsByCode: { 'feature-owner': 2, 'task-owner': 1 }, syntax: 'available', compilerIndex: 'not-requested', diffCheck: 'passed'
   });
 });
