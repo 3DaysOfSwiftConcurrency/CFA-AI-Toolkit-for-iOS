@@ -12,6 +12,30 @@ import { installWatchdog } from './cfa-migration-watchdog-install.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packageManifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const configuredProjectRoot = process.env.CFA_MIGRATION_PROJECT_ROOT?.trim();
+
+function migrationProject(value) {
+  if (!configuredProjectRoot) return value;
+  const allowedRoot = fs.realpathSync(configuredProjectRoot);
+  const requestedRoot = fs.realpathSync(value);
+  if (requestedRoot !== allowedRoot) {
+    throw Error('The CFA Migration Engine is scoped to the project selected by its host application.');
+  }
+  return requestedRoot;
+}
+
+function migrationLedger(value) {
+  if (!configuredProjectRoot) return value;
+  const allowedRoot = fs.realpathSync(configuredProjectRoot);
+  const allowedLedger = path.join(allowedRoot, 'MIGRATION_LEDGER.md');
+  const requestedLedger = fs.existsSync(value)
+    ? fs.realpathSync(value)
+    : path.join(fs.realpathSync(path.dirname(value)), path.basename(value));
+  if (requestedLedger !== allowedLedger) {
+    throw Error('The CFA Migration Engine may update only MIGRATION_LEDGER.md in the project selected by its host application.');
+  }
+  return requestedLedger;
+}
 
 function text(value) {
   return { content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) }], structuredContent: typeof value === 'object' ? value : undefined };
@@ -117,17 +141,20 @@ export function createMigrationEngineServer({ queueContinuation = requestCodexCo
   server.registerTool('cfa_migration_init', {
     title: 'Initialize CFA migration', description: 'Append the Engine state block to an existing migration ledger without replacing any existing engine state.',
     inputSchema: z.object({ project: nonEmpty, goal: nonEmpty, scope: nonEmpty, ledger: ledger.optional() })
-  }, ({ project, goal, scope, ledger: ledgerFile }) => invoke(['init', project, '--goal', goal, '--scope', scope, ...(ledgerFile ? ['--ledger', ledgerFile] : [])]));
+  }, ({ project, goal, scope, ledger: ledgerFile }) => invoke(['init', migrationProject(project), '--goal', goal, '--scope', scope, ...(ledgerFile ? ['--ledger', migrationLedger(ledgerFile)] : [])]));
   server.registerTool('cfa_migration_audit', {
     title: 'Audit a CFA migration', description: 'Run the shared inspector and migration analysis, then record review leads in the existing ledger. Scanner output is not a compliance verdict.',
     inputSchema: z.object({ project: nonEmpty, ledger, evidenceId: nonEmpty, continuationToken })
-  }, ({ project, ledger: ledgerFile, evidenceId, continuationToken: token }) => invoke(['audit', project, '--ledger', ledgerFile, '--id', evidenceId, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: ledgerFile, continuationToken: token, queueContinuation }));
+  }, ({ project, ledger: ledgerFile, evidenceId, continuationToken: token }) => {
+    const selectedLedger = migrationLedger(ledgerFile);
+    return invoke(['audit', migrationProject(project), '--ledger', selectedLedger, '--id', evidenceId, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: selectedLedger, continuationToken: token, queueContinuation });
+  });
   server.registerTool('cfa_migration_review_leads', {
     title: 'List CFA review leads', description: 'Read the shared CFA inspector’s current source locations and messages without writing to the project. Leads require semantic review; they are not conformance verdicts.',
     inputSchema: z.object({ project: nonEmpty, code: nonEmpty.optional() })
   }, async ({ project, code }) => {
     try {
-      const report = await inspect(project);
+      const report = await inspect(migrationProject(project));
       const leads = (report.findings ?? []).filter(finding => !code || finding.code === code);
       return text({ sourceFingerprint: report.sourceFingerprint, findings: leads });
     } catch (error) {
@@ -137,46 +164,56 @@ export function createMigrationEngineServer({ queueContinuation = requestCodexCo
   server.registerTool('cfa_migration_status', {
     title: 'Read migration status', description: 'Read the current migration goal, phase, baseline and next action from a validated ledger.',
     inputSchema: z.object({ ledger })
-  }, ({ ledger: ledgerFile }) => invoke(['status', ledgerFile]));
+  }, ({ ledger: ledgerFile }) => invoke(['status', migrationLedger(ledgerFile)]));
   server.registerTool('cfa_migration_validate', {
     title: 'Validate migration ledger', description: 'Check the ledger state is internally consistent. This does not certify semantic CFA compliance.',
     inputSchema: z.object({ ledger })
-  }, ({ ledger: ledgerFile }) => invoke(['validate', ledgerFile]));
+  }, ({ ledger: ledgerFile }) => invoke(['validate', migrationLedger(ledgerFile)]));
   server.registerTool('cfa_migration_claim_continuation', {
     title: 'Claim a CFA migration continuation', description: 'Claim one reserved host continuation and return the current ledger state. Stale or terminal signals do no work; a completed migration returns its completion message.',
     inputSchema: z.object({ ledger, token: nonEmpty })
-  }, ({ ledger: ledgerFile, token }) => invoke(['claim-continuation', ledgerFile, '--token', token]));
+  }, ({ ledger: ledgerFile, token }) => invoke(['claim-continuation', migrationLedger(ledgerFile), '--token', token]));
   server.registerTool('cfa_migration_heartbeat_continuation', {
     title: 'Heartbeat an active CFA migration worker', description: 'Renew the claimed worker lease before a long-running migration action so automatic recovery does not duplicate live work.',
     inputSchema: z.object({ ledger, token: nonEmpty, leaseSeconds: z.number().int().min(30).max(86400).optional() })
-  }, ({ ledger: ledgerFile, token, leaseSeconds }) => invoke(['heartbeat-continuation', ledgerFile, '--token', token, ...(leaseSeconds ? ['--lease-seconds', String(leaseSeconds)] : [])]));
+  }, ({ ledger: ledgerFile, token, leaseSeconds }) => invoke(['heartbeat-continuation', migrationLedger(ledgerFile), '--token', token, ...(leaseSeconds ? ['--lease-seconds', String(leaseSeconds)] : [])]));
   server.registerTool('cfa_migration_recover_continuation', {
     title: 'Recover a stopped CFA migration', description: 'Inspect the continuation lease and requeue the Codex migration thread only when no worker is healthy. Safe to call repeatedly from a watchdog.',
     inputSchema: z.object({ ledger })
   }, async ({ ledger: ledgerFile }) => {
-    try { return text(await recoverContinuation(ledgerFile, queueContinuation)); }
+    try { return text(await recoverContinuation(migrationLedger(ledgerFile), queueContinuation)); }
     catch (error) { return { isError: true, content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }] }; }
   });
   server.registerTool('cfa_migration_reopen', {
     title: 'Reopen a completed CFA migration', description: 'Move a completed ledger back to verification when new evidence or stricter completion rules show work remains.',
     inputSchema: z.object({ ledger, reason: nonEmpty, nextAction: nonEmpty, continuationToken })
-  }, ({ ledger: ledgerFile, reason, nextAction, continuationToken: token }) => invoke(['reopen', ledgerFile, '--reason', reason, '--next-action', nextAction, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: ledgerFile, continuationToken: token, queueContinuation }));
+  }, ({ ledger: ledgerFile, reason, nextAction, continuationToken: token }) => {
+    const selectedLedger = migrationLedger(ledgerFile);
+    return invoke(['reopen', selectedLedger, '--reason', reason, '--next-action', nextAction, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: selectedLedger, continuationToken: token, queueContinuation });
+  });
   server.registerTool('cfa_migration_checkpoint', {
     title: 'Record migration checkpoint', description: 'Record an audit, fix, verification, review or completion-phase checkpoint in the existing ledger.',
     inputSchema: z.object({ ledger, phase: z.enum(['audit', 'fix', 'verify', 'hybrid-review', 'final-audit', 'human-review']), nextAction: nonEmpty, action: nonEmpty, result: nonEmpty, continuationToken })
-  }, ({ ledger: ledgerFile, phase, nextAction, action, result, continuationToken: token }) => invoke(['checkpoint', ledgerFile, '--phase', phase, '--next-action', nextAction, '--action', action, '--result', result, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: ledgerFile, continuationToken: token, queueContinuation }));
+  }, ({ ledger: ledgerFile, phase, nextAction, action, result, continuationToken: token }) => {
+    const selectedLedger = migrationLedger(ledgerFile);
+    return invoke(['checkpoint', selectedLedger, '--phase', phase, '--next-action', nextAction, '--action', action, '--result', result, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: selectedLedger, continuationToken: token, queueContinuation });
+  });
   server.registerTool('cfa_migration_evidence', {
     title: 'Record migration evidence', description: 'Append a source, build, test, behaviour or review fact to the existing migration ledger.',
     inputSchema: z.object({ ledger, id: nonEmpty, revision: nonEmpty, kind: nonEmpty, outcome: nonEmpty, summary: nonEmpty, continuationToken })
-  }, ({ ledger: ledgerFile, id, revision, kind, outcome, summary, continuationToken: token }) => invoke(['evidence', ledgerFile, '--id', id, '--revision', revision, '--kind', kind, '--outcome', outcome, '--summary', summary, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: ledgerFile, continuationToken: token, queueContinuation }));
+  }, ({ ledger: ledgerFile, id, revision, kind, outcome, summary, continuationToken: token }) => {
+    const selectedLedger = migrationLedger(ledgerFile);
+    return invoke(['evidence', selectedLedger, '--id', id, '--revision', revision, '--kind', kind, '--outcome', outcome, '--summary', summary, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: selectedLedger, continuationToken: token, queueContinuation });
+  });
   server.registerTool('cfa_migration_enable_continuation', {
     title: 'Enable self-healing Codex continuation', description: 'Configure the Codex chat and start a local watchdog that redelivers expired migration worker leases without requiring a person to resume work.',
     inputSchema: z.object({ ledger, codexThreadId: nonEmpty })
   }, async ({ ledger: ledgerFile, codexThreadId }) => {
     try {
-      const result = await engineMain(['continuation', ledgerFile, '--codex-thread', codexThreadId], { out: () => {} });
-      const watchdog = startWatchdog(ledgerFile);
-      const continuation = await queueNextContinuation(ledgerFile, null, queueContinuation);
+      const selectedLedger = migrationLedger(ledgerFile);
+      const result = await engineMain(['continuation', selectedLedger, '--codex-thread', codexThreadId], { out: () => {} });
+      const watchdog = startWatchdog(selectedLedger);
+      const continuation = await queueNextContinuation(selectedLedger, null, queueContinuation);
       return text({ result, watchdog, continuation });
     } catch (error) {
       return { isError: true, content: [{ type: 'text', text: error instanceof Error ? error.message : String(error) }] };
@@ -185,11 +222,17 @@ export function createMigrationEngineServer({ queueContinuation = requestCodexCo
   server.registerTool('cfa_migration_block', {
     title: 'Record migration blocker', description: 'Record a genuine external blocker and its exact unblocking condition.',
     inputSchema: z.object({ ledger, reason: nonEmpty, unblockCondition: nonEmpty, nextAction: nonEmpty, continuationToken })
-  }, ({ ledger: ledgerFile, reason, unblockCondition, nextAction, continuationToken: token }) => invoke(['block', ledgerFile, '--reason', reason, '--unblock-condition', unblockCondition, '--next-action', nextAction, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: ledgerFile, continuationToken: token, queueContinuation }));
+  }, ({ ledger: ledgerFile, reason, unblockCondition, nextAction, continuationToken: token }) => {
+    const selectedLedger = migrationLedger(ledgerFile);
+    return invoke(['block', selectedLedger, '--reason', reason, '--unblock-condition', unblockCondition, '--next-action', nextAction, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: selectedLedger, continuationToken: token, queueContinuation });
+  });
   server.registerTool('cfa_migration_complete', {
     title: 'Record completed CFA migration', description: 'Close a migration only when every named completion-gate evidence ID already exists in the ledger, then return an optional separate readability follow-up.',
     inputSchema: z.object({ ledger, baseline: nonEmpty, build: nonEmpty, tests: nonEmpty, behaviourRegression: nonEmpty, primitiveInventory: nonEmpty, navigatorReview: nonEmpty, hybridReview: nonEmpty, finalCfaAudit: nonEmpty, humanArchitectureReview: nonEmpty, continuationToken })
-  }, ({ ledger: ledgerFile, baseline, build, tests, behaviourRegression, primitiveInventory, navigatorReview, hybridReview, finalCfaAudit, humanArchitectureReview, continuationToken: token }) => invoke(['complete', ledgerFile, '--baseline', baseline, '--build', build, '--tests', tests, '--behaviour-regression', behaviourRegression, '--primitive-inventory', primitiveInventory, '--navigator-review', navigatorReview, '--hybrid-review', hybridReview, '--final-cfa-audit', finalCfaAudit, '--human-architecture-review', humanArchitectureReview, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: ledgerFile, continuationToken: token, queueContinuation, includePostMigrationReadability: true }));
+  }, ({ ledger: ledgerFile, baseline, build, tests, behaviourRegression, primitiveInventory, navigatorReview, hybridReview, finalCfaAudit, humanArchitectureReview, continuationToken: token }) => {
+    const selectedLedger = migrationLedger(ledgerFile);
+    return invoke(['complete', selectedLedger, '--baseline', baseline, '--build', build, '--tests', tests, '--behaviour-regression', behaviourRegression, '--primitive-inventory', primitiveInventory, '--navigator-review', navigatorReview, '--hybrid-review', hybridReview, '--final-cfa-audit', finalCfaAudit, '--human-architecture-review', humanArchitectureReview, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: selectedLedger, continuationToken: token, queueContinuation, includePostMigrationReadability: true });
+  });
   return server;
 }
 

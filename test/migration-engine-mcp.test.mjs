@@ -21,8 +21,14 @@ function project(t) {
   assert.equal(spawnSync('git', ['-C', directory, 'commit', '-qm', 'Baseline']).status, 0);
   return directory;
 }
-async function connected(t) {
-  const transport = new StdioClientTransport({ command: process.execPath, args: [server], cwd: process.cwd(), stderr: 'pipe' });
+async function connected(t, environment = {}) {
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [server],
+    cwd: process.cwd(),
+    env: { ...process.env, ...environment },
+    stderr: 'pipe'
+  });
   const client = new Client({ name: 'cfa-migration-engine-test', version: '1.0.0' });
   await client.connect(transport);
   t.after(async () => { await client.close(); });
@@ -97,6 +103,38 @@ test('MCP server runs the existing engine without creating a second ledger forma
   assert.match(contents, /CFA Migration Engine state: managed/);
   assert.match(contents, /"id": "mcp-audit"/);
   assert.equal(fs.existsSync(path.join(directory, '.cfa')), false);
+});
+
+test('host-scoped MCP server rejects projects and ledgers outside the selected repository', async t => {
+  const selectedProject = project(t);
+  const otherProject = project(t);
+  const client = await connected(t, { CFA_MIGRATION_PROJECT_ROOT: selectedProject });
+  const selectedLedger = path.join(selectedProject, 'MIGRATION_LEDGER.md');
+
+  const accepted = await client.callTool({
+    name: 'cfa_migration_init',
+    arguments: {
+      project: selectedProject,
+      goal: 'Migrate the selected app',
+      scope: 'Main app target',
+      ledger: selectedLedger
+    }
+  });
+  assert.equal(accepted.isError, undefined, JSON.stringify(accepted));
+
+  const rejectedProject = await client.callTool({
+    name: 'cfa_migration_review_leads',
+    arguments: { project: otherProject }
+  });
+  assert.equal(rejectedProject.isError, true);
+  assert.match(rejectedProject.content[0].text, /scoped to the project selected by its host application/);
+
+  const rejectedLedger = await client.callTool({
+    name: 'cfa_migration_status',
+    arguments: { ledger: path.join(otherProject, 'MIGRATION_LEDGER.md') }
+  });
+  assert.equal(rejectedLedger.isError, true);
+  assert.match(rejectedLedger.content[0].text, /only MIGRATION_LEDGER\.md in the project selected/);
 });
 
 test('MCP completion offers readability without reopening a completed migration', async t => {
