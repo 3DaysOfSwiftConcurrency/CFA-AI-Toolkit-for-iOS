@@ -50,6 +50,18 @@ test('keeps unfamiliar app files visible until their owner is decided', async t 
   assert.ok(report.findings.some(item => item.code === 'file-placement-unresolved' && item.file === 'Demo/CustomPayload.unknown'));
 });
 
+test('scans hidden files without treating them as unresolved app files', async t => {
+  const root = await project(t);
+  await fs.writeFile(path.join(root, 'Demo/.DS_Store'), 'Finder metadata');
+  await fs.writeFile(path.join(root, 'Demo/.custom-config'), 'tool configuration');
+  const report = await inspect(root);
+  assert.equal(report.fileLocations.find(item => item.file === 'Demo/.DS_Store')?.status, 'ignored-hidden-file');
+  assert.equal(report.fileLocations.find(item => item.file === 'Demo/.custom-config')?.status, 'ignored-hidden-file');
+  assert.equal(report.fileLocations.length, report.scope.projectFiles);
+  assert.ok(!report.findings.some(item => item.file === 'Demo/.DS_Store'));
+  assert.ok(!report.findings.some(item => item.file === 'Demo/.custom-config'));
+});
+
 test('does not treat a synchronized unit-test group as the app resource root', async t => {
   const root = await project(t);
   await fs.appendFile(path.join(root, 'Demo.xcodeproj/project.pbxproj'), '\nisa = PBXFileSystemSynchronizedRootGroup; path = DemoTests; sourceTree = "<group>";');

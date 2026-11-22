@@ -52,6 +52,12 @@ export async function reviewFilePlacement(root, projectFiles) {
   const entries = new Map();
   const locations = [];
   for (const file of projectFiles) {
+    // Dot-files can contain Finder, Git, or tool configuration metadata.
+    // Inventory them, but never treat them as movable app resources.
+    if (path.posix.basename(file).startsWith('.')) {
+      locations.push({file, status: 'ignored-hidden-file', expected: null});
+      continue;
+    }
     const appRoot = [...roots.keys()].filter(candidate => file.startsWith(`${candidate}/`)).sort((a, b) => b.length - a.length)[0];
     if (!appRoot || file.includes('.xcodeproj/')) {
       locations.push({file, status: 'outside-app-target', expected: null});
