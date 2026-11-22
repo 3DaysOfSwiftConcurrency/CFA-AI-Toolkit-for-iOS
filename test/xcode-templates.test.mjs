@@ -50,7 +50,7 @@ test('Remote List starter has no stale template residue', () => {
   assert.match(project, /INFOPLIST_KEY_CFBundleDisplayName = "\$\(PRODUCT_NAME\)";/);
   assert.doesNotMatch(project, /Todays Twenty|public\.app-category\.education/);
   assert.match(project, /INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;/);
-  assert.equal(fs.existsSync(path.join(starter, 'RemoteList/3 - App Resources/LaunchScreen.storyboard')), true);
+  assert.equal(fs.existsSync(path.join(starter, 'RemoteList/1 - View/LaunchScreen.storyboard')), true);
   const testSources = fs.readdirSync(path.join(starter, 'RemoteListTests'), { recursive: true, encoding: 'utf8' })
     .filter(file => file.endsWith('.swift'))
     .map(file => fs.readFileSync(path.join(starter, 'RemoteListTests', file), 'utf8')).join('\n');

@@ -6,6 +6,7 @@ Use this top-level reading order:
 Application
 ├── 1 - View
 │   ├── App.swift
+│   ├── LaunchScreen.storyboard (when used)
 │   ├── AppInformation.swift (when app identity is presented)
 │   ├── Theme
 │   │   ├── AppColourTheme.swift
@@ -73,10 +74,19 @@ For a CFA Xcode template, the on-disk path and the Xcode navigator group are
 both part of the architecture. CFA follows Xcode's own app-project conventions:
 
 - `App.swift` is in `1 - View`.
+- Storyboards and XIBs, including `LaunchScreen.storyboard`, belong in
+  `1 - View`. Keep localized variants together and verify their target membership.
 - `Assets.xcassets` stays at the app target's top level. It is Xcode's special
   asset catalog and owns the AppIcon build setting.
 - Privacy manifests, entitlements and local StoreKit files are in
   `3 - App Resources`.
+
+Review every project file, including non-Swift resources and Xcode build
+definitions, during a migration. Move files with an unambiguous CFA destination
+and reconcile on-disk paths, navigator placement, target membership, schemes,
+and runtime resource lookups. Unknown file types and explicit Xcode references
+need an ownership decision before moving; never discard them to make the
+folder map look complete.
 
 Do not create a second CFA asset catalog or override Xcode's inherited asset
 generator. In `TemplateInfo.plist`, every CFA-owned resource needs a matching

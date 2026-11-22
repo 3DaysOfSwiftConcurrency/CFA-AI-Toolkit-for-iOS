@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { analyse, maskSwift, scanSource } from './analyse.mjs';
+import {reviewFilePlacement} from './file-placement.mjs';
 
 const screenPath = /(?:^|\/)1 - View\/Views\/.*View\.swift$/;
 const productionSourceTree = /(?:^|\/)(?:1 - View|2 - AppModel|3 - App Resources|4 - Swift Extensions)\//;
@@ -256,6 +257,15 @@ export async function inspect(project) {
     ? appModel.slice(0, appModelBodyStart).replace(/[^\n]/g, ' ') + memberSignatures(braceBody(appModel, appModelBodyStart - 1))
     : '';
   const findings = [];
+  const {placements: filePlacements, locations: fileLocations} = await reviewFilePlacement(root, inventory.projectFiles);
+  for (const {file, destination, reason} of filePlacements) {
+    findings.push(finding('file-placement', 'review', `Move to ${destination}. ${reason}`, file, 1));
+  }
+  for (const {file, status} of fileLocations) {
+    if (status === 'unresolved') {
+      findings.push(finding('file-placement-unresolved', 'review', 'This app-target file has no automatic CFA placement rule. Determine its owner, target membership and resource lookup before migration completion.', file, 1));
+    }
+  }
   const propertyCandidates = new Map();
   function recordProperty(name, property) {
     if (!propertyCandidates.has(name)) propertyCandidates.set(name, []);
@@ -1172,7 +1182,10 @@ export async function inspect(project) {
     project: path.basename(root),
     sourceFingerprint: inventory.sourceFingerprint,
     method: 'Lexical source inspection; verify findings against Swift semantics and target membership.',
-    scope: { swiftFiles: inventory.scope.fileCount, screens: screens.length, skipped: inventory.scope.skipped, symbolicLinkPaths: inventory.scope.symbolicLinkPaths },
+    scope: { swiftFiles: inventory.scope.fileCount, projectFiles: inventory.scope.projectFileCount, screens: screens.length, skipped: inventory.scope.skipped, symbolicLinkPaths: inventory.scope.symbolicLinkPaths },
+    projectFilePaths: inventory.projectFiles,
+    filePlacements,
+    fileLocations,
     appModelFile: appModelFile ?? null,
     screens,
     findings,
@@ -1187,7 +1200,7 @@ export async function inspect(project) {
 }
 
 export function renderInspection(report) {
-  const lines = [`CFA inspection: ${report.project}`, `${report.scope.screens} View candidates · ${report.scope.swiftFiles} Swift files · ${report.findings.length} findings`, ''];
+  const lines = [`CFA inspection: ${report.project}`, `${report.scope.screens} View candidates · ${report.scope.swiftFiles} Swift files · ${report.scope.projectFiles ?? 0} project files · ${report.findings.length} findings`, ''];
   for (const screen of report.screens) {
     if (screen.structuralRoot && !screen.viewModelFile) {
       lines.push(`${screen.name}: structural tab root · no ViewModel required by this pattern`);

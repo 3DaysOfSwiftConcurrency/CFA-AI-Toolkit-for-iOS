@@ -241,7 +241,11 @@ Use deliberate passes:
    legacy primitives, completed feature milestones and verification gaps.
 5. As the scoped features take shape, reconcile their physical locations and
    Xcode navigator groups with the CFA folder map. Revisit temporary locations,
-   including existing Swift packages, and perform safe in-scope moves rather
+   including existing Swift packages. Inventory every project file, not only
+   Swift sources: storyboards and XIBs belong in `1 - View`; app resources,
+   localized files, asset catalogs and build definitions also need a placement
+   and target-membership review. Use `cfa inspect` for placement findings and
+   `cfa organize` to plan safe resource moves. Apply safe in-scope moves rather
    than merely noting that files are misplaced. Follow the placement and module
    checks in [migration workflow](references/concurrency-migration.md#reconcile-cfa-file-placement).
    Rebuild and test affected targets after moving code. Document an intentional

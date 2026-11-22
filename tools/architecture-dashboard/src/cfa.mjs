@@ -4,6 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { inspect, renderInspection } from './inspector.mjs';
+import {moveFilePlacements} from './file-placement.mjs';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const dashboardCLI = path.join(scriptDirectory, 'cli.mjs');
@@ -251,7 +252,11 @@ skill from that toolkit before changing the project.
   Features and their microservices under 2 - AppModel. Name folders for the
   responsibilities they contain. Put independently reusable Views in their own
   files and keep private implementation details beside their owner. Before
-  moving files, inspect their declarations and callers. Preserve behaviour,
+  moving files, inventory every project file, not only Swift sources. Put
+  storyboards and XIBs in 1 - View, app resources in 3 - App Resources and
+  the primary Assets.xcassets at the app target root. Use cfa inspect for
+  placement findings and cfa organize for safe resource moves. Inspect Swift
+  declarations and callers before moving source. Preserve behaviour,
   target membership and resource lookup. Check both the filesystem and the
   Xcode navigator, update scripts that refer to moved paths, and build and
   test the affected targets.
@@ -528,6 +533,7 @@ function usage() {
 Usage:
   cfa dashboard [project-folder] [dashboard options]
   cfa inspect [project-folder] [--json]
+  cfa organize [project-folder] [--apply]
   cfa doctor [project-folder]
   cfa project-guidance
   cfa enable-project [project-folder] [--host auto|codex|claude|cursor]
@@ -832,6 +838,28 @@ async function inspectProject(values) {
   console.log(json ? JSON.stringify(report, null, 2) : renderInspection(report));
 }
 
+async function organizeProject(values) {
+  let project;
+  let apply = false;
+  for (const value of values) {
+    if (value === '--apply') apply = true;
+    else if (!value.startsWith('--') && !project) project = value;
+    else throw Error(`Unknown or incomplete option: ${value}`);
+  }
+  const root = projectDirectory(project);
+  const report = await inspect(root);
+  const entries = report.filePlacements;
+  const unresolved = report.fileLocations.filter(item => item.status === 'unresolved' || item.status === 'source-ownership-review');
+  if (!apply) {
+    console.log(JSON.stringify({project: root, scannedFiles: report.scope.projectFiles, placements: entries, unresolved,
+      instruction: 'Use --apply to move safe files; review blocked and unresolved files, then verify Xcode targets and resource lookup.'}, null, 2));
+    return;
+  }
+  const moved = await moveFilePlacements(root, entries);
+  console.log(JSON.stringify({moved, needsReview: entries.filter(entry => !entry.movable), unresolved,
+    instruction: 'Reopen the Xcode project, check navigator and target membership, then build and test affected targets.'}, null, 2));
+}
+
 try {
   if (!args.length || args.includes('--help') || args.includes('-h')) {
     usage();
@@ -839,6 +867,7 @@ try {
     const command = args.shift();
     if (command === 'dashboard') dashboard(args);
     else if (command === 'inspect') await inspectProject(args);
+    else if (command === 'organize') await organizeProject(args);
     else if (command === 'doctor') doctor(args.shift());
     else if (command === 'enable-project') enableProject(args);
     else if (command === 'project-guidance') {

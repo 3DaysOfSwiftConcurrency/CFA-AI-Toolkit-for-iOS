@@ -71,7 +71,7 @@ export function verifyXcodeTemplateStructure(template = defaultTemplate) {
     ['1 - View/Views/Settings/SettingsViewModel.swift', 'Source/Application/1 - View/Views/Settings/SettingsViewModel.swift'],
     ['2 - AppModel/AppModel.swift', 'Source/Application/2 - AppModel/AppModel.swift'],
     ['2 - AppModel/Features/Settings/SettingsFeature.swift', 'Source/Application/2 - AppModel/Features/Settings/SettingsFeature.swift'],
-    ['3 - App Resources/LaunchScreen.storyboard', 'Source/Application/3 - App Resources/LaunchScreen.storyboard'],
+    ['1 - View/LaunchScreen.storyboard', 'Source/Application/1 - View/LaunchScreen.storyboard'],
     ['3 - App Resources/PrivacyInfo.xcprivacy', 'Source/Application/3 - App Resources/PrivacyInfo.xcprivacy'],
     ['4 - Swift Extensions/Date+StartOfDay.swift', 'Source/Application/4 - Swift Extensions/Date+StartOfDay.swift']
   ];

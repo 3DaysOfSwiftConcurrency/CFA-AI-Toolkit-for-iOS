@@ -62,7 +62,7 @@ export async function collectProjectAnalysis(root, options = {}, providers = {})
     possibleIndexMatches:indexedByLine.get(JSON.stringify([item.file,item.line])) || []
   }));
   const analysis = {schemaVersion:1, generatedAt:new Date().toISOString(), sourceFingerprint:before.sourceFingerprint,
-    scope:before.scope, files:before.files.map(({path,hash})=>({path,hash})),
+    scope:before.scope, projectFilePaths:before.projectFiles, files:before.files.map(({path,hash})=>({path,hash})),
     nativeSources:before.nativeSources || [], buildDefinitions:before.buildDefinitions || [], syntax:{...syntax,items:scopedSyntaxItems,excludedItems:excludedSyntaxItems,missingFiles:syntax.status === 'available' ? missingFiles : [],coverage:excludedSyntaxItems ? 'unverified' : syntaxCoverage}, compilerIndex, callCandidates,
     limitations:['Syntax calls and lexical task nesting are not resolved relationships or runtime parentage.',
       'Same-line index matches are candidates only; multiple calls and macros can make them ambiguous.',

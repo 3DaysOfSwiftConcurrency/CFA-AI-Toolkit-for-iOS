@@ -25,6 +25,8 @@ For a quick read-only CFA ownership map, use the bundled command:
 ```sh
 node src/cfa.mjs inspect /path/to/your-ios-repository
 node src/cfa.mjs inspect /path/to/your-ios-repository --json
+node src/cfa.mjs organize /path/to/your-ios-repository
+node src/cfa.mjs organize /path/to/your-ios-repository --apply
 ```
 
 It identifies screen/ViewModel pairs, visible `AppModel.shared` feature routes,
@@ -33,6 +35,15 @@ from the CFA folder map. The JSON inspection schema is version 2. Its route
 fields `featureType` and `featureFile` distinguish a written type name from a
 located declaration. Scan one app directory at a time if the repository contains
 multiple AppModel files.
+
+Inspection inventories every regular project file, including storyboards, XIBs,
+asset catalogs, localized resources and build definitions. `organize` prints
+proposed resource moves. `--apply` moves unambiguous files in Xcode's
+filesystem-synchronized app groups, where the navigator follows disk paths.
+Explicitly referenced files, asset catalogs and unknown file types require
+individual review. After a move, check target membership and runtime resource
+lookups, then build and test the affected targets. The command does not delete
+files or rewrite classic Xcode project references.
 
 The inspector checks ViewModel ownership separately from naming. A screen can
 own its ViewModel in private `@State` under another name and still receive a

@@ -44,6 +44,15 @@
 				<string>com.apple.dt.applicationTarget</string>
 			</array>
 		</dict>
+		<key>1 - View/LaunchScreen.storyboard</key>
+		<dict>
+			<key>Path</key>
+			<string>Source/Application/1 - View/LaunchScreen.storyboard</string>
+			<key>TargetIdentifiers</key>
+			<array>
+				<string>com.apple.dt.applicationTarget</string>
+			</array>
+		</dict>
 		<key>1 - View/Theme/AppColourTheme.swift</key>
 		<dict>
 			<key>Path</key>
@@ -271,17 +280,6 @@
 				<string>com.apple.dt.applicationTarget</string>
 			</array>
 		</dict>
-		<key>3 - App Resources/LaunchScreen.storyboard</key>
-		<dict>
-			<key>Group</key>
-			<string>3 - App Resources</string>
-			<key>Path</key>
-			<string>Source/Application/3 - App Resources/LaunchScreen.storyboard</string>
-			<key>TargetIdentifiers</key>
-			<array>
-				<string>com.apple.dt.applicationTarget</string>
-			</array>
-		</dict>
 		<key>3 - App Resources/PrivacyInfo.xcprivacy</key>
 		<dict>
 			<key>Group</key>
@@ -315,6 +313,7 @@
 	<array>
 		<string>1 - View/___PACKAGENAMEASIDENTIFIER___App.swift</string>
 		<string>1 - View/AppInformation.swift</string>
+		<string>1 - View/LaunchScreen.storyboard</string>
 		<string>1 - View/Theme/AppColourTheme.swift</string>
 		<string>1 - View/Theme/ThemeManager.swift</string>
 		<string>1 - View/Views/AddHabit/AddHabitView.swift</string>
@@ -339,7 +338,6 @@
 		<string>2 - AppModel/User Data Storage/Local/StoredHabit.swift</string>
 		<string>2 - AppModel/User Data Storage/Local/SwiftDataManager.swift</string>
 		<string>2 - AppModel/User Data Storage/Protocols/HabitsRepository.swift</string>
-		<string>3 - App Resources/LaunchScreen.storyboard</string>
 		<string>3 - App Resources/PrivacyInfo.xcprivacy</string>
 		<string>Assets.xcassets</string>
 		<string>../AGENTS.md</string>
