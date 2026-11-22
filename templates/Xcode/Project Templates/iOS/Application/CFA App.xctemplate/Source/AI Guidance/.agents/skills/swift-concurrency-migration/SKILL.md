@@ -241,6 +241,9 @@ Use deliberate passes:
    legacy primitives, completed feature milestones and verification gaps.
 5. As the scoped features take shape, reconcile their physical locations and
    Xcode navigator groups with the CFA folder map. Revisit temporary locations,
+   preserve an existing View-layer ThemeManager as the sole theme owner, and
+   remove any migration-created AppearanceFeature or writable theme environment
+   key after restoring the original theme selection and persistence behaviour.
    including existing Swift packages. Inventory every project file, not only
    Swift sources: storyboards and XIBs belong in `1 - View`; app resources,
    localized files, asset catalogs and build definitions also need a placement

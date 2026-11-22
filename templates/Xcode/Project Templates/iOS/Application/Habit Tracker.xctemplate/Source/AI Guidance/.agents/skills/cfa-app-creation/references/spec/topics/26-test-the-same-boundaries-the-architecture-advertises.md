@@ -14,8 +14,9 @@ needs them; keep the named Feature and ViewModel test homes easy to find.
 Rules for tests:
 
 - every ViewModel has its own test file and suite;
-- every concrete Feature has a named API test file under `FeatureTests`,
-  including `SettingsFeatureTests.swift` in a new app;
+- every concrete Feature has a named API test file under `FeatureTests`;
+- test the ThemeManager's selection, persistence, fallback and palette updates
+  in presentation tests when the app has selectable themes;
 - never create one shared test suite for several screen ViewModels;
 - ViewModel tests inject an isolated feature capability;
 - feature tests exercise business rules and workflow coordination;

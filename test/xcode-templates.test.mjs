@@ -17,7 +17,8 @@ test('CFA App has the complete, strict-concurrency CFA skeleton', () => {
   assert.doesNotMatch(source, /GitRepos|GitHub|URLSession|RepoCache/);
   assert.match(source, /struct RootView: View/);
   assert.match(source, /final class AppModel/);
-  assert.match(source, /final class SettingsFeature/);
+  assert.match(source, /final class ThemeManager/);
+  assert.doesNotMatch(source, /final class SettingsFeature|final class AppearanceFeature/);
   assert.match(source, /final class SettingsViewModel/);
   for (const folder of ['1 - View', '2 - AppModel', '3 - App Resources', '4 - Swift Extensions']) {
     assert.equal(fs.existsSync(path.join(app, 'Source', 'Application', folder)), true, folder);
@@ -28,10 +29,10 @@ test('every native CFA app template carries portable AI project context', () => 
   for (const template of nativeAppTemplates) assert.equal(verifyNativeTemplateAIContext(template), true, template);
 });
 
-test('CFA App test component covers its AppModel, Feature and ViewModel', () => {
+test('CFA App test component covers its AppModel, ThemeManager and ViewModel', () => {
   for (const file of [
     'Source/AppModel tests/AppModelTests.swift',
-    'Source/FeatureTests/SettingsFeatureTests.swift',
+    'Source/PresentationTests/ThemeManagerTests.swift',
     'Source/View model tests/SettingsViewModelTests.swift'
   ]) assert.equal(fs.existsSync(path.join(tests, file)), true, file);
   execFileSync('plutil', ['-lint', path.join(tests, 'TemplateInfo.plist')]);

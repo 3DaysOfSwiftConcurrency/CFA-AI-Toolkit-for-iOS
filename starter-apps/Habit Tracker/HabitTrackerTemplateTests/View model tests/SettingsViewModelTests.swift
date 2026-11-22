@@ -55,7 +55,7 @@ struct SettingsViewModelTests {
         #expect(viewModel.firstWeekday == 1)
     }
 
-    @Test("Changing theme routes through the preference feature")
+    @Test("Changing theme routes through ThemeManager")
     func selectsTheme() {
         let suite = "SettingsViewModelTests.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else {
@@ -66,10 +66,11 @@ struct SettingsViewModelTests {
         let feature = SettingsFeature(defaults: defaults)
         let viewModel = SettingsViewModel(settingsFeature: feature)
 
-        viewModel.selectTheme(.terracotta)
+        let themeManager = ThemeManager(defaults: defaults)
+        viewModel.selectTheme(.terracotta, using: themeManager)
 
-        #expect(viewModel.selectedTheme == .terracotta)
-        #expect(feature.selectedTheme == .terracotta)
+        #expect(themeManager.selection == .terracotta)
+        #expect(defaults.string(forKey: "selectedTheme") == "terracotta")
         #expect(viewModel.themeTitle(.terracotta) == "Terracotta")
     }
 }

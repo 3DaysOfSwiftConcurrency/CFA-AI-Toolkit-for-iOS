@@ -44,7 +44,7 @@ test('public architecture map includes the mandatory Settings boundary', () => {
   assert.ok(folderMap, 'README CFA folder map');
   assert.match(folderMap, /SettingsView\.swift/);
   assert.match(folderMap, /SettingsViewModel\.swift/);
-  assert.match(folderMap, /SettingsFeature\.swift/);
+  assert.match(folderMap, /ThemeManager\.swift/);
 });
 
 test('headings inside fenced examples remain part of their section', () => {

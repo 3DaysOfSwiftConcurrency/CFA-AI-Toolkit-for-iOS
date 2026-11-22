@@ -4,18 +4,15 @@ import Observation
 @MainActor
 @Observable
 final class SettingsViewModel {
-    private let settingsFeature: SettingsFeature
     private let appInformation: AppInformation
     private let developerWebsiteAddress = "https://3daysofswiftconcurrency.com"
 
-    init(settingsFeature: SettingsFeature = AppModel.shared.settingsFeature,
-         appInformation: AppInformation = .current) {
-        self.settingsFeature = settingsFeature
+    init(appInformation: AppInformation = .current) {
         self.appInformation = appInformation
     }
 
-    func selectTheme(_ theme: AppColourTheme) {
-        settingsFeature.selectTheme(theme)
+    func selectTheme(_ theme: AppColourTheme, using themeManager: ThemeManager) {
+        themeManager.selectedTheme = theme
     }
 
     func themeName(_ theme: AppColourTheme) -> String {

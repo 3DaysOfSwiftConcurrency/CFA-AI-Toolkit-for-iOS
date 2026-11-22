@@ -51,7 +51,7 @@ struct SettingsViewModelTests {
         #expect(viewModel.firstWeekday == 1)
     }
 
-    @Test("Changing theme updates the preference feature")
+    @Test("Changing theme updates ThemeManager")
     func selectsTheme() {
         let suite = "SettingsViewModelTests.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else {
@@ -62,9 +62,10 @@ struct SettingsViewModelTests {
         let feature = SettingsFeature(defaults: defaults)
         let viewModel = SettingsViewModel(settingsFeature: feature)
 
-        viewModel.selectTheme(.ocean)
+        let themeManager = ThemeManager(defaults: defaults)
+        viewModel.selectTheme(.ocean, using: themeManager)
 
-        #expect(viewModel.selectedTheme == .ocean)
+        #expect(themeManager.selection == .ocean)
         #expect(viewModel.themeTitle(.ocean) == "Ocean")
     }
 }

@@ -75,9 +75,14 @@ the architecture:
    A separate history is opt-in for new apps.
    During migration, preserve existing deep-link, notification and history
    capabilities.
-4. When the app uses `ThemeManager`, it is a presentation dependency supplied through the
-   SwiftUI environment. AppModel and features are not environment
-   values.
+4. When an app has selectable colour themes, preserve one observable
+   `ThemeManager` in `1 - View/Theme` as the selection, persistence and palette
+   owner. The App supplies that instance through the typed SwiftUI environment.
+   Do not replace it with an Appearance/Theme Feature, put theme selection in
+   AppModel, or add a writable theme `EnvironmentValues` key. Check that every
+   themed View and sheet reads the same manager and that changing selection
+   updates the palette and preferred colour scheme immediately. AppModel and
+   Features are not environment values.
 5. Features own feature state and behaviour; ViewModels own screen
    presentation state and route user intent to their feature. Published API
    or persistence snapshots use immutable `let` properties and contents, and

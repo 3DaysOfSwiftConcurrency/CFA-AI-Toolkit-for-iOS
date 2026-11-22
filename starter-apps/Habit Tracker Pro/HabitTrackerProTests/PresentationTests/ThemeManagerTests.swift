@@ -15,27 +15,26 @@ struct ThemeManagerTests {
         #expect(AppColourTheme.automatic.colorScheme == nil)
     }
 
-    @Test func featureSelectionDrivesThemeAndUnknownIdentifiersFollowSystem() throws {
+    @Test func managerSelectionDrivesThemeAndUnknownIdentifiersFollowSystem() throws {
         let suite = "ThemeManagerTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        let feature = SettingsFeature(defaults: defaults)
-        let themeManager = ThemeManager(settingsFeature: feature)
+        let themeManager = ThemeManager(defaults: defaults)
         #expect(themeManager.selectedTheme.id == "automatic")
         for palette in AppColourTheme.availableThemes {
             let selection = try #require(ThemeSelection(rawValue: palette.id))
-            feature.selectTheme(selection)
+            themeManager.selection = selection
             #expect(themeManager.selectedTheme.id == palette.id)
-            #expect(SettingsFeature(defaults: defaults).selectedTheme == selection)
+            #expect(ThemeManager(defaults: defaults).selection == selection)
         }
-        feature.selectTheme(.automatic)
+        themeManager.selection = .automatic
         #expect(themeManager.selectedTheme.colorScheme == nil)
         defaults.set("obsolete-theme", forKey: "selectedTheme")
-        #expect(SettingsFeature(defaults: defaults).selectedTheme == .automatic)
+        #expect(ThemeManager(defaults: defaults).selection == .automatic)
         // Existing installations keep their recognised choices.
         for legacyID in ["light", "dark"] {
             defaults.set(legacyID, forKey: "selectedTheme")
-            #expect(SettingsFeature(defaults: defaults).selectedTheme.rawValue == legacyID)
+            #expect(ThemeManager(defaults: defaults).selection.rawValue == legacyID)
         }
     }
 

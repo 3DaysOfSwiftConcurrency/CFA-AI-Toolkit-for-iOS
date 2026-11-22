@@ -10,8 +10,8 @@ struct SettingsView: View {
                 // Explicit setters avoid Swift 6.2.3's code-generation crash for bound actor-isolated methods.
                 Section {
                     Picker("Colour theme", selection: Binding(
-                        get: { viewModel.selectedTheme },
-                        set: { viewModel.selectTheme($0) }
+                        get: { themeManager.selectedTheme },
+                        set: { viewModel.selectTheme($0, using: themeManager) }
                     )) {
                         ForEach(ThemeChoice.allCases) { Text(viewModel.themeTitle($0)).tag($0) }
                     }.pickerStyle(.menu).frame(minHeight: 48)

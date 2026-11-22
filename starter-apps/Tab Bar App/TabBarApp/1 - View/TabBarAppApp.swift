@@ -15,7 +15,7 @@ final class AppLaunchDelegate: NSObject, UIApplicationDelegate {
 @main
 struct TabBarAppApp: App {
     @UIApplicationDelegateAdaptor(AppLaunchDelegate.self) private var launchDelegate
-    @State private var themeManager = ThemeManager(settingsFeature: AppModel.shared.settingsFeature)
+    @State private var themeManager = ThemeManager()
 
     var body: some Scene {
         WindowGroup {

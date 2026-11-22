@@ -15,18 +15,17 @@ struct ThemeManagerTests {
         #expect(AppColourTheme.automatic.colorScheme == nil)
     }
 
-    @Test func resolvesTheFeatureSelectionIntoItsPalette() throws {
+    @Test func resolvesTheManagerSelectionIntoItsPalette() throws {
         let suite = "ThemeManagerTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        let feature = SettingsFeature(defaults: defaults)
-        let themeManager = ThemeManager(settingsFeature: feature)
+        let themeManager = ThemeManager(defaults: defaults)
         #expect(themeManager.selectedTheme.id == "automatic")
         for selection in ThemeSelection.allCases {
-            feature.selectTheme(selection)
+            themeManager.selection = selection
             #expect(themeManager.selectedTheme.id == selection.rawValue)
         }
-        feature.selectTheme(.automatic)
+        themeManager.selection = .automatic
         #expect(themeManager.selectedTheme.colorScheme == nil)
     }
 

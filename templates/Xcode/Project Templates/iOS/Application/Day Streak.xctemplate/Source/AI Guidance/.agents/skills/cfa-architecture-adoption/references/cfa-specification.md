@@ -270,11 +270,11 @@ type merely to complete the folder diagram.
 The Xcode navigator must communicate the design without requiring a developer
 to inspect source files.
 
-Every new CFA app includes a Settings screen, its adjacent
-`SettingsViewModel.swift`, and `SettingsFeature.swift` exposed through
-`AppModel.shared.settingsFeature`. Settings is a screen even when its first
-version only selects a colour theme; do not collapse it into a data-only
-component or call its feature a manager.
+When a CFA app has Settings, give the screen an adjacent `SettingsViewModel.swift`.
+Create `SettingsFeature` in AppModel only for actual application preferences or
+business behaviour. A colour-theme-only Settings screen uses the single
+`ThemeManager` in `1 - View/Theme`; selecting a palette does not justify a
+Feature, and theme state must not be mirrored into AppModel.
 
 ### Settings About Section and CFA Footer
 
@@ -1781,8 +1781,9 @@ needs them; keep the named Feature and ViewModel test homes easy to find.
 Rules for tests:
 
 - every ViewModel has its own test file and suite;
-- every concrete Feature has a named API test file under `FeatureTests`,
-  including `SettingsFeatureTests.swift` in a new app;
+- every concrete Feature has a named API test file under `FeatureTests`;
+- test the ThemeManager's selection, persistence, fallback and palette updates
+  in presentation tests when the app has selectable themes;
 - never create one shared test suite for several screen ViewModels;
 - ViewModel tests inject an isolated feature capability;
 - feature tests exercise business rules and workflow coordination;

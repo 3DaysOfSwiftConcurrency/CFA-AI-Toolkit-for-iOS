@@ -1,6 +1,12 @@
+import Foundation
 import Observation
 import SwiftUI
 import UIKit
+
+enum ThemeChoice: String, CaseIterable, Identifiable {
+    case automatic, daylight, midnight, quiet, ocean, plum, ember, indigo
+    var id: String { rawValue }
+}
 
 extension ThemeChoice {
     var colorScheme: ColorScheme? {
@@ -73,13 +79,17 @@ private extension Color {
 
 @MainActor @Observable
 final class ThemeManager {
-    private let settingsFeature: SettingsFeature
-    var selectedTheme: ThemeChoice { settingsFeature.selectedTheme }
+    private let defaults: UserDefaults
+    private static let selectedThemeStorageKey = "selectedTheme"
+    var selectedTheme: ThemeChoice {
+        didSet { defaults.set(selectedTheme.rawValue, forKey: Self.selectedThemeStorageKey) }
+    }
     var current: AppColourTheme {
         selectedTheme == .automatic ? .automatic : .palette(selectedTheme)
     }
 
-    init(settingsFeature: SettingsFeature) {
-        self.settingsFeature = settingsFeature
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        selectedTheme = ThemeChoice(rawValue: defaults.string(forKey: Self.selectedThemeStorageKey) ?? "") ?? .automatic
     }
 }

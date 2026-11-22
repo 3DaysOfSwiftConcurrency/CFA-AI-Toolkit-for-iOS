@@ -9,10 +9,8 @@ struct AppModelTests {
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let remoteListFeature = RemoteListFeature(provider: TestRemoteListProvider(), cache: TestRemoteListItemCache())
-        let settingsFeature = SettingsFeature(defaults: defaults)
-        let appModel = AppModel(remoteListFeature: remoteListFeature, settingsFeature: settingsFeature)
+        let appModel = AppModel(remoteListFeature: remoteListFeature)
         #expect(appModel.remoteListFeature === remoteListFeature)
-        #expect(appModel.settingsFeature === settingsFeature)
     }
 
     @Test func repeatedLaunchStartsOneSharedRefresh() async throws {
@@ -21,8 +19,7 @@ struct AppModelTests {
         defer { defaults.removePersistentDomain(forName: name) }
         let launchProvider = LaunchProvider()
         let remoteListFeature = RemoteListFeature(provider: launchProvider, cache: TestRemoteListItemCache())
-        let appModel = AppModel(remoteListFeature: remoteListFeature,
-                                settingsFeature: SettingsFeature(defaults: defaults))
+        let appModel = AppModel(remoteListFeature: remoteListFeature)
         appModel.applicationDidFinishLaunching()
         await launchProvider.waitUntilStarted()
         appModel.applicationDidFinishLaunching()

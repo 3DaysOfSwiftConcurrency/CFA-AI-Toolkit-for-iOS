@@ -4,11 +4,9 @@ import Testing
 
 @MainActor
 struct AppModelTests {
-    @Test func composesTheHomeAndSettingsFeatures() {
-        let defaults = UserDefaults(suiteName: "AppModelTests-\(UUID().uuidString)")!
-        let model = AppModel(homeFeature: HomeFeature(), settingsFeature: SettingsFeature(defaults: defaults))
+    @Test func composesTheHomeFeature() {
+        let model = AppModel(homeFeature: HomeFeature())
 
         #expect(model.homeFeature.starterSteps.count == 3)
-        #expect(model.settingsFeature.selectedTheme == .automatic)
     }
 }

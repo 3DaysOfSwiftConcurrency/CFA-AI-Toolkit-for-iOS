@@ -16,6 +16,25 @@ async function fixture(t, files) {
   return root;
 }
 
+test('reviews a migrated theme Feature and writable environment key instead of missing the ThemeManager regression', async t => {
+  const root = await fixture(t, {
+    'App/1 - View/Theme/AppColourTheme.swift': 'enum AppColourTheme { case mint, midnight }\nextension EnvironmentValues { var calculatorTheme: AppColourTheme { get { .mint } set {} } }',
+    'App/2 - AppModel/Features/Appearance/AppearanceFeature.swift': 'final class AppearanceFeature { var selectedTheme: AppColourTheme = .mint }',
+    'App/2 - AppModel/AppModel.swift': 'final class AppModel { let appearanceFeature: AppearanceFeature }'
+  });
+  const findings = (await inspect(root)).findings;
+  for (const code of ['theme-manager-missing', 'theme-feature-ownership', 'writable-theme-environment']) {
+    assert.ok(findings.some(item => item.code === code), code);
+  }
+  await fs.writeFile(path.join(root, 'App/1 - View/Theme/ThemeManager.swift'),
+    'final class ThemeManager { var selectedTheme: AppColourTheme = .mint }');
+  await fs.writeFile(path.join(root, 'App/1 - View/Theme/AppColourTheme.swift'),
+    'enum AppColourTheme { case mint, midnight }');
+  await fs.rm(path.join(root, 'App/2 - AppModel/Features/Appearance/AppearanceFeature.swift'));
+  const repaired = (await inspect(root)).findings;
+  assert.ok(!repaired.some(item => item.code.startsWith('theme-') || item.code === 'writable-theme-environment'));
+});
+
 test('maps a complete screen to AppModel, feature, collaborator and named tests', async t => {
   const root = await fixture(t, {
     'Application/1 - View/Views/Chat/ChatView.swift': 'import SwiftUI\nstruct ChatView: View { @State private var viewModel = ChatViewModel(); var body: some View { Text("Hi") } }',

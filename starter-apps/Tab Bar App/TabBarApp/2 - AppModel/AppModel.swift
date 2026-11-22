@@ -5,17 +5,15 @@ final class AppModel {
     static let shared = AppModel.live()
 
     let homeFeature: HomeFeature
-    let settingsFeature: SettingsFeature
     private var didFinishLaunching: Bool
 
-    init(homeFeature: HomeFeature, settingsFeature: SettingsFeature) {
+    init(homeFeature: HomeFeature) {
         self.homeFeature = homeFeature
-        self.settingsFeature = settingsFeature
         didFinishLaunching = false
     }
 
     static func live() -> AppModel {
-        AppModel(homeFeature: HomeFeature(), settingsFeature: SettingsFeature(defaults: .standard))
+        AppModel(homeFeature: HomeFeature())
     }
 
     func applicationDidFinishLaunching() {

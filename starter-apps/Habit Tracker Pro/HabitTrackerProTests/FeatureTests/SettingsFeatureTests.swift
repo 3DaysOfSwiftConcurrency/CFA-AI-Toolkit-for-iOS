@@ -22,16 +22,4 @@ struct SettingsFeatureTests {
         #expect(SettingsFeature(defaults: defaults).firstWeekday == 1)
     }
 
-    @Test("Theme selection is saved and restored")
-    func persistsTheme() throws {
-        let suite = "SettingsThemeTests.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
-        let feature = SettingsFeature(defaults: defaults)
-
-        feature.selectTheme(.plum)
-
-        #expect(feature.selectedTheme == .plum)
-        #expect(SettingsFeature(defaults: defaults).selectedTheme == .plum)
-    }
 }

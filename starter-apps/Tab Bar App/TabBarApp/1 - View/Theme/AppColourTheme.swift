@@ -1,4 +1,9 @@
 import SwiftUI
+
+enum ThemeSelection: String, CaseIterable, Identifiable {
+    case automatic, light, dark, ocean, plum, forest, terracotta, indigo
+    var id: String { rawValue }
+}
 import UIKit
 
 struct AppColourTheme: Equatable {

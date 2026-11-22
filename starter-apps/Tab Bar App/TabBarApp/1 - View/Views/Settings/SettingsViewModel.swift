@@ -3,16 +3,9 @@ import Observation
 @MainActor
 @Observable
 final class SettingsViewModel {
-    private let settingsFeature: SettingsFeature
 
-    init(settingsFeature: SettingsFeature = AppModel.shared.settingsFeature) {
-        self.settingsFeature = settingsFeature
-    }
-
-    var selectedTheme: ThemeSelection { settingsFeature.selectedTheme }
-
-    func selectTheme(_ theme: ThemeSelection) {
-        settingsFeature.selectTheme(theme)
+    func selectTheme(_ theme: ThemeSelection, using themeManager: ThemeManager) {
+        themeManager.selection = theme
     }
 
     func title(for theme: ThemeSelection) -> String {

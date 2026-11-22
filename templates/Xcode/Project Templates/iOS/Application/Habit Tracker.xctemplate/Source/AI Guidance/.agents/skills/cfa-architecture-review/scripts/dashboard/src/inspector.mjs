@@ -257,6 +257,28 @@ export async function inspect(project) {
     ? appModel.slice(0, appModelBodyStart).replace(/[^\n]/g, ' ') + memberSignatures(braceBody(appModel, appModelBodyStart - 1))
     : '';
   const findings = [];
+  const themeManagerFiles = [...sources].filter(([, source]) => /\bclass\s+ThemeManager\b/.test(source)).map(([file]) => file);
+  const themeSelectionFiles = [...sources].filter(([, source]) => /\b(?:enum|struct)\s+(?:AppColourTheme|ThemeSelection)\b/.test(source)).map(([file]) => file);
+  if (themeSelectionFiles.length && !themeManagerFiles.length) {
+    findings.push(finding('theme-manager-missing', 'review', 'Selectable themes need one ThemeManager in 1 - View/Theme to own selection, persistence and palette updates.', themeSelectionFiles[0], 1));
+  }
+  for (const file of themeManagerFiles) {
+    if (!/(?:^|\/)1 - View\/Theme\/ThemeManager\.swift$/.test(file)) {
+      findings.push(finding('theme-manager-placement', 'review', 'Place ThemeManager in 1 - View/Theme and inject the single instance by type through the SwiftUI environment.', file, 1));
+    }
+    if (/\b(?:AppearanceFeature|ThemeFeature|SettingsFeature)\b/.test(sources.get(file))) {
+      findings.push(finding('theme-manager-feature-dependency', 'review', 'ThemeManager must own its selection and persistence without delegating theme state to an AppModel Feature.', file, 1));
+    }
+  }
+  for (const [file, source] of sources) {
+    if (/(?:^|\/)Tests?\//.test(file)) continue;
+    if (/\b(?:class|actor)\s+\w*Feature\b/.test(source) && /\b(?:selectedTheme|selectedColourTheme|selectTheme|ThemeSelection)\b/.test(source)) {
+      findings.push(finding('theme-feature-ownership', 'review', 'Theme selection is presentation state owned by the View-layer ThemeManager, not a Feature in AppModel.', file, 1));
+    }
+    if (/\bextension\s+EnvironmentValues\b/.test(source) && /\b(?:AppColourTheme|ThemeSelection|ThemeManager)\b/.test(source)) {
+      findings.push(finding('writable-theme-environment', 'review', 'Use the single typed ThemeManager environment instance; a separate writable theme value can bypass palette updates.', file, 1));
+    }
+  }
   const {placements: filePlacements, locations: fileLocations} = await reviewFilePlacement(root, inventory.projectFiles);
   for (const {file, destination, reason} of filePlacements) {
     findings.push(finding('file-placement', 'review', `Move to ${destination}. ${reason}`, file, 1));

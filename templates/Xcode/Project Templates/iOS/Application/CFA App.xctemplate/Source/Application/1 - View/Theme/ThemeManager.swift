@@ -1,16 +1,23 @@
+import Foundation
 import Observation
 import SwiftUI
 
 @MainActor
 @Observable
 final class ThemeManager {
-    private let settingsFeature: SettingsFeature
+    private let defaults: UserDefaults
+    private static let selectedThemeKey = "selectedTheme"
 
-    init(settingsFeature: SettingsFeature = AppModel.shared.settingsFeature) {
-        self.settingsFeature = settingsFeature
+    var selection: ThemeSelection {
+        didSet { defaults.set(selection.rawValue, forKey: Self.selectedThemeKey) }
     }
 
     var selectedTheme: AppColourTheme {
-        AppColourTheme(selection: settingsFeature.selectedTheme)
+        AppColourTheme(selection: selection)
+    }
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        selection = ThemeSelection(rawValue: defaults.string(forKey: Self.selectedThemeKey) ?? "") ?? .automatic
     }
 }

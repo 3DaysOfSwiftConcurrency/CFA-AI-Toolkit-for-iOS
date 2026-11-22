@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct ___PACKAGENAMEASIDENTIFIER___App: App {
-    @State private var themeManager = ThemeManager(settingsFeature: AppModel.shared.settingsFeature)
+    @State private var themeManager = ThemeManager()
 
     var body: some Scene {
         WindowGroup {

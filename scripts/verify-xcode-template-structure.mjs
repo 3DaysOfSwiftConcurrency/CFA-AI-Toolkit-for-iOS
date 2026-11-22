@@ -70,7 +70,7 @@ export function verifyXcodeTemplateStructure(template = defaultTemplate) {
     ['1 - View/Views/Settings/SettingsView.swift', 'Source/Application/1 - View/Views/Settings/SettingsView.swift'],
     ['1 - View/Views/Settings/SettingsViewModel.swift', 'Source/Application/1 - View/Views/Settings/SettingsViewModel.swift'],
     ['2 - AppModel/AppModel.swift', 'Source/Application/2 - AppModel/AppModel.swift'],
-    ['2 - AppModel/Features/Settings/SettingsFeature.swift', 'Source/Application/2 - AppModel/Features/Settings/SettingsFeature.swift'],
+    ['1 - View/Theme/ThemeManager.swift', 'Source/Application/1 - View/Theme/ThemeManager.swift'],
     ['1 - View/LaunchScreen.storyboard', 'Source/Application/1 - View/LaunchScreen.storyboard'],
     ['3 - App Resources/PrivacyInfo.xcprivacy', 'Source/Application/3 - App Resources/PrivacyInfo.xcprivacy'],
     ['4 - Swift Extensions/Date+StartOfDay.swift', 'Source/Application/4 - Swift Extensions/Date+StartOfDay.swift']
@@ -91,7 +91,8 @@ export function verifyXcodeTemplateStructure(template = defaultTemplate) {
   const sources = expected.map(([, source]) => fs.readFileSync(path.join(template, source), 'utf8')).join('\n');
   if (/GitRepos|GitHub|URLSession|RepoCache/.test(sources)) throw Error('CFA App template structure: contains product-specific demo dependencies.');
   if (!/struct RootView: View/.test(sources) || !/final class AppModel/.test(sources) ||
-      !/final class SettingsFeature/.test(sources) || !/final class SettingsViewModel/.test(sources)) {
+      !/final class ThemeManager/.test(sources) || !/final class SettingsViewModel/.test(sources) ||
+      /final class AppearanceFeature|final class SettingsFeature/.test(sources)) {
     throw Error('CFA App template structure: missing required CFA infrastructure.');
   }
   return true;

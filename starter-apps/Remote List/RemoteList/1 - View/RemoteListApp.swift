@@ -16,7 +16,7 @@ final class CFAAppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct RemoteListApp: App {
     @UIApplicationDelegateAdaptor(CFAAppDelegate.self) private var appDelegate
-    @State private var themeManager = ThemeManager(settingsFeature: AppModel.shared.settingsFeature)
+    @State private var themeManager = ThemeManager()
 
     var body: some Scene {
         WindowGroup {

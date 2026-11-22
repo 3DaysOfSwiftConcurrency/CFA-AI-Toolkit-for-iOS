@@ -260,6 +260,12 @@ skill from that toolkit before changing the project.
   target membership and resource lookup. Check both the filesystem and the
   Xcode navigator, update scripts that refer to moved paths, and build and
   test the affected targets.
+- When the app has selectable themes, keep one observable ThemeManager in
+  1 - View/Theme. It owns selection, persistence and palette resolution. The
+  App injects it by type into the SwiftUI environment. Do not replace it with
+  an AppearanceFeature, put theme selection in AppModel or add a writable
+  EnvironmentValues theme key that bypasses the manager. Verify immediate
+  palette and colour-scheme updates throughout the existing screens and sheets.
 - Reserve 4 - Swift Extensions for broadly reusable Swift standard library and
   Foundation extensions. Keep SwiftUI and UIKit extensions in the View layer.
   Keep purpose-specific extensions and protocols with their owners.

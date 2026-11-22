@@ -4,14 +4,14 @@ import Testing
 
 @MainActor
 struct SettingsViewModelTests {
-    @Test func forwardsThemeSelectionToSettingsFeature() {
+    @Test func forwardsThemeSelectionToThemeManager() {
         let defaults = UserDefaults(suiteName: "SettingsViewModelTests-\(UUID().uuidString)")!
-        let feature = SettingsFeature(defaults: defaults)
-        let viewModel = SettingsViewModel(settingsFeature: feature)
+        let themeManager = ThemeManager(defaults: defaults)
+        let viewModel = SettingsViewModel()
 
-        viewModel.selectTheme(.forest)
+        viewModel.selectTheme(.forest, using: themeManager)
 
-        #expect(feature.selectedTheme == .forest)
-        #expect(viewModel.selectedTheme == .forest)
+        #expect(themeManager.selection == .forest)
+        #expect(defaults.string(forKey: "selectedTheme") == "forest")
     }
 }

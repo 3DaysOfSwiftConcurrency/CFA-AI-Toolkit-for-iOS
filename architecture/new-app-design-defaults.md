@@ -75,13 +75,15 @@ A read-only review never changes icons.
 
 ### Colour Theme
 
-Create a dedicated `ThemeManager.swift` and keep presentation palette code in
-`1 - View/Theme`. When a Feature owns the persisted theme selection, keep the
-theme identifier with that Feature and its palette mapping in the View layer.
-The application owns exactly one observable ThemeManager and
+Create dedicated `ThemeManager.swift` and `AppColourTheme.swift` files in
+`1 - View/Theme`. ThemeManager owns the selected theme, its persistence and
+the currently resolved palette. Theme selection is presentation state: do not
+create `AppearanceFeature`, move it into `SettingsFeature`, or expose it through
+AppModel. The application owns exactly one observable ThemeManager and
 supplies that same instance to every screen, scene, and presentation. Do not
 construct separate managers in individual screens or place this presentation
-state in AppModel.
+state in AppModel. Inject the manager by type through the SwiftUI environment;
+do not add a writable `EnvironmentValues` theme key that can diverge from it.
 
 Unless the user supplies another design, a new CFA app ships seven distinct,
 complete colour palettes, including at
@@ -92,9 +94,7 @@ default for a fresh installation or an unknown saved identifier. A manual
 choice stays selected when system appearance changes; returning to Automatic
 follows the system again. Persist the mode, not its last resolved palette.
 
-ThemeManager exposes the current selection and its palette. Keep one owner for
-the selection: for example, a SettingsFeature can own its persisted value while
-ThemeManager presents it. Every screen and shared component
+ThemeManager owns the current selection and exposes its palette. Every screen and shared component
 uses that current palette for semantic colours: backgrounds, surfaces, text,
 secondary text, accents, button foregrounds, and feedback. Keep palette literals
 centralized. Deliberately fixed artwork colours can remain stable, but must not

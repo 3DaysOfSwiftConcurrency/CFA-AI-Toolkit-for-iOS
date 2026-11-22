@@ -60,8 +60,9 @@ test('the default foundation project includes the required CFA composition', () 
 
     const appModel = fs.readFileSync(path.join(app, '2 - AppModel', 'AppModel.swift'), 'utf8');
     assert.match(appModel, /final class AppModel/);
-    assert.match(appModel, /settingsFeature: SettingsFeature/);
-    assert.equal(fs.existsSync(path.join(output, 'FoundationProjectTests', 'FeatureTests', 'SettingsFeatureTests.swift')), true);
+    assert.doesNotMatch(appModel, /settingsFeature: SettingsFeature/);
+    assert.equal(fs.existsSync(path.join(output, 'FoundationProject', '1 - View', 'Theme', 'ThemeManager.swift')), true);
+    assert.equal(fs.existsSync(path.join(output, 'FoundationProjectTests', 'PresentationTests', 'ThemeManagerTests.swift')), true);
   });
 });
 

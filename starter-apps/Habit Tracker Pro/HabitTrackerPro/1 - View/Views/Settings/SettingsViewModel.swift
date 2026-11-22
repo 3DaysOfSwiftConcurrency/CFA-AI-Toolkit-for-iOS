@@ -14,7 +14,6 @@ final class SettingsViewModel {
     }
 
     var firstWeekday: Int { settingsFeature.firstWeekday }
-    var selectedTheme: ThemeSelection { settingsFeature.selectedTheme }
     var appName: String { appInformation.appName }
     var versionDescription: String { appInformation.versionDescription }
 
@@ -22,8 +21,8 @@ final class SettingsViewModel {
         settingsFeature.selectFirstWeekday(weekday)
     }
 
-    func selectTheme(_ theme: ThemeSelection) {
-        settingsFeature.selectTheme(theme)
+    func selectTheme(_ theme: ThemeSelection, using themeManager: ThemeManager) {
+        themeManager.selection = theme
     }
 
     func themeTitle(_ theme: ThemeSelection) -> String {

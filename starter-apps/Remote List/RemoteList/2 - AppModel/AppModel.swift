@@ -5,12 +5,10 @@ final class AppModel {
     static let shared = AppModel.live()
 
     let remoteListFeature: RemoteListFeature
-    let settingsFeature: SettingsFeature
     private var hasFinishedLaunching: Bool
 
-    init(remoteListFeature: RemoteListFeature, settingsFeature: SettingsFeature) {
+    init(remoteListFeature: RemoteListFeature) {
         self.remoteListFeature = remoteListFeature
-        self.settingsFeature = settingsFeature
         hasFinishedLaunching = false
     }
 
@@ -27,8 +25,7 @@ final class AppModel {
             remoteListFeature: RemoteListFeature(
                 provider: RemoteListAPI(networkingManager: networkingManager),
                 cache: RemoteListItemFileCache(cacheDirectoryURL: .cachesDirectory)
-            ),
-            settingsFeature: SettingsFeature()
+            )
         )
     }
 }

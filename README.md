@@ -50,6 +50,13 @@ Each feature has one named folder. Its concrete `Feature` type, domain values
 and supporting workers live together inside that folder instead of being spread
 across unrelated areas of the Xcode project.
 
+For apps with selectable colour themes, one observable `ThemeManager` in
+`1 - View/Theme` owns the choice, saved identifier, and current palette. The App
+injects it by type into the SwiftUI environment. Settings reads and changes
+that same manager; a `SettingsFeature` is used for other application preferences
+only. A theme does not become an `AppearanceFeature` or a second writable
+environment value during migration.
+
 ## Official CFA architecture and project structure
 
 The official definition of Cooperative Feature Architecture is the

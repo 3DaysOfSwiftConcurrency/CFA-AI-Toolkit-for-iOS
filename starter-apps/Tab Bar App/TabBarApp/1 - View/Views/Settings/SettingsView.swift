@@ -9,8 +9,8 @@ struct SettingsView: View {
             Form {
                 Section("Appearance") {
                     Picker("Colour theme", selection: Binding(
-                        get: { viewModel.selectedTheme },
-                        set: { viewModel.selectTheme($0) }
+                        get: { themeManager.selection },
+                        set: { viewModel.selectTheme($0, using: themeManager) }
                     )) {
                         ForEach(ThemeSelection.allCases) { theme in
                             Text(viewModel.title(for: theme)).tag(theme)

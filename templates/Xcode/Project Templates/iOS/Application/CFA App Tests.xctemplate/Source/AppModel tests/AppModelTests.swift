@@ -4,10 +4,7 @@ import Testing
 @Suite("AppModel")
 @MainActor
 struct AppModelTests {
-    @Test func retainsItsSettingsFeature() {
-        let settingsFeature = SettingsFeature(defaults: .standard)
-        let appModel = AppModel(settingsFeature: settingsFeature)
-
-        #expect(appModel.settingsFeature === settingsFeature)
+    @Test func compositionRootIsStable() {
+        #expect(AppModel.shared === AppModel.shared)
     }
 }

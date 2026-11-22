@@ -4,14 +4,13 @@ import Testing
 
 @MainActor
 struct ThemeManagerTests {
-    @Test func reflectsTheSettingsFeatureTheme() throws {
+    @Test func reflectsItsOwnThemeSelection() throws {
         let name = "TimesThirtyTests.\(UUID())"
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
-        let feature = SettingsFeature(defaults: defaults)
-        let themeManager = ThemeManager(settingsFeature: feature)
+        let themeManager = ThemeManager(defaults: defaults)
         #expect(themeManager.selectedTheme == .automatic)
-        feature.selectTheme(.plum)
+        themeManager.selectedTheme = .plum
         #expect(themeManager.selectedTheme == .plum)
         #expect(themeManager.current.colorScheme == .dark)
     }

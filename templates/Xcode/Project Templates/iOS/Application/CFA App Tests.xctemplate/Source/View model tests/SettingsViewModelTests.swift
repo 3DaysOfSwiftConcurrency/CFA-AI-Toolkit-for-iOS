@@ -5,13 +5,14 @@ import Testing
 @Suite("SettingsViewModel")
 @MainActor
 struct SettingsViewModelTests {
-    @Test func forwardsTheThemeSelectionToItsFeature() throws {
+    @Test func forwardsTheThemeSelectionToItsManager() throws {
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
-        let settingsFeature = SettingsFeature(defaults: defaults)
-        let viewModel = SettingsViewModel(settingsFeature: settingsFeature)
+        let themeManager = ThemeManager(defaults: defaults)
+        let viewModel = SettingsViewModel()
 
-        viewModel.selectTheme(.light)
+        viewModel.selectTheme(.light, using: themeManager)
 
-        #expect(viewModel.selectedTheme == .light)
+        #expect(themeManager.selection == .light)
+        #expect(defaults.string(forKey: "selectedTheme") == "light")
     }
 }

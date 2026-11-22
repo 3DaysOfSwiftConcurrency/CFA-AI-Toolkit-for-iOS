@@ -15,7 +15,7 @@ struct SettingsView: View {
                         "Colour theme",
                         selection: Binding(
                             get: { themeManager.selectedTheme },
-                            set: { viewModel.selectTheme($0) }
+                            set: { viewModel.selectTheme($0, using: themeManager) }
                         )
                     ) {
                         ForEach(AppColourTheme.allCases) { theme in

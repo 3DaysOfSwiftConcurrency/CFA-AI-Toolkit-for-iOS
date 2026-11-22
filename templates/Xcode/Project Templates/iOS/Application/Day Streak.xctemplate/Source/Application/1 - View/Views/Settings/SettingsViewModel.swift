@@ -13,11 +13,10 @@ final class SettingsViewModel {
     }
 
     var preferredDifficulty: Difficulty { settingsFeature.preferredDifficulty }
-    var selectedTheme: ThemeChoice { settingsFeature.selectedTheme }
     var appName: String { appInformation.appName }
     var versionDescription: String { appInformation.versionDescription }
     func selectDifficulty(_ difficulty: Difficulty) { settingsFeature.selectDifficulty(difficulty) }
-    func selectTheme(_ theme: ThemeChoice) { settingsFeature.selectTheme(theme) }
+    func selectTheme(_ theme: ThemeChoice, using themeManager: ThemeManager) { themeManager.selectedTheme = theme }
     func difficultyTitle(_ difficulty: Difficulty) -> String { difficulty.rawValue.capitalized }
     func themeTitle(_ theme: ThemeChoice) -> String { theme.rawValue.capitalized }
 }

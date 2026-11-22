@@ -1,5 +1,10 @@
 import SwiftUI
 
+enum ThemeSelection: String, CaseIterable, Identifiable {
+    case automatic, light, dark
+    var id: String { rawValue }
+}
+
 struct AppColourTheme {
     let tint: Color
     let background: Color
