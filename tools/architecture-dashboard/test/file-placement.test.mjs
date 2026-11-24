@@ -72,6 +72,24 @@ test('does not treat a synchronized unit-test group as the app resource root', a
   assert.ok(!report.filePlacements.some(item => item.file.startsWith('DemoTests/')));
 });
 
+test('scans repositories with root files and nested classic Xcode projects', async t => {
+  const root = await project(t, false);
+  const library = path.join(root, 'Library');
+  await fs.mkdir(path.join(library, 'Library.xcodeproj'), {recursive: true});
+  await fs.mkdir(path.join(library, 'Library', '1 - View'), {recursive: true});
+  await fs.writeFile(path.join(library, 'Library.xcodeproj', 'project.pbxproj'),
+    'isa = PBXGroup; path = Library; sourceTree = "<group>";');
+  await fs.writeFile(path.join(library, 'Library', '1 - View', 'LibraryView.swift'),
+    'struct LibraryView {}');
+  await fs.writeFile(path.join(root, 'Podfile'), 'platform :ios');
+  const report = await inspect(root);
+  assert.equal(report.fileLocations.length, report.scope.projectFiles);
+  assert.equal(report.fileLocations.find(item => item.file === 'Podfile')?.status,
+    'outside-app-target');
+  assert.equal(report.filePlacements.find(item => item.file === 'Demo/LaunchScreen.storyboard')?.movable,
+    false);
+});
+
 test('does not move classic Xcode references or overwrite a destination', async t => {
   const classic = await project(t, false);
   const report = await inspect(classic);

@@ -41,10 +41,13 @@ export async function reviewFilePlacement(root, projectFiles) {
     // Classic projects can still be audited, but their resource references
     // cannot safely be changed by a simple filesystem rename.
     for (const file of projectFiles) {
-      const parts = file.split('/');
-      const appRoot = path.posix.join(base, parts[base === '.' ? 0 : base.split('/').length]);
-      if (file.startsWith(`${base === '.' ? '' : base + '/'}${parts[base === '.' ? 0 : base.split('/').length]}/`) &&
-          parts.some(part => folderNames.includes(part))) {
+      const prefix = base === '.' ? '' : `${base}/`;
+      if (!file.startsWith(prefix)) continue;
+      const relative = file.slice(prefix.length);
+      const parts = relative.split('/');
+      if (parts.length < 2) continue;
+      const appRoot = path.posix.join(base, parts[0]);
+      if (parts.some(part => folderNames.includes(part))) {
         if (!roots.has(appRoot)) roots.set(appRoot, {project, synchronized: false, source});
       }
     }
@@ -52,6 +55,12 @@ export async function reviewFilePlacement(root, projectFiles) {
   const entries = new Map();
   const locations = [];
   for (const file of projectFiles) {
+    // Dot-files can contain Finder, Git, or tool configuration metadata.
+    // Inventory them, but never treat them as movable app resources.
+    if (path.posix.basename(file).startsWith('.')) {
+      locations.push({file, status: 'ignored-hidden-file', expected: null});
+      continue;
+    }
     const appRoot = [...roots.keys()].filter(candidate => file.startsWith(`${candidate}/`)).sort((a, b) => b.length - a.length)[0];
     if (!appRoot || file.includes('.xcodeproj/')) {
       locations.push({file, status: 'outside-app-target', expected: null});
