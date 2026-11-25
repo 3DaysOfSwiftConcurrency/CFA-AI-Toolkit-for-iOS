@@ -543,8 +543,12 @@ operations enforce authorisation independently.
   Preserve code that still serves another route. Remove duplicate state owners
   and speculative abstractions introduced by the change, and correct placeholder
   names.
-- Build and run focused tests when available. Report an unavailable runtime or
-  toolchain honestly; do not turn missing verification into a pass.
+- Apply the mandatory final compilation gate in
+  [project workflow](project-workflow.md#mandatory-final-compilation-gate).
+  Build every affected target after the last edit and run relevant tests.
+  Compiler errors keep the task open until corrected and rebuilt; an unavailable
+  toolchain or failed build must be reported as unverified or blocked, never as
+  a completed, compiling change.
 
 If any invariant fails, correct the plan before expanding the implementation.
 

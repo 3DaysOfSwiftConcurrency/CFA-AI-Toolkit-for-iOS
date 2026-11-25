@@ -5,6 +5,12 @@ description: Review iOS feature ownership and CFA conformance without changing a
 
 # CFA Architecture Review
 
+For a read-only review, check compilation with the discovered scheme when
+possible and report its actual outcome. If it cannot be run, mark compilation
+unverified. Do not claim the reviewed project compiles without a passing build,
+or change its code merely to make the review pass. Follow the
+[mandatory final compilation gate](references/project-workflow.md#mandatory-final-compilation-gate).
+
 Read the [CFA specification reading map](references/spec/README.md) to locate applicable topics. The complete CFA specification remains authoritative; use it for whole-app audits.
 
 Read [project workflow and design authority](references/project-workflow.md) first.

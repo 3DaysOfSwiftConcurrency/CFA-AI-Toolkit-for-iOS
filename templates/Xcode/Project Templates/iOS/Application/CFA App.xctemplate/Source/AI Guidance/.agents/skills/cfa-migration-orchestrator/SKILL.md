@@ -5,6 +5,13 @@ description: "Orchestrate an authorised CFA and Swift Concurrency migration acro
 
 # CFA Migration Orchestrator
 
+Before calling any app or package edit complete, follow the
+[mandatory final compilation gate](references/project-workflow.md#mandatory-final-compilation-gate):
+build every affected target at the final revision, repair compiler errors and
+rebuild after the last edit. Run relevant tests and report the actual build
+command and result. If compilation is blocked or fails, identify the blocker
+and keep the task open; do not claim a compiling, verified completion.
+
 Own an authorised, whole-app CFA and Swift Concurrency migration from its
 agreed goal through a verified handoff. This is an execution workflow, not a
 continuation reminder: keep taking safe, in-scope migration actions until the

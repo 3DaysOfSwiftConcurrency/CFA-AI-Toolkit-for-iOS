@@ -70,10 +70,14 @@ identifier in the repository. For each slice:
    other external contracts unless a separate authorised change requires one.
    Do not add layers, move ownership, or alter product behaviour merely to
    make names look uniform.
-5. Run the focused tests and a relevant build or static check. Re-read the
-   changed code as a new reader, then record the evidence and choose the next
-   Feature. Stop only when the agreed AppModel and Feature scope has been
-   reviewed or a real product decision is needed.
+5. Run focused tests and build every affected target after the last rename or
+   project edit. A static check cannot replace compilation: repair any compiler
+   errors, including missed callers, and build again. Re-read the changed code
+   as a new reader, then record build and test evidence before choosing the
+   next Feature. Follow the mandatory final compilation gate in
+   [project workflow](references/project-workflow.md#mandatory-final-compilation-gate).
+   Stop only when the agreed AppModel and Feature scope has been reviewed and
+   the final build passes, or report the exact blocker without claiming completion.
 
 When a migration has just completed, this is an optional next programme. Do
 not reopen its completed migration ledger, revise its evidence, or start a

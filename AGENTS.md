@@ -32,6 +32,10 @@ preserves product behaviour while moving the implementation to CFA and Swift
 Concurrency. The dashboard is a tool used by architecture review.
 
 Run `npm test`, `npm run validate`, and `python3 scripts/release.py` for release changes.
+When editing a starter app or Xcode template, build every affected target at
+the final revision and report the command and result. Repair compiler errors
+and rebuild before calling the app work complete; if the build cannot run,
+report the blocker without claiming compilation succeeded.
 All runtime dependencies must be packaged or stated as prerequisites. Test installation
 in a temporary destination. Do not alter a real personal marketplace during tests.
 Do not infer native host compatibility or public publication from a valid manifest.

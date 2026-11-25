@@ -112,6 +112,13 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
     throw Error(`Unexpected or missing skill package: expected exactly ${expectedSkills.join(', ')}.`);
   }
   const expectedTopics = specTopics(base);
+  const workflowPolicy = fs.readFileSync(path.join(base, 'architecture/project-workflow.md'), 'utf8');
+  const portableInstructions = fs.readFileSync(path.join(base, 'templates/project-guidance/AGENTS.md'), 'utf8');
+  if (!workflowPolicy.includes('## Mandatory final compilation gate') ||
+      !workflowPolicy.includes('final source revision') ||
+      !portableInstructions.includes('After any app or project edit, build every affected target')) {
+    throw Error('Missing final compilation policy in canonical workflow or portable project instructions.');
+  }
   for (const folder of ['architecture/spec', ...cfaSkills.map(name => `skills/${name}/references/spec`)]) {
     const directory = path.join(base, folder);
     if (!fs.existsSync(directory) || JSON.stringify(files(directory).sort()) !== JSON.stringify([...expectedTopics.keys()].sort())) throw Error(`Missing or unexpected specification topics: ${folder}`);
@@ -249,6 +256,9 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
     if (!fs.existsSync(agentMetadata)) throw Error(`Missing skill interface metadata: ${name}`);
     validateSkillInterface(agentMetadata, name);
     validateSkillFrontmatter(text, name);
+    if (!text.includes('(references/project-workflow.md#mandatory-final-compilation-gate)')) {
+      throw Error(`Missing mandatory final compilation gate: ${name}`);
+    }
     if (referenceFeatureSkills.includes(name)) {
       const reference = path.join(skill, 'references/reference-feature.md');
       if (!fs.existsSync(reference) || !text.includes('(references/reference-feature.md)')) throw Error(`Missing reference Feature entry point: ${name}`);

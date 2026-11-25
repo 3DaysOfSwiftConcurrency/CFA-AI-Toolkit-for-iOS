@@ -5,6 +5,13 @@ description: Add, change or remove a feature in an existing CFA SwiftUI iOS app.
 
 # CFA feature work
 
+Before calling any app or package edit complete, follow the
+[mandatory final compilation gate](references/project-workflow.md#mandatory-final-compilation-gate):
+build every affected target at the final revision, repair compiler errors and
+rebuild after the last edit. Run relevant tests and report the actual build
+command and result. If compilation is blocked or fails, identify the blocker
+and keep the task open; do not claim a compiling, verified completion.
+
 Before writing code, apply [Decide before writing code](references/swift-coding-guide.md#decide-before-writing-code).
 Resolve ownership, the smallest useful API, failure behaviour and any task
 lifetime first. Implement and verify one coherent behaviour at a time. For a

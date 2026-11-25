@@ -120,6 +120,24 @@ check as successful. The toolkit helper
 `scripts/xcode-scheme-discovery.mjs` performs this discovery and dry-run gate
 when it is available in the repository.
 
+## Mandatory final compilation gate
+
+For any task that changes an Xcode app or package, compile the changed project
+at its final source revision before calling the task complete. Discover the
+actual container and scheme as above, build every affected app, extension,
+device or package target with an appropriate destination and configuration,
+and run relevant tests. A source scan, static check, earlier successful build,
+or green tests from before the last edit cannot replace the final build.
+After fixing any compiler error, build again; repeat until the affected builds
+pass. Record the command, scheme, destination, configuration, targets and result
+in the handoff. Rebuild after any subsequent code or project-file change.
+
+If compilation cannot be run or fails, continue safe repairs when possible.
+Otherwise state the exact failure or environment blocker and the remaining
+verification step. Do not claim that the task or project is finished, verified,
+or compilable. For a read-only review, report the build result or explicitly
+mark compilation unverified; do not change app code under review-only scope.
+
 Before delivery, compare the changed UI/behaviour with the baseline. Every
 intentional visual or interaction change must follow the current request or
 an applicable new-app default that the user has not overridden. Record any

@@ -474,6 +474,14 @@ test('release validation rejects a missing workflow policy and an entry point th
  assert.throws(()=>validate(source,{source:false}),/Missing workflow policy entry point/);
 });
 
+test('release validation rejects a skill that drops the final compilation gate', t => {
+ const {source}=release(t);
+ const entry=path.join(source,'skills/enhanced-code-readability/SKILL.md');
+ const original=fs.readFileSync(entry,'utf8');
+ fs.writeFileSync(entry,original.replace('(references/project-workflow.md#mandatory-final-compilation-gate)',''));
+ assert.throws(()=>validate(source,{source:false}),/Missing mandatory final compilation gate: enhanced-code-readability/);
+});
+
 test('release validation rejects an unquoted colon in a skill description', t => {
  const {source}=release(t);
  const entry=path.join(source,'skills/swift-concurrency-migration/SKILL.md');

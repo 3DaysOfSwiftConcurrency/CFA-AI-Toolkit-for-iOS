@@ -22,3 +22,12 @@ one to use; if none are returned, stop. Do not derive, invent, or substitute a
 scheme from a target, app, or folder name. Validate a test or presentation
 check with its explicit simulator destination before executing it, then reuse
 the same verified container, scheme, and destination for the actual command.
+
+After any app or project edit, build every affected target at the final source
+revision before calling the task complete. Run relevant tests and repeat the
+build after fixing compiler errors or making further edits. Record the actual
+scheme, destination, configuration, targets and outcome. A static check, old
+build or test run does not establish final compilation. If building is blocked
+or fails, report the exact problem and remaining check; do not claim the task
+is finished or the project compiles. For a read-only review, report compilation
+as checked or unverified without changing app code.
