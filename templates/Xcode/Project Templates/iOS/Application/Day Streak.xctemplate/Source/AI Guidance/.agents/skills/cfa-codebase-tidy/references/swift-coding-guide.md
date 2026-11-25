@@ -280,6 +280,31 @@ meaningfully named intermediate values or straightforward statements. Keep a
 short chain when its meaning is already obvious. The goal is understanding,
 not a minimum line count, a maximum name length, or an arbitrary ban on chains.
 
+**Rule for chained operations:** If one expression chains more than two
+operations, split it into meaningfully named, explicitly typed intermediate
+values. Count collection construction and calls such as `flatMap`, `filter` and
+`compactMap` as operations; ordinary property access alone is not the concern.
+This is a Swift coding standard for both model and presentation code. Long
+transformation chains hide the type and purpose of each stage and can make
+Swift's type checker unable to resolve the expression in reasonable time.
+Keep each resulting expression to at most two operations, and preserve the
+original order, optional handling and collection semantics when splitting it.
+
+```swift
+// A long chain hides both the intermediate data and its types.
+let identifiers = Set(groups).flatMap(\.entries).filter(\.isActive).compactMap(\.identifier)
+
+// Each name describes the information produced at that step.
+let uniqueGroups: Set<AuditGroup> = Set(groups)
+let allEntries: [AuditEntry] = uniqueGroups.flatMap(\.entries)
+let activeEntries: [AuditEntry] = allEntries.filter(\.isActive)
+let identifiers: [String] = activeEntries.compactMap(\.identifier)
+```
+
+**Review:** Does any expression perform more than two chained operations? If
+so, can a reader follow each intermediate value and its explicit type, and
+does the split retain the same results, including duplicate and nil handling?
+
 **Rule:** Name a value for the specific information it contains or identifies. A name such as `storageKey`, `value`, `data`, `result` or `manager` usually describes a mechanism or a vague role, not the information a reader needs to understand.
 
 For example, a key used only to persist the selected colour theme is `selectedColourThemeStorageKey`, not `storageKey`. The longer name is valuable because it makes the stored information clear at every read and write site. Use concise names when the scope makes the information genuinely obvious; do not shorten away the domain meaning.
