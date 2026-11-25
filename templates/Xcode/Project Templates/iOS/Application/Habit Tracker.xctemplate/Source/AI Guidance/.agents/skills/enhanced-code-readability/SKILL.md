@@ -131,6 +131,18 @@ loop without waiting for the developer to say “continue”:
    evidence as verified. A subsequent source or project edit reopens affected
    checkpoints and requires another build.
 
+Use the [rename build gate](scripts/rename-build-gate.mjs) for an executable
+checkpoint when Node and Xcode are available. For each affected scheme, run
+`verify <project-root> --scheme <discovered-scheme> --destination
+<explicit-destination> --evidence <project-root>/READABILITY_BUILD_EVIDENCE.json`;
+use a separate evidence file per scheme and `--build-action build-for-testing`
+when test sources changed. The command discovers the scheme, dry-runs, builds,
+and writes evidence only on success. Run `check` on every evidence file before
+claiming completion. It rejects source changed after the build, and a failed
+rebuild removes earlier success evidence. If the gate cannot run, retain the
+checkpoint as blocked; never invent an evidence file or treat a manual source
+scan as a substitute for a build.
+
 The workflow may stop as **complete** only when all requested declarations
 have decisions, every rename checkpoint is verified at the final revision,
 all affected targets compile and relevant tests pass. A cache, toolchain or
