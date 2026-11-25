@@ -103,12 +103,54 @@ remaining work; never silently narrow a whole-Model request.
 
 ## Work one coherent slice at a time
 
+### Rename checkpoint and stop rule
+
+Before the first rename, discover the real Xcode scheme and prove the affected
+targets build at the baseline revision. If the baseline has compiler errors,
+repair them as a separate verified step before renaming. If package resolution,
+cache permissions or tooling prevent a build, do not start new renames: first
+restore a working verification path. For a pass already in progress, repair
+known broken callers immediately, and leave that checkpoint open until its
+final build succeeds.
+
+Treat each coherent rename slice as an open checkpoint until the build proves
+its caller closure. Keep a short record with the original declaration, new
+name, affected targets, all call sites found across first-party source and
+tests, the exact final-revision build command and its result. Follow this
+loop without waiting for the developer to say “continue”:
+
+1. Rename the declaration and every matching caller, including calls in the
+   declaring type, presentation/navigation code, tests and extensions.
+2. Search the entire first-party Swift tree for the removed spelling. Resolve
+   every hit in type context; do not assume a zero-hit scan of changed files
+   covers untouched callers.
+3. Build the affected targets. If any compiler diagnostic remains, fix it
+   immediately, search again and rerun the build. Do not start another Feature
+   or record a verified checkpoint between a failed build and its repair.
+4. Only after the final build succeeds, record that revision and its build
+   evidence as verified. A subsequent source or project edit reopens affected
+   checkpoints and requires another build.
+
+The workflow may stop as **complete** only when all requested declarations
+have decisions, every rename checkpoint is verified at the final revision,
+all affected targets compile and relevant tests pass. A cache, toolchain or
+permission failure is **blocked**, not complete: record it, continue only
+independent safe work, and do not publish a finished handoff or commit a
+verified checkpoint. Do not hide missed callers behind a deprecated alias or
+replace the compiler gate with Swift parsing.
+
 **A rename is complete only after a successful build at the final source
 revision.** Editing a declaration and its known callers is an applied,
 unverified rename. Parsing, search results, token comparisons, or passing
 tests do not establish that the affected targets compile. Build every affected
 app, extension, test or package target after the last rename in the slice;
-repair any compilation errors and rebuild. If Xcode or a dependency blocks
+repair any compilation errors immediately and rebuild. In particular, a
+method rename must search **all first-party Swift source and tests**, including
+Views, navigation adapters, extensions, same-type calls and test helpers, for
+the old spelling. Inspect each hit in its type context; a search limited to
+the Feature folder or previously known callers is insufficient. If a build
+reports a missing member, fix every related call site, then build again before
+making another naming change. If Xcode or a dependency blocks
 the build before compilation, keep the rename and slice explicitly open,
 record the exact failure and remaining build command, and do not report it as
 finished or choose the next Feature as though it passed. A later code change

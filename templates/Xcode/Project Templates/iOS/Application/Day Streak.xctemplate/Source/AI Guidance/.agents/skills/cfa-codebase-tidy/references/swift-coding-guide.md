@@ -337,6 +337,13 @@ Treat a rename as applied but unverified until every affected target builds
 successfully after the last edit. A blocked build leaves that rename and slice
 open; record the exact failure, repair it when possible and rebuild before
 moving to the next Feature or calling the work complete.
+Establish a successful baseline build before starting a naming slice; fix
+existing compiler errors first, and do not begin new renames while the build
+environment cannot reach compilation.
+Search the full first-party source and test tree for the removed spelling,
+including calls from Views, navigation, extensions and within the renamed type.
+Resolve each hit in context, then repair any compiler-reported missed caller
+immediately and rerun the build.
 After Features, repeat for the rest of the agreed Model. A generic-name search
 or a file-level checkmark is a prompt for inspection, not full coverage. Preserve
 required callback names and external contracts with a recorded reason. Build
