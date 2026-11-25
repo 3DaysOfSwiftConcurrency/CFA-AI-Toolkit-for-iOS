@@ -305,7 +305,7 @@ The CFA AI Toolkit for iOS contains ten AI skills and one local analysis tool.
 | [CFA Architecture Adoption](skills/cfa-architecture-adoption/SKILL.md) | adopt CFA ownership and structure in an existing app, one verified Feature at a time. |
 | [Legacy GCD migration](skills/swift-concurrency-migration/SKILL.md) | migrate agreed GCD, operation queue and callback paths to CFA and Swift Concurrency while preserving existing behaviour. |
 | [CFA Migration Orchestrator](skills/cfa-migration-orchestrator/SKILL.md) | drive an authorised whole-app CFA migration through audit, correction and verification until the final gate or a genuine blocker. |
-| [Enhanced Code Readability](skills/enhanced-code-readability/SKILL.md) | make an existing app teach its reader through small, verified naming and flow improvements. |
+| [Enhanced Code Readability](skills/enhanced-code-readability/SKILL.md) | review every Feature function and property, then the rest of the agreed Model, with recorded naming decisions and verified builds. |
 | [CFA Architecture Review](skills/cfa-architecture-review/SKILL.md) | review architecture or run a whole-app Swift Concurrency Health Check without changing app code. Works with CFA and other architectures. |
 | [CFA Codebase Tidy](skills/cfa-codebase-tidy/SKILL.md) | simplify a CFA project after feature work. |
 | [CFA Unit Tests](skills/cfa-unit-tests/SKILL.md) | write and audit tests that protect real feature behaviour. |

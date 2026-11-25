@@ -319,6 +319,30 @@ Name task handles and task collections for the work and lifecycle they actually 
 
 **Review:** Read each declaration without its implementation. Can a reader identify the information it stores, not merely the API or container it uses?
 
+### Function-name inventory during a CFA readability pass
+
+**Rule:** Review every function and every stored or computed property in every
+Feature in the agreed target, including extensions, private helpers, static
+members and nested types. Feature APIs are the capabilities a ViewModel can
+discover; the name and labels of each exposed method must explain its specific
+action and outcome without opening its body. `SessionFeature.request(_:)` is
+ambiguous when it can fetch different users or clear an activity indicator.
+Separate genuinely different actions into accurately named entry points while
+preserving one shared execution owner where that behaviour is required.
+
+Record each declaration and its callers with a reason to keep, rename or block.
+Check parameters, local values and closure captures within each function, then
+reconcile reviewed and discovered counts by Feature against the final source.
+After Features, repeat for the rest of the agreed Model. A generic-name search
+or a file-level checkmark is a prompt for inspection, not full coverage. Preserve
+required callback names and external contracts with a recorded reason. Build
+every affected target and run focused tests at the final revision; a parse
+check does not establish that renames compile.
+
+**Review:** Can a new UI developer identify every callable Feature behaviour
+from its signature? Which Feature declarations remain unreviewed, and do the
+final source counts match the recorded decisions?
+
 ### Variable-name scan during every tidy-up
 
 **Rule:** Every CFA tidy-up includes a contextual variable-name scan of the

@@ -53,6 +53,11 @@ as a tidy-up failure. An ordinary tidy-up is not consent to add branding.
 
 Record a baseline and a short ledger: observed problem, owner, change, evidence, remaining limitation. Inspect actual callers and Xcode target membership. Work through the passes below, re-reviewing changed code after each pass. Repeat while concrete issues remain, not to meet an arbitrary count. Finish when the agreed scope has no known actionable violations; report unverified runtime behaviour separately. Never call a project a showcase on the basis of folder names or passing tests alone.
 
+When the request includes a whole-Feature or whole-Model naming pass, apply
+`$enhanced-code-readability`'s complete per-declaration inventory and
+reconciliation gate. A generic-name search and a file-level review cannot
+establish that every exposed Feature behaviour has a meaningful name.
+
 **KISS and readability govern every pass.** Optimize for a new reader understanding the code, including developers learning Swift. Fewer lines, clever syntax and longer chains are not evidence of simplicity. Prefer explicit names and a straightforward flow; avoid adding abstractions merely to satisfy a style preference.
 
 1. **UI structure.** Give each screen-level SwiftUI View its own adjacent ViewModel. Trace existing UIKit screens through their actual presentation owners. Extract meaningful stateless components and UIKit adapters into named presentation folders. Remove unreachable UI and obsolete wiring while preserving stored records and exports. Use consistent code formatting and named identifiers. Preserve the existing design system and accessible labels. Preserve layout and keyboard behaviour during extraction.

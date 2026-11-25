@@ -1176,6 +1176,27 @@ func process()
 Names must let a junior developer understand what will happen without knowing
 the implementation or navigating through several nested objects.
 
+**Every exposed Feature method and property is part of the app's usable API.**
+Its name, argument labels and return type should tell a ViewModel author which
+business action starts, what information is returned, and whether the operation
+changes shared state. `SessionFeature.request(_:)` is not descriptive if the
+argument can mean fetching a user, fetching a different user representation or
+clearing an activity indicator. Give distinct behaviours distinct entry points;
+do not require a caller to read an implementation or an extra manual to learn
+which action an API performs. Keep private helper and state names accurate too.
+Framework callbacks and required protocol spellings remain compatible; review
+their surrounding names rather than mechanically changing those contracts.
+
+For an authorised naming pass, inventory every Feature function and stored or
+computed property, including private/static members and extensions. Review
+each declaration in context and at its callers, record a keep/rename/blocked
+decision with a reason, and reconcile reviewed counts with the final source
+inventory for every Feature. Review parameter and local names within each
+function. Then apply the same complete review to the rest of the agreed Model.
+A handful of renamed files or a scan for generic verbs is not evidence that
+all names have been assessed. Finish only after the inventory is reconciled
+and the affected targets compile and relevant tests pass at the final revision.
+
 Do not expose deep object graphs such as
 `appModel.progress.snapshot.chart.points`. Expose the capability or result the
 caller actually needs through a clear feature API.

@@ -412,6 +412,13 @@ operations enforce authorisation independently.
   named test file in its ViewModel test group or under `FeatureTests`,
   respectively.
   Verify target membership and the behaviours each test actually exercises.
+- For a naming pass, reconcile every Feature function and property with an
+  item-by-item keep, rename or blocked decision at the final source revision.
+  Prioritise exposed methods: read their signatures as the ViewModel author
+  would and confirm the action, result and side effects are clear without
+  opening the implementation. Review private helpers and local names too,
+  then repeat across the rest of the agreed Model. An unreviewed declaration
+  or a blocked build keeps the naming pass open.
 - Confirm that launch refresh logic is absent from RootTabView and feature
   screens use `.task` for their own initial work—not as a substitute for
   application launch. Trace the delegate's direct synchronous call to

@@ -96,6 +96,10 @@
         },
         {
           "file": "swift-coding-guide.md",
+          "heading": "Function-name inventory during a CFA readability pass"
+        },
+        {
+          "file": "swift-coding-guide.md",
           "heading": "Variable-name scan during every tidy-up"
         },
         {
