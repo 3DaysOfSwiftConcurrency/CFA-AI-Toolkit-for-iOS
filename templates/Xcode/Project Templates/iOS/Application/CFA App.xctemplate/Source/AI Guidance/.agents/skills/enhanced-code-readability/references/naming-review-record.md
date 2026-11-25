@@ -9,16 +9,20 @@ and declaration manually. Do not turn a missing parser into a zero count.
 
 ## Scope and inventory
 
-| Target | Feature or model area | Source files and extensions | Functions found / reviewed | Properties found / reviewed | Unresolved | Build and tests at final revision |
-| --- | --- | --- | --- | --- | --- | --- |
-| App target | SessionFeature | Feature file and extensions | To count / 0 | To count / 0 | To assess | Pending |
+| Target | Feature or model area | Source files and extensions | Functions found / reviewed | Properties found / reviewed | Unresolved | Rename verification | Build and tests at final revision |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| App target | SessionFeature | Feature file and extensions | To count / 0 | To count / 0 | To assess | Pending build | Pending |
 
 Replace placeholder counts from the source. Include private and static
 functions, nested types, initializers, stored and computed properties. Note
 conditional compilation, external declarations and files the scanner did not
 read. Recount after edits; the total reviewed must equal the current total
 found in every row. A missing source file, an unresolved decision or a build
-blocker prevents a completed verdict.
+blocker prevents a completed verdict. Record a rename as **applied, unverified**
+until a successful build of every affected target at the final source revision.
+Only then change its status to **verified**. If the build stops before Swift
+compilation, retain **pending build** and the precise blocker; do not call the
+rename or the Feature slice finished.
 
 ## Declaration decisions
 
@@ -34,6 +38,7 @@ row or in a linked subsection. Framework-required callbacks and compatibility
 contracts can keep their spelling with the reason recorded.
 
 Before closing a Feature or model area, compare this table with a fresh source
-inventory, check all callers and tests, and record the final build result. A
+inventory, check all callers and tests, and record the final build result for
+the final source revision. Any subsequent rename requires another build. A
 source parse or a list of changed names cannot establish compilation or full
 naming coverage.

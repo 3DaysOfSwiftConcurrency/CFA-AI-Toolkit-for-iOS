@@ -418,7 +418,9 @@ operations enforce authorisation independently.
   would and confirm the action, result and side effects are clear without
   opening the implementation. Review private helpers and local names too,
   then repeat across the rest of the agreed Model. An unreviewed declaration
-  or a blocked build keeps the naming pass open.
+  or a blocked build keeps the naming pass open. An applied rename is not a
+  completed rename until the affected targets successfully compile at the
+  final source revision; a parse check or earlier build cannot close it.
 - Confirm that launch refresh logic is absent from RootTabView and feature
   screens use `.task` for their own initial work—not as a substitute for
   application launch. Trace the delegate's direct synchronous call to

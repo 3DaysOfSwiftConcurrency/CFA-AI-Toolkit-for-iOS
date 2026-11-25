@@ -103,6 +103,17 @@ remaining work; never silently narrow a whole-Model request.
 
 ## Work one coherent slice at a time
 
+**A rename is complete only after a successful build at the final source
+revision.** Editing a declaration and its known callers is an applied,
+unverified rename. Parsing, search results, token comparisons, or passing
+tests do not establish that the affected targets compile. Build every affected
+app, extension, test or package target after the last rename in the slice;
+repair any compilation errors and rebuild. If Xcode or a dependency blocks
+the build before compilation, keep the rename and slice explicitly open,
+record the exact failure and remaining build command, and do not report it as
+finished or choose the next Feature as though it passed. A later code change
+invalidates earlier build evidence for that affected target.
+
 For a whole-Model pass, start with one named Feature and its directly related
 screens, ViewModels, workers and tests. Cover every Feature before moving to
 the rest of AppModel. An explicitly narrow AppModel-only request can start
@@ -131,7 +142,8 @@ For each slice:
    declarations; trace every renamed call site, including cleanup and error
    paths. Run focused tests and build every affected target after the last
    rename or project edit. A static check cannot replace compilation: repair
-   compiler errors, including missed callers, and build again. Re-read the changed code
+   compiler errors, including missed callers, and build again. Re-read the
+   changed code
    as a new reader, then record build and test evidence before choosing the
    next Feature. Follow the mandatory final compilation gate in
    [project workflow](references/project-workflow.md#mandatory-final-compilation-gate).
