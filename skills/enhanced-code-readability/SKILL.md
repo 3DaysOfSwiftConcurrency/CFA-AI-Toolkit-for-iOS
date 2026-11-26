@@ -1,6 +1,6 @@
 ---
 name: enhanced-code-readability
-description: "Improve an existing Swift or CFA app's clarity in small, verified feature-by-feature passes. Use for behaviour-preserving naming and flow improvements; not for a mechanical repo-wide rename or new feature work."
+description: "Improve an existing Swift or CFA app's clarity in verified Model-then-View passes. Use for behaviour-preserving naming and flow improvements; not for a mechanical repo-wide rename or new feature work."
 ---
 
 # Enhanced code readability
@@ -101,6 +101,26 @@ programme finished when only Feature files have been checked. For an explicitly
 narrower request, name its exact scope and report the untouched inventory as
 remaining work; never silently narrow a whole-Model request.
 
+For a whole-app readability programme, close the Model inventory and its
+verified build checkpoints before beginning the separate **View phase**.
+Updating View callers during a Model rename does not count as reviewing the
+View. Inventory every first-party presentation file in the agreed targets,
+including SwiftUI Views, UIKit controllers, ViewModels, navigation and UI
+adapters. Review every function and stored/computed property there, plus its
+parameters, local values and closure captures, using the same individual
+keep/rename/blocked decisions and final-source count reconciliation. Follow
+each screen action through its ViewModel to the already-reviewed Feature API;
+names should say what the UI displays, what intent it forwards and what
+presentation work it awaits. Keep framework-required callbacks and bindings
+with a reason. Review UI slices one at a time, including their tests and
+cross-layer callers. A specifically requested View-only pass may start after
+the existing Model audit and build evidence have been checked; it need not
+repeat the Model audit. Track remaining View files and declarations explicitly
+until a final no-change review and successful build close this phase.
+Retain a presentation timing or cancellation injection when a focused test
+uses it to prove behaviour; simplify its name or flow without discarding that
+control merely because the default closure looks longer than an inline call.
+
 ## Work one coherent slice at a time
 
 ### Rename checkpoint and stop rule
@@ -168,10 +188,12 @@ record the exact failure and remaining build command, and do not report it as
 finished or choose the next Feature as though it passed. A later code change
 invalidates earlier build evidence for that affected target.
 
-For a whole-Model pass, start with one named Feature and its directly related
-screens, ViewModels, workers and tests. Cover every Feature before moving to
-the rest of AppModel. An explicitly narrow AppModel-only request can start
-there. Do not mechanically rename every matching identifier in the repository.
+For a whole-Model pass, start with one named Feature and inspect its related
+screens, ViewModels, workers and tests as callers. Cover every Feature before
+moving to the rest of AppModel. Begin the View naming inventory only after the
+Model phase closes, unless the developer explicitly chooses another scope.
+An explicitly narrow AppModel-only request can start there. Do not mechanically
+rename every matching identifier in the repository.
 For each slice:
 
 1. Record the baseline revision, the complete inventory above, the owning
@@ -201,8 +223,8 @@ For each slice:
    as a new reader, then record build and test evidence before choosing the
    next Feature. Follow the mandatory final compilation gate in
    [project workflow](references/project-workflow.md#mandatory-final-compilation-gate).
-   Stop only when every declaration and property in the agreed Feature and
-   AppModel scope has a recorded decision, no actionable naming issue remains,
+   Stop only when every declaration and property in the agreed Model and/or
+   View phase has a recorded decision, no actionable naming issue remains,
    and the final build passes. If discovery, compilation or tests are blocked,
    report exact counts and the blocker without claiming completion.
 

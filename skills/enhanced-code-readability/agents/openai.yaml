@@ -1,4 +1,4 @@
 interface:
   display_name: "Enhanced Code Readability"
   short_description: "Make Swift code teach its reader"
-  default_prompt: "Use $enhanced-code-readability to improve this app's clarity one verified Feature at a time."
+  default_prompt: "Use $enhanced-code-readability to review and improve the Model first, then the View, in verified slices."

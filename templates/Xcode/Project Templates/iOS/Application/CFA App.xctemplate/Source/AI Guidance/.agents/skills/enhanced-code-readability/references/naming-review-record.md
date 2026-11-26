@@ -2,7 +2,10 @@
 
 Keep this record in the app's `READABILITY_LEDGER.md` for a whole-app pass. It
 tracks decisions, not just edits. Start with the actual target's Feature types,
-then all model files outside those Features. Search declarations with a
+then all model files outside those Features. Once the Model phase is verified,
+open a separate View inventory for SwiftUI, UIKit, ViewModels, navigation and
+presentation adapters. Caller edits made during Model work do not count as View
+reviews. Search declarations with a
 Swift-aware parser where available; reconcile its file list with the Xcode
 target and project tree. If a parser is unavailable, inspect every source file
 and declaration manually. Do not turn a missing parser into a zero count.
@@ -12,6 +15,7 @@ and declaration manually. Do not turn a missing parser into a zero count.
 | Target | Feature or model area | Source files and extensions | Functions found / reviewed | Properties found / reviewed | Unresolved | Rename verification | Build and tests at final revision |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | App target | SessionFeature | Feature file and extensions | To count / 0 | To count / 0 | To assess | Pending build | Pending |
+| App target | Settings presentation | View, ViewModel and UI adapters | To count / 0 | To count / 0 | To assess | Pending build | Pending |
 
 Replace placeholder counts from the source. Include private and static
 functions, nested types, initializers, stored and computed properties. Note
