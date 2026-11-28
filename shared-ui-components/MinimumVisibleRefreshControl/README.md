@@ -21,7 +21,11 @@ func refreshDidFinish() {
 ```
 
 For user-initiated pulls, the control records its own `.valueChanged` start.
-For programmatic refreshes, it records `beginRefreshing()`.
+For programmatic refreshes, use `beginRefreshingAfterLayout()`. The component
+waits for UIKit's next layout turn, reveals itself when appropriate, and owns
+that short lifecycle hand-off. If refresh work ends before that turn, calling
+`endRefreshing()` cancels the pending presentation instead of flashing a
+spinner.
 
 ## SwiftUI
 
