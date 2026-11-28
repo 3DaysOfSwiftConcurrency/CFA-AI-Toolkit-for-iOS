@@ -26,7 +26,7 @@ export function stageRelease(output,base=root,{includeMcpRuntime=false, installR
     fs.cpSync(path.join(base,relative),destination,{recursive:true,errorOnExist:true,force:false,
       filter: source => isReleasePath(path.relative(base, source))});
   };
-  for(const relative of ['.codex-plugin','plugin.json','mcp.json','package.json','package-lock.json','mcp','readme-images','skills','LICENSE','CONTRIBUTING.md','BENEFITS.md','CFA-ENGINEERING-PHILOSOPHY.md','Install.command','Install Xcode Template.command','docs','architecture','evals','templates','starter-apps','scripts/create-cfa-project.mjs','scripts/verify-starter-projects.mjs','scripts/install.mjs','scripts/install-xcode-template.mjs','scripts/files.mjs','scripts/skill-names.mjs','scripts/release-exclusions.json'])copy(relative);
+  for(const relative of ['.codex-plugin','plugin.json','mcp.json','package.json','package-lock.json','mcp','readme-images','shared-ui-components','skills','LICENSE','CONTRIBUTING.md','BENEFITS.md','CFA-ENGINEERING-PHILOSOPHY.md','Install.command','Install Xcode Template.command','docs','architecture','evals','templates','starter-apps','scripts/create-cfa-project.mjs','scripts/verify-starter-projects.mjs','scripts/install.mjs','scripts/install-xcode-template.mjs','scripts/files.mjs','scripts/skill-names.mjs','scripts/release-exclusions.json'])copy(relative);
   fs.copyFileSync(path.join(base,'README.md'),path.join(output,'README.md'));
   if (includeMcpRuntime) installRuntime(output);
   writeJSON(path.join(output,'checksums.json'),inventory(output));

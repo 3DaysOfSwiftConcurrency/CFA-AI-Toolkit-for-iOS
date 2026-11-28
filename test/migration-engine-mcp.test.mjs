@@ -47,7 +47,7 @@ test('MCP server exposes the shared CFA workflow and its migration tools', async
   assert.deepEqual(tools.map(tool => tool.name).sort(), [
     'cfa_migration_audit', 'cfa_migration_block', 'cfa_migration_checkpoint', 'cfa_migration_claim_continuation',
     'cfa_migration_complete', 'cfa_migration_enable_continuation', 'cfa_migration_evidence', 'cfa_migration_heartbeat_continuation',
-    'cfa_migration_init', 'cfa_migration_recover_continuation', 'cfa_migration_reopen', 'cfa_migration_review_leads', 'cfa_migration_status', 'cfa_migration_validate'
+    'cfa_migration_init', 'cfa_migration_presentation_audit', 'cfa_migration_recover_continuation', 'cfa_migration_reopen', 'cfa_migration_review_leads', 'cfa_migration_status', 'cfa_migration_validate'
   ]);
   const specification = await client.readResource({ uri: 'cfa://migration-engine/specification' });
   assert.match(specification.contents[0].text, /Cooperative Feature Architecture/);
@@ -97,11 +97,14 @@ test('MCP server runs the existing engine without creating a second ledger forma
   const ledger = path.join(directory, 'MIGRATION_LEDGER.md');
   const audited = await client.callTool({ name: 'cfa_migration_audit', arguments: { project: directory, ledger, evidenceId: 'mcp-audit' } });
   assert.equal(audited.isError, undefined, JSON.stringify(audited));
+  const presentation = await client.callTool({ name: 'cfa_migration_presentation_audit', arguments: { project: directory, ledger, evidenceId: 'mcp-presentation-audit' } });
+  assert.equal(presentation.isError, undefined, JSON.stringify(presentation));
   const valid = await client.callTool({ name: 'cfa_migration_validate', arguments: { ledger } });
   assert.equal(valid.isError, undefined, JSON.stringify(valid));
   const contents = fs.readFileSync(ledger, 'utf8');
   assert.match(contents, /CFA Migration Engine state: managed/);
   assert.match(contents, /"id": "mcp-audit"/);
+  assert.match(contents, /"id": "mcp-presentation-audit"/);
   assert.equal(fs.existsSync(path.join(directory, '.cfa')), false);
 });
 

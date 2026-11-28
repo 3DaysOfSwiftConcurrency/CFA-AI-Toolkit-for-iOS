@@ -68,6 +68,15 @@ to run the bundled CFA inspector and migration source analysis. It records a
 source fingerprint, working-diff check and scanner summary in the ledger. Its
 leads require semantic review; it never declares CFA conformance automatically.
 
+When preparing a UIKit screen for a future SwiftUI replacement, use
+`presentation-audit /path/to/project --ledger /path/to/project/MIGRATION_LEDGER.md --id <id> --source-root <relative-production-source-root>`.
+It records controller, lifecycle, swizzle, composition and notification matches
+as source-review leads. Classify each lead by responsibility before moving it:
+screen workflow belongs with the screen model, shared state and operations with
+the owning Feature, and app-wide reactions with application composition. Keep
+UIKit rendering in place until those boundaries and their behavior tests are
+clear; the audit is not permission for a mechanical rewrite.
+
 Use `block` only when the ledger records the precise external condition that
 prevents all remaining work. Use `complete` only at the final revision with
 all named completion-gate evidence IDs; the command refuses a partial gate.

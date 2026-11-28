@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { auditProject, initialState, validateState } from '../skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs';
+import { auditProject, initialState, presentationAuditProject, validateState } from '../skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs';
 
 const script = path.resolve('skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs');
 function project(t, name = 'cfa-migration-engine-') {
@@ -155,10 +155,14 @@ test('engine safely reopens a legacy completed ledger with limited verification'
   for (const id of ids) assert.equal(spawnSync(process.execPath, [script, 'evidence', ledger, '--id', id, '--revision', 'abc123', '--kind', 'check', '--outcome', 'passed', '--summary', id]).status, 0);
   const flags = ['--baseline', '--build', '--tests', '--behaviour-regression', '--primitive-inventory', '--navigator-review', '--hybrid-review', '--final-cfa-audit', '--human-architecture-review'];
   assert.equal(spawnSync(process.execPath, [script, 'complete', ledger, ...flags.flatMap((flag, index) => [flag, ids[index]])]).status, 0);
-  const contents = fs.readFileSync(ledger, 'utf8').replace('"outcome": "passed",\n      "summary": "tests"', '"outcome": "passed-with-limitation",\n      "summary": "tests"');
+  const contents = fs.readFileSync(ledger, 'utf8')
+    .replace('"schemaVersion": 4', '"schemaVersion": 3')
+    .replace(/^[ \t]*"sourceFingerprint": "[^"]+",\n(?=[ \t]*"kind")/gm, '')
+    .replace('"outcome": "passed",\n      "summary": "tests"', '"outcome": "passed-with-limitation",\n      "summary": "tests"');
   fs.writeFileSync(ledger, contents);
   assert.notEqual(spawnSync(process.execPath, [script, 'validate', ledger]).status, 0);
-  assert.equal(spawnSync(process.execPath, [script, 'reopen', ledger, '--reason', 'The final test gate is limited.', '--next-action', 'Run the full test suite.']).status, 0);
+  const reopened = spawnSync(process.execPath, [script, 'reopen', ledger, '--reason', 'The final test gate is limited.', '--next-action', 'Run the full test suite.'], { encoding: 'utf8' });
+  assert.equal(reopened.status, 0, reopened.stderr);
   const status = spawnSync(process.execPath, [script, 'status', ledger], { encoding: 'utf8' });
   assert.match(status.stdout, /"phase": "verify"/);
   assert.equal(spawnSync(process.execPath, [script, 'validate', ledger]).status, 0);
@@ -235,4 +239,41 @@ test('engine summarizes inspection evidence without treating scanner leads as ve
     sourceFingerprint: 'fingerprint', swiftFiles: 7, findings: 3,
     findingsByCode: { 'feature-owner': 2, 'task-owner': 1 }, syntax: 'available', compilerIndex: 'not-requested', diffCheck: 'passed'
   });
+});
+
+test('presentation audit inventories UIKit migration leads without classifying them as defects', t => {
+  const directory = project(t, 'cfa-presentation-audit-');
+  fs.writeFileSync(path.join(directory, 'LegacyScreen.swift'), `
+import UIKit
+
+final class LegacyScreen: UIViewController {
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    bindViewModel()
+    NotificationCenter.default.post(name: .init("updated"), object: nil)
+    _ = AppModel.shared
+  }
+}
+
+final class LegacyScreenViewModel {
+  func viewDidLoad() {}
+}
+
+func installSwizzle() {
+  method_exchangeImplementations(UIViewController.self, UIViewController.self)
+}
+`);
+  const report = presentationAuditProject(directory);
+  assert.equal(report.sourceRoot, '.');
+  assert.equal(report.swiftFiles, 1);
+  assert.deepEqual(report.counts, {
+    'composition-reach-through': 1,
+    'legacy-presentation-hook': 1,
+    'method-swizzle': 1,
+    'presentation-notification': 1,
+    'lifecycle-named-api': 2,
+    'uikit-controller': 1
+  });
+  assert.ok(report.leads.every(lead => lead.file === 'LegacyScreen.swift'));
+  assert.ok(report.leads.every(lead => Array.isArray(lead.lines) && lead.lines.length > 0));
 });

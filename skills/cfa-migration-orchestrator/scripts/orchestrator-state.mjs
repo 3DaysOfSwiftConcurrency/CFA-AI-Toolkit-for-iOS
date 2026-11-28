@@ -107,7 +107,7 @@ function onlyOptions(args, names) {
   return true;
 }
 function usage() {
-  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> [--continuation-token <token>] | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> [--continuation-token <token>] | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text> [--continuation-token <token>] | continuation <ledger.md> --codex-thread <thread-id> | prepare-continuation <ledger.md> [--continuation-token <token>] | recover-continuation <ledger.md> | mark-continuation-delivery <ledger.md> --token <token> | claim-continuation <ledger.md> --token <token> [--lease-seconds <seconds>] | heartbeat-continuation <ledger.md> --token <token> [--lease-seconds <seconds>] | release-continuation <ledger.md> --token <token> | reopen <ledger.md> --reason <text> --next-action <text> [--continuation-token <token>] | block <ledger.md> --reason <text> --unblock-condition <text> --next-action <text> [--continuation-token <token>] | complete <ledger.md> --baseline <id> --build <id> --tests <id> --behaviour-regression <id> --primitive-inventory <id> --navigator-review <id> --hybrid-review <id> --final-cfa-audit <id> --human-architecture-review <id> [--continuation-token <token>]';
+  return 'Usage: orchestrator-state.mjs init <project> --goal <text> --scope <text> [--ledger <existing-ledger.md>] | audit <project> --ledger <existing-ledger.md> --id <evidence-id> [--continuation-token <token>] | presentation-audit <project> --ledger <existing-ledger.md> --id <evidence-id> [--source-root <relative-source-directory>] [--continuation-token <token>] | validate <ledger.md> | status <ledger.md> | checkpoint <ledger.md> --phase <phase> --next-action <text> --action <text> --result <text> [--continuation-token <token>] | evidence <ledger.md> --id <id> --revision <revision> --kind <kind> --outcome <outcome> --summary <text> [--continuation-token <token>] | continuation <ledger.md> --codex-thread <thread-id> | prepare-continuation <ledger.md> [--continuation-token <token>] | recover-continuation <ledger.md> | mark-continuation-delivery <ledger.md> --token <token> | claim-continuation <ledger.md> --token <token> [--lease-seconds <seconds>] | heartbeat-continuation <ledger.md> --token <token> [--lease-seconds <seconds>] | release-continuation <ledger.md> --token <token> | reopen <ledger.md> --reason <text> --next-action <text> [--continuation-token <token>] | block <ledger.md> --reason <text> --unblock-condition <text> --next-action <text> [--continuation-token <token>] | complete <ledger.md> --baseline <id> --build <id> --tests <id> --behaviour-regression <id> --primitive-inventory <id> --navigator-review <id> --hybrid-review <id> --final-cfa-audit <id> --human-architecture-review <id> [--continuation-token <token>]';
 }
 function activeWorker(state, token) {
   const active = state.continuation?.active;
@@ -202,12 +202,59 @@ export async function auditProject(project, providers = {}) {
   };
 }
 
+function swiftFiles(root) {
+  const excluded = new Set(['.build', '.git', 'DerivedData', 'node_modules']);
+  const files = [];
+  function visit(directory) {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      if (excluded.has(entry.name)) continue;
+      const absolute = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(absolute);
+      else if (entry.isFile() && entry.name.endsWith('.swift')) files.push(absolute);
+    }
+  }
+  visit(root);
+  return files.sort();
+}
+
+function matchingLines(source, pattern) {
+  return source.split(/\r?\n/).flatMap((line, index) => pattern.test(line) ? [index + 1] : []);
+}
+
+/**
+ * Finds presentation-migration leads without deciding whether any one lead is
+ * a defect. UIKit projects use many legitimate lifecycle and presentation APIs;
+ * their owner and behaviour must be reviewed before a migration changes them.
+ */
+export function presentationAuditProject(project, { sourceRoot, ...providers } = {}) {
+  const root = sourceRoot ? path.resolve(project, sourceRoot) : project;
+  if (!root.startsWith(`${project}${path.sep}`) && root !== project) fail('Presentation audit source root must be inside the selected project.');
+  if (!fs.statSync(root, { throwIfNoEntry: false })?.isDirectory()) fail(`Presentation audit source root does not exist: ${root}`);
+  const files = (providers.swiftFiles ?? swiftFiles)(root);
+  const leads = [];
+  const add = (file, code, lines) => {
+    if (lines.length) leads.push({ file: path.relative(project, file), code, lines });
+  };
+  for (const file of files) {
+    const source = fs.readFileSync(file, 'utf8');
+    add(file, 'uikit-controller', matchingLines(source, /:\s*(?:UI|NS)(?:Table|Collection)?ViewController\b/));
+    add(file, 'method-swizzle', matchingLines(source, /\b(?:method_exchangeImplementations|class_(?:add|replace)Method)\b/));
+    add(file, 'legacy-presentation-hook', matchingLines(source, /\b(?:bindViewModel|bindStyles)\s*\(/));
+    add(file, 'lifecycle-named-api', matchingLines(source, /\bfunc\s+(?:viewDidLoad|viewWillAppear|viewDidAppear|viewWillDisappear|viewDidDisappear|viewDidLayoutSubviews)\s*\(/));
+    add(file, 'composition-reach-through', matchingLines(source, /\bAppModel\.shared\b/));
+    add(file, 'presentation-notification', matchingLines(source, /\bNotificationCenter\.default\.post\s*\(/));
+  }
+  const counts = Object.fromEntries([...leads.reduce((result, lead) =>
+    result.set(lead.code, (result.get(lead.code) ?? 0) + lead.lines.length), new Map()).entries()].sort());
+  return { sourceRoot: path.relative(project, root) || '.', swiftFiles: files.length, leads, counts };
+}
+
 export async function main(args, { out = console.log, providers = {}, locked = false } = {}) {
   const [command, target, ...rest] = args;
   const readOnly = new Set(['validate', 'status']);
   const suppliedLedger = option(rest, '--ledger');
   const ledger = command === 'init' && target ? path.resolve(suppliedLedger ?? path.join(target, 'MIGRATION_LEDGER.md')) :
-    command === 'audit' && suppliedLedger ? path.resolve(suppliedLedger) : target ? path.resolve(target) : null;
+    ['audit', 'presentation-audit'].includes(command) && suppliedLedger ? path.resolve(suppliedLedger) : target ? path.resolve(target) : null;
   if (!locked && ledger && !readOnly.has(command)) {
     return withLedgerLock(ledger, () => main(args, { out, providers, locked: true }));
   }
@@ -236,6 +283,21 @@ export async function main(args, { out = console.log, providers = {}, locked = f
     if (errors.length) fail(errors.join('\n'));
     replaceState(file, state); out(JSON.stringify(report, null, 2)); return report;
   }
+  if (command === 'presentation-audit') {
+    const ledgerOption = option(rest, '--ledger'), id = option(rest, '--id'), sourceRoot = option(rest, '--source-root'), continuationToken = option(rest, '--continuation-token');
+    if (!target || !text(ledgerOption) || !text(id) || !onlyOptions(rest, ['--ledger', '--id', '--source-root', '--continuation-token'])) fail(usage());
+    const project = path.resolve(target), file = path.resolve(ledgerOption), state = checkedState(file);
+    if (state.phase === 'completed') fail('Reopen the completed migration before recording a UIKit-to-SwiftUI presentation audit.');
+    activeWorker(state, continuationToken);
+    const report = presentationAuditProject(project, { ...providers, sourceRoot });
+    state.phase = 'audit';
+    state.nextAction = 'Trace the smallest screen-sized presentation lead, record its current behaviour, and extract one responsibility before replacing UIKit rendering.';
+    state.evidence.push({ id, revision: git(project, ['rev-parse', 'HEAD']) ?? 'unavailable', sourceFingerprint: sourceFingerprint(project, file), kind: 'presentation-migration-audit', outcome: 'observed', summary: `Inspected ${report.swiftFiles} Swift files under ${report.sourceRoot}. Lead occurrences ${JSON.stringify(report.counts)}. These are source-review leads, not defect or ownership verdicts.` });
+    state.attempts.push({ action: 'Ran the UIKit-to-SwiftUI presentation audit.', result: 'Recorded lifecycle, swizzle, composition, and notification leads for semantic ownership review before any renderer replacement.' });
+    const errors = validateState(state, project, file);
+    if (errors.length) fail(errors.join('\n'));
+    replaceState(file, state); out(JSON.stringify(report, null, 2)); return report;
+  }
   const file = target && path.resolve(target);
   if (!file || !['validate', 'status', 'checkpoint', 'evidence', 'continuation', 'prepare-continuation', 'recover-continuation', 'mark-continuation-delivery', 'claim-continuation', 'heartbeat-continuation', 'release-continuation', 'reopen', 'block', 'complete'].includes(command)) fail(usage());
   if (command === 'validate') { if (rest.length) fail(usage()); checkedState(file); out('Valid CFA Migration Engine state.'); return; }
@@ -245,7 +307,7 @@ export async function main(args, { out = console.log, providers = {}, locked = f
     const { state } = extract(readLedger(file));
     if (state.phase !== 'completed') fail('Only a completed migration can be reopened.');
     activeWorker(state, continuationToken);
-    state.schemaVersion = 4; state.phase = 'verify'; state.nextAction = nextAction; state.blocker = null; state.completionGate = null;
+    state.phase = 'verify'; state.nextAction = nextAction; state.blocker = null; state.completionGate = null;
     if (state.continuation) { state.continuation.pending = null; state.continuation.active = null; }
     state.attempts.push({ action: 'Reopened completed migration.', result: reason });
     const errors = validateState(state, path.dirname(file), file);

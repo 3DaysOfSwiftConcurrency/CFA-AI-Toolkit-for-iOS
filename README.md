@@ -128,7 +128,10 @@ CFA AI Toolkit for iOS instructions available to your AI coding tool.
 
 For an MCP-capable client, the toolkit also includes a local CFA Migration Engine
 server. It exposes the existing ledger workflow and shared CFA rules rather than a
-second rules implementation. In the Codex plugin release, it is installed and
+second rules implementation. It can also record a scoped UIKit presentation
+audit before a SwiftUI renderer is replaced: controller, lifecycle, swizzle,
+composition and notification matches are review leads, never automatic defect
+or ownership verdicts. In the Codex plugin release, it is installed and
 configured with the toolkit; there is no separate MCP setup or `npm` command for
 the developer. On macOS with Codex, its optional continuation mode can recover
 an interrupted migration through a leased, watchdog-backed workflow; see
@@ -288,7 +291,10 @@ For a whole existing-app migration, use the dedicated
 or the [CFA migration guide](docs/MIGRATION-GUIDE.md) for an already
 CFA-structured app. They include the start, continuation and recovery prompts,
 and explain how to handle a bug or genuine product-design decision exposed
-during the audit.
+during the audit. Before replacing a UIKit renderer, use the Migration Engine's
+scoped presentation audit to record the current responsibilities and extract
+screen workflow, application coordination, or legacy lifecycle machinery into
+clear owners first.
 
 Saying **“Using CFA”** makes your intention clear. Once your AI tool reliably
 finds installed skills, a normal iOS request can use CFA too. If it does not,

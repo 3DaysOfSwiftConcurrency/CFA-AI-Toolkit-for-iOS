@@ -149,6 +149,13 @@ export function createMigrationEngineServer({ queueContinuation = requestCodexCo
     const selectedLedger = migrationLedger(ledgerFile);
     return invoke(['audit', migrationProject(project), '--ledger', selectedLedger, '--id', evidenceId, ...(token ? ['--continuation-token', token] : [])], { continuationLedger: selectedLedger, continuationToken: token, queueContinuation });
   });
+  server.registerTool('cfa_migration_presentation_audit', {
+    title: 'Audit UIKit-to-SwiftUI presentation migration', description: 'Inventory UIKit controller lifecycle, swizzling, composition, and notification leads before replacing a renderer. Source matches are review leads, not automatic ownership or defect verdicts.',
+    inputSchema: z.object({ project: nonEmpty, ledger, evidenceId: nonEmpty, sourceRoot: nonEmpty.optional(), continuationToken })
+  }, ({ project, ledger: ledgerFile, evidenceId, sourceRoot, continuationToken: token }) => {
+    const selectedLedger = migrationLedger(ledgerFile);
+    return invoke(['presentation-audit', migrationProject(project), '--ledger', selectedLedger, '--id', evidenceId, ...(sourceRoot ? ['--source-root', sourceRoot] : []), ...(token ? ['--continuation-token', token] : [])], { continuationLedger: selectedLedger, continuationToken: token, queueContinuation });
+  });
   server.registerTool('cfa_migration_review_leads', {
     title: 'List CFA review leads', description: 'Read the shared CFA inspector’s current source locations and messages without writing to the project. Leads require semantic review; they are not conformance verdicts.',
     inputSchema: z.object({ project: nonEmpty, code: nonEmpty.optional() })
