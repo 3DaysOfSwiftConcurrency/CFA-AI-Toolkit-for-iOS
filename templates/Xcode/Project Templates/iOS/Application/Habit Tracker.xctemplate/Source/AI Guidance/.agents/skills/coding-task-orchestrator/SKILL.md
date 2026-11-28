@@ -19,6 +19,17 @@ the [decision rationale and verified learning links](references/explanations/gui
 This skill coordinates work. An applicable project, architecture, migration,
 testing, or security skill still supplies the domain rules.
 
+## Autonomous continuation
+
+For an authorized task that must continue without waiting for a developer to
+send another message, use the toolkit's generic task-continuation runner when
+its MCP or command-line interface is available. It persists the objective,
+acceptance criteria, exact next action and Codex thread; a watchdog then
+requeues a stopped worker only while the task remains active. Claim the
+continuation token before acting, heartbeat before long operations, and record
+the next action at every non-terminal checkpoint. Do not use it for an
+ordinary one-off explanation or when the developer has asked to pause.
+
 ## Maintain forward progress
 
 - Record the requested outcome, acceptance checks, current evidence, remaining

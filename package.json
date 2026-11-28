@@ -13,6 +13,7 @@
     "sync": "node scripts/sync.mjs",
     "validate": "node scripts/validate.mjs",
     "mcp:migration": "node mcp/cfa-migration-engine.mjs",
+    "task:continuation": "node mcp/cfa-task-continuation-runner.mjs",
     "evals": "node scripts/run-evaluations.mjs",
     "explanations:audit": "node tools/explanations/explanations.mjs audit",
     "explanations:validate": "node tools/explanations/explanations.mjs validate",

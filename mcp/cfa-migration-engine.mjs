@@ -45,7 +45,7 @@ function text(value) {
 function continuationMessage(state) {
   const token = state.continuation?.pending?.token;
   return continuationWakeMessage({
-    taskName: 'A CFA migration', token,
+    taskName: 'A CFA migration', stateLabel: 'migration', token,
     claimInstruction: 'First call cfa_migration_claim_continuation with this token and the ledger path.',
     workInstruction: 'use the returned workerToken as continuationToken in every state-changing CFA migration call. Heartbeat before an operation likely to exceed the active lease. Continue every independent audit, fix, and verification action until the ledger is completed or a genuine user decision is required.'
   });

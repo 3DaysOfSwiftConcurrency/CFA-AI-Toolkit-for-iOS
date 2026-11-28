@@ -27,6 +27,6 @@ export function queueCodexContinuation({ threadId, message, execute = spawnSync,
  * Produces a bounded wake-up payload. The receiving worker must claim the
  * reserved token before acting, so duplicate or stale host deliveries are safe.
  */
-export function continuationWakeMessage({ taskName, token, claimInstruction, workInstruction }) {
-  return `${taskName} continuation is ready with token ${token}. This is a wake-up signal, not the current task state. ${claimInstruction} If it is stale, blocked, or completed, stop without performing work. If claimed, ${workInstruction}`;
+export function continuationWakeMessage({ taskName, stateLabel = 'task', token, claimInstruction, workInstruction }) {
+  return `${taskName} continuation is ready with token ${token}. This is a wake-up signal, not the current ${stateLabel} state. ${claimInstruction} If it is stale, blocked, or completed, stop without performing work. If claimed, ${workInstruction}`;
 }
