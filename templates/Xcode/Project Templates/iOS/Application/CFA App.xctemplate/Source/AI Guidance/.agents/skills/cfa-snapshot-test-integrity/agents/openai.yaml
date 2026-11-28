@@ -1,0 +1,4 @@
+interface:
+  display_name: "CFA Snapshot Test Integrity"
+  short_description: "Repair fragile iOS screenshot tests"
+  default_prompt: "Use $cfa-snapshot-test-integrity to audit these iOS snapshot tests and replace only invalid product-screen harnesses with real simulator evidence."

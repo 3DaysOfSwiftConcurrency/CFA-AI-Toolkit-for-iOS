@@ -4,6 +4,31 @@ Our working principles for readable, dependable Swift. This is a living guide: a
 
 Creation follows these rules from the start. Adoption, Legacy GCD migration and tidying apply them within the requested scope. Read-only reviews report violations and suggested corrections without editing code. Legacy GCD migration adopts CFA while preserving product behaviour; it does not mechanically replace GCD syntax or preserve an unclear ownership model.
 
+## CFA proposal gate
+
+**Rule:** Before proposing a CFA design or showing Swift code, inspect the
+relevant composition and identify the direct owner of each responsibility.
+
+State which type owns the domain operation and durable state, which type owns
+session or application state when relevant, and which type owns the screen,
+navigation, or presentation workflow. Every caller receives the concrete
+Feature or focused collaborator it needs directly from composition. A Feature
+must not expose another Feature or collaborator as a route for callers to
+reach through: `settingsFeature.sessionFeature` is a boundary violation, not
+dependency injection.
+
+Challenge complexity before adding it. Do not create a forwarding type,
+protocol, task registry, delay, sleeper, or waiting closure solely to make a
+test possible. First establish a real product requirement. Tests that must
+control completion order use a controlled provider, repository, request, or
+operation at the existing substitution boundary; production APIs do not gain
+artificial timing seams for that purpose.
+
+**Review:** Can each collaborator name its own direct dependency and distinct
+responsibility? Does each injected dependency serve production behaviour rather
+than test orchestration? If either answer is no, inspect the existing
+composition again before presenting code.
+
 ## Decide before writing code
 
 Apply this decision process before the first edit to each coherent behaviour.

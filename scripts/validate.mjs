@@ -136,7 +136,7 @@ export function validate(base=root,{source=true,checkXcodeProjects=true}={}) {
   if(pluginInterface?.displayName!=='CFA AI Toolkit for iOS' || pluginInterface.developerName!==publisherName ||
       pluginInterface.category!=='Productivity' || typeof pluginInterface.shortDescription!=='string' ||
       !pluginInterface.shortDescription.trim() || typeof pluginInterface.longDescription!=='string' ||
-      !pluginInterface.longDescription.includes('Ten skills') ||
+      !pluginInterface.longDescription.includes('Twelve skills') ||
       JSON.stringify(pluginInterface.capabilities)!==JSON.stringify(['Read','Write']) ||
       !Array.isArray(pluginInterface.defaultPrompt) || pluginInterface.defaultPrompt.length<5 ||
       pluginInterface.defaultPrompt.some(prompt=>typeof prompt!=='string' || !prompt.trim())) {

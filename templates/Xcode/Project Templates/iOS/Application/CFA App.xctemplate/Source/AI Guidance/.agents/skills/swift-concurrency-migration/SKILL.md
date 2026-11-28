@@ -46,6 +46,16 @@ tests inject Features into ViewModels, not ViewModels into Views.
 Migrate a legacy application into CFA and Swift Concurrency by preserving its
 product behaviour, not translating concurrency syntax.
 
+When migration touches screenshot tests, treat the app launch, root controller
+and window as product behaviour. Do not introduce a test-only launch mode,
+synthetic window, blank root or injected delay to make a snapshot pass. First
+classify each image test as a product UI snapshot, a limited component-layout
+snapshot or an invalid harness. Product snapshots drive the normal app on the
+configured simulator using deterministic fixture data outside the UI; preserve
+the original reference until the actual result and changed contract are
+reviewed. Apply `$cfa-snapshot-test-integrity` for the detailed audit and
+repair workflow.
+
 Read [CFA specification](references/cfa-specification.md), [CFA change gate](references/cfa-change-gate.md), [reference feature](references/reference-feature.md), [migration workflow](references/concurrency-migration.md) and [product behaviour contract](references/product-behaviour-contract.md).
 
 This is a CFA migration. It changes the architecture as well as legacy GCD,

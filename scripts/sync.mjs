@@ -13,6 +13,7 @@ export const explanationFiles = ['guide.md', 'catalogue.json',
   ...JSON.parse(fs.readFileSync(path.join(root, 'architecture/explanations/catalogue.json'), 'utf8')).topics.map(topic => topic.note)];
 export const iconSkills = ['cfa-app-creation', 'cfa-architecture-adoption', 'swift-concurrency-migration', 'cfa-codebase-tidy'];
 export const projectAnalysisFiles = ['project-analysis.mjs','analyse.mjs','dashboard.mjs','syntax-evidence.mjs','syntax-inventory.swift','program-map.mjs','index-program-map.c','indexstore.h'];
+export const snapshotIntegrityFiles = ['snapshot-test-integrity.mjs'];
 export const starterIcon = 'templates/Xcode/Project Templates/iOS/Application/CFA App.xctemplate/Source/Assets.xcassets/AppIcon.appiconset';
 const nativeAppTemplates = ['CFA App.xctemplate', 'Habit Tracker.xctemplate', 'Day Streak.xctemplate'];
 const nativeGuidanceDefinitions = {
@@ -49,6 +50,10 @@ export function sync(base = root, { skipXcodeProjects = false } = {}) {
     for (const file of ['project-workflow.md', 'new-app-design-defaults.md']) {
       copy(`architecture/${file}`, `skills/${name}/references/${file}`);
     }
+  }
+  copy('architecture/snapshot-test-integrity.md', 'skills/cfa-snapshot-test-integrity/references/snapshot-test-integrity.md');
+  for (const file of snapshotIntegrityFiles) {
+    copy(`tools/snapshot-test-integrity/${file}`, `skills/cfa-snapshot-test-integrity/scripts/${file}`);
   }
   copy('architecture/macos-app-creation.md', 'skills/cfa-app-creation/references/macos-app-creation.md');
   for (const name of skills) copy('architecture/swift-coding-guide.md',`skills/${name}/references/swift-coding-guide.md`);

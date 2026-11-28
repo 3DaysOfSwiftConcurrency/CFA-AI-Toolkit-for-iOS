@@ -166,7 +166,7 @@ Write those values into the report before you start building.
      `node scripts/install.mjs --mode skills --skills-directory <host-skills-dir>`  
      (Claude Code commonly uses `~/.claude/skills`.)
    - From a **git source checkout**, the installer may not have a release
-     checksum inventory. In that case, copy all ten folders from
+     checksum inventory. In that case, copy all twelve folders from
      `skills/` into the host’s skills directory, as the installation guide
      describes, and record that you installed from source.
 3. Optionally install the native Xcode templates (no Node.js required):
@@ -191,7 +191,7 @@ Write those values into the report before you start building.
    actually produced (a blank CFA skeleton, a renamed starter, leftover demo
    features, and so on). Observe; do not pre-judge.
 5. Confirm, in a **new** conversation, that the host can see the skills.
-   The ten skill folders are:
+   The twelve skill folders are:
 
    | Folder | Skill |
    | --- | --- |
@@ -204,6 +204,8 @@ Write those values into the report before you start building.
    | `skills/cfa-codebase-tidy` | CFA Codebase Tidy |
    | `skills/cfa-unit-tests` | CFA Unit Tests |
    | `skills/enhanced-code-readability` | Enhanced Code Readability |
+   | `skills/cfa-snapshot-test-integrity` | CFA Snapshot Test Integrity |
+   | `skills/cfa-anti-spaghetti-guard` | CFA Anti-Spaghetti Guard |
    | `skills/swift-code-quality` | Swift Code Quality |
 
    A new-app build should start with **CFA App Creation**. **CFA Unit Tests**

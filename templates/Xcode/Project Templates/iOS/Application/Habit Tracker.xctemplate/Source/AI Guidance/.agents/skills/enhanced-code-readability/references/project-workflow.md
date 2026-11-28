@@ -143,3 +143,10 @@ intentional visual or interaction change must follow the current request or
 an applicable new-app default that the user has not overridden. Record any
 unverified visual checks accurately. Do not use source checks as proof of an
 unchanged rendered interface.
+
+For snapshot-test work, inspect the test host before accepting a screenshot
+result. The normal app root, window and lifecycle are part of the product under
+test: do not replace them through test schemes, test plans, launch environment
+flags or application branches. Keep fixture data outside the product UI, wait
+for observable screen readiness rather than elapsed time, and preserve existing
+reference images until a human reviews an explicitly changed product contract.

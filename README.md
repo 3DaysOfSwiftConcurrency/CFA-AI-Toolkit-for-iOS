@@ -7,7 +7,7 @@
 # CFA AI Toolkit for iOS
 
 **Build, modernise, test and maintain iOS apps with AI, SwiftUI and Swift
-Concurrency.** This repository contains the CFA AI Toolkit for iOS: ten AI skills,
+Concurrency.** This repository contains the CFA AI Toolkit for iOS: twelve AI skills,
 three native Xcode project templates, an architecture inspector and practical
 guidance for working on new and existing apps. It is published by
 [3 Days of Swift Concurrency](https://www.3daysofswiftconcurrency.com/).
@@ -88,9 +88,9 @@ provides guidance for AI-written code, has fewer moving parts, and gives a
 developer a visible path from SwiftUI to each implemented feature and the shared
 state it owns.
 
-# CFA AI Toolkit for iOS — 10 AI Skills + Inspector
+# CFA AI Toolkit for iOS — 12 AI Skills + Inspector
 
-**CFA AI Toolkit for iOS is a free, open-source collection of ten AI skills and one
+**CFA AI Toolkit for iOS is a free, open-source collection of twelve AI skills and one
 tool.** It teaches an AI coding tool how to create, change, tidy, test, migrate
 and review an iOS project using the CFA architecture. The skills give the AI a
 clear blueprint to follow, which makes AI-driven development more consistent
@@ -111,7 +111,7 @@ and released under the [MIT licence](LICENSE).
 
 ## Free explanations when you need the reason
 
-All ten skills share 17 local design-decision references and verified links to
+All twelve skills share 17 local design-decision references and verified links to
 free public tutorials. They answer your question directly and can offer a relevant
 article for more detail, such as [why use AppModel in our code?](https://www.3daysofswiftconcurrency.com/cfa/explanation/appmodel-composition).
 The references work offline; visiting the website or enrolling in training is optional.
@@ -119,7 +119,7 @@ The references work offline; visiting the website or enrolling in training is op
 ## Install CFA AI Toolkit for iOS once
 
 An AI skill is a small folder of instructions for an AI coding tool. Installing
-the CFA AI Toolkit for iOS copies its ten skill folders into the place where your coding
+the CFA AI Toolkit for iOS copies its twelve skill folders into the place where your coding
 tool looks for skills on your computer. When you later ask your AI to create an
 iOS app, it can read the CFA architecture instructions and use CFA.
 
@@ -230,7 +230,7 @@ without you having to paste its rules into every prompt.
 The portable CFA AI Toolkit for iOS skills are in both the extracted plugin
 release and the repository’s `skills` folder. The checksummed installer below
 must be run from the extracted plugin release. If you are working from a Git
-source checkout, copy all ten skill folders manually; the source checkout
+source checkout, copy all twelve skill folders manually; the source checkout
 intentionally has no release checksum inventory.
 
 For Claude Code, the destination is commonly `~/.claude/skills`. From the
@@ -245,7 +245,7 @@ that folder. Restart the AI tool or start a new conversation, then send it the
 same confirmation message shown above.
 
 The dashboard needs Node.js 20 or newer. `Install.command` can use Codex's
-installed runtime when it is available. If your tool supports plain skill folders, you can copy the ten folders manually
+installed runtime when it is available. If your tool supports plain skill folders, you can copy the twelve folders manually
 instead of using Node.js.
 
 For screenshots, upgrades and troubleshooting, read
@@ -296,7 +296,7 @@ say “Using CFA” or name the relevant skill from the list below.
 
 ## CFA AI Toolkit for iOS skills
 
-The CFA AI Toolkit for iOS contains ten AI skills and one local analysis tool.
+The CFA AI Toolkit for iOS contains twelve AI skills and one local analysis tool.
 
 | Skill | Use it when you want to… |
 | --- | --- |
@@ -309,7 +309,9 @@ The CFA AI Toolkit for iOS contains ten AI skills and one local analysis tool.
 | [CFA Architecture Review](skills/cfa-architecture-review/SKILL.md) | review architecture or run a whole-app Swift Concurrency Health Check without changing app code. Works with CFA and other architectures. |
 | [CFA Codebase Tidy](skills/cfa-codebase-tidy/SKILL.md) | simplify a CFA project after feature work. |
 | [CFA Unit Tests](skills/cfa-unit-tests/SKILL.md) | write and audit tests that protect real feature behaviour. |
+| [CFA Snapshot Test Integrity](skills/cfa-snapshot-test-integrity/SKILL.md) | audit or repair iOS screenshot tests so they verify the real launched product. |
 | [Swift Code Quality](skills/swift-code-quality/SKILL.md) | apply Matt’s Swift standards to production code, examples and open-source projects. |
+| [CFA Anti-Spaghetti Guard](skills/cfa-anti-spaghetti-guard/SKILL.md) | check ownership, direct dependencies and test seams before CFA code is proposed. |
 
 The included **Xcode Project Dashboard** scans a Swift Concurrency project and
 creates a local HTML report. It lists task creation sites and source locations
@@ -515,7 +517,7 @@ cfa enable-project --host cursor
 ```
 
 This is optional. It reinforces CFA in that repository; it does not install
-skills or alter source code. Check that all ten installed skills are present,
+skills or alter source code. Check that all twelve installed skills are present,
 their bundled CFA references agree, and inspect project guidance at any time
 with:
 
@@ -605,7 +607,7 @@ This section is for AI coding assistants (Codex, Claude Code, Cursor and others)
 5. [`CFA-ENGINEERING-PHILOSOPHY.md`](CFA-ENGINEERING-PHILOSOPHY.md): the practical decision guide for choosing the simplest clear, owned, testable design within the canonical rules.
 
 **Pick the skill that matches the task** (folders in [`skills/`](skills)):
-`cfa-app-creation`, `cfa-feature-work`, `cfa-architecture-adoption`, `swift-concurrency-migration` (Legacy GCD migration), `cfa-migration-orchestrator` (whole migration ownership), `cfa-architecture-review` (read-only), `cfa-codebase-tidy`, `cfa-unit-tests`, `swift-code-quality`.
+`cfa-app-creation`, `cfa-feature-work`, `cfa-architecture-adoption`, `swift-concurrency-migration` (Legacy GCD migration), `cfa-migration-orchestrator` (whole migration ownership), `enhanced-code-readability`, `cfa-architecture-review` (read-only), `cfa-codebase-tidy`, `cfa-unit-tests`, `cfa-snapshot-test-integrity`, `cfa-anti-spaghetti-guard`, `swift-code-quality`.
 
 **Rules to keep in every change**
 

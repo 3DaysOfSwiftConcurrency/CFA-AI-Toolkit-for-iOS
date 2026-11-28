@@ -101,7 +101,10 @@ the architecture:
    do not add a matching `FeatureAPI` protocol. Inject a fake
    repository or provider into the concrete feature instead. Reserve
    infrastructure names for lower-level services;
-   do not call a feature owner a `Manager`.
+   do not call a feature owner a `Manager`. A caller that needs another
+   Feature or focused collaborator receives it directly from composition;
+   never tunnel through a Feature property such as
+   `settingsFeature.sessionFeature`.
 8. API operations return domain data or throw. Features keep domain
    data, operation state and retained errors as separate values; no result-like
    `LoadState` enum may carry all three.
@@ -313,6 +316,14 @@ the architecture:
     when its input matches another command.
 
 23. The branded Settings About/footer is a new-app default, not a CFA invariant.
+24. A product snapshot verifies the normal launched app, not a synthetic test
+    harness. Never add a test-only launch branch, replacement root controller,
+    replacement window, blank host or artificial response delay to make an
+    image comparison pass. Preserve a failing reference image while deciding
+    whether the app or its harness changed. A snapshot involving a native
+    control, safe area, keyboard or app lifecycle must come from the configured
+    simulator through the real user-visible route. A directly constructed
+    component image may verify only its owned layout and must say so.
     Existing apps receive it only on an explicit request such as “add CFA footer
     to Settings View”. Never repeatedly prompt or fail an ordinary tidy-up
     because themes, a footer or CFA branding are absent.

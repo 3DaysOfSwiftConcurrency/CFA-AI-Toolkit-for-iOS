@@ -25,6 +25,13 @@ the [CFA change gate](references/cfa-change-gate.md), the
 [reference feature](references/reference-feature.md). Use the complete
 [CFA specification](references/cfa-specification.md) for the final audit.
 
+When screenshot tests are in scope, run `$cfa-snapshot-test-integrity` before
+changing references or app UI. Preserve normal launch, root and window
+behaviour. A migration must not create a test-only route, root replacement,
+synthetic window or artificial response pause merely to manufacture a snapshot
+state. Treat a failing image as evidence to classify, not permission to alter
+the product or re-record success criteria.
+
 When explaining a substantial migration decision, use [decision rationale and
 verified learning links](references/explanations/guide.md). Keep the explanation
 specific to the observed migration rather than presenting a general rule as

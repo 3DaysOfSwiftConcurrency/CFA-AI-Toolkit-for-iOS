@@ -1,10 +1,23 @@
 # CFA project instructions
 
 This project uses Cooperative Feature Architecture (CFA). Read
-`ARCHITECTURE.md` before changing Swift source. It points to the authoritative
+`ARCHITECTURE.md` before changing Swift source or suggesting Swift code. It points to the authoritative
 CFA specification and Swift coding guide packaged under `.agents/skills`.
 
-Choose the relevant local skill for the request. Preserve the product's
+Before proposing a CFA design or Swift snippet, apply the local
+`cfa-anti-spaghetti-guard` skill. Identify the owner of each responsibility and
+show how each collaborator receives its direct dependency. Never reach through
+one Feature to another Feature or its collaborators (for example,
+`settingsFeature.sessionFeature`). Do not introduce a production delay, sleeper,
+or test-only waiting closure merely to create a race in a test; control the
+actual provider or request at the existing substitution boundary instead.
+
+When changing or interpreting screenshot tests, apply the local
+`cfa-snapshot-test-integrity` skill. A product screenshot must use the normal
+launched app on the configured simulator; do not replace the root controller or
+window, add a test-only launch path, or wait for an arbitrary elapsed time.
+
+Choose the relevant local workflow skill for the request. Preserve the product's
 existing behaviour, design and project instructions; CFA guidance does not
 authorise unrelated changes. Keep concrete Feature ownership, ViewModel
 presentation boundaries and test evidence aligned with the canonical

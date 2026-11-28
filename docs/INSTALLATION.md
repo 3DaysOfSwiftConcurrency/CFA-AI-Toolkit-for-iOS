@@ -8,7 +8,7 @@
 - For AI-guided workflows: your own supported agent/account and its normal permissions.
 
 Node.js, Xcode and the AI host are not bundled. The package contains the architecture,
-all ten skills, references and dashboard executable source, with no Trend dependency.
+all twelve skills, references and dashboard executable source, with no Trend dependency.
 
 ## Xcode project templates
 
@@ -172,14 +172,14 @@ compatibility with every host version.
 
 Run the installer commands in this section from the extracted plugin release,
 which contains `checksums.json`. A Git source checkout intentionally does not
-contain that generated release inventory; copy its ten `skills` folders
+contain that generated release inventory; copy its twelve `skills` folders
 manually when installing directly from source.
 
 ```sh
 node scripts/install.mjs --mode skills --skills-directory ~/.claude/skills
 ```
 
-This installs all ten folders into Claude Code's skill directory. Each is
+This installs all twelve folders into Claude Code's skill directory. Each is
 self-contained: the CFA specification and supporting references are bundled as
 needed, and the dashboard source and docs are inside the review skill. Restart
 Claude Code or open a new conversation after installation.
@@ -212,7 +212,7 @@ names disappear from the active package. Open a new conversation afterward.
 For standalone mode, the installer refuses to proceed if `cfa-development` or
 `xcode-project-dashboard` remains under `.agents/skills`. Move these legacy folders
 outside the host’s skill discovery directory first, retaining any edits, then install
-the ten new skills. This prevents duplicate or conflicting guidance. The installer
+the twelve new skills. This prevents duplicate or conflicting guidance. The installer
 never silently deletes an old skill or guesses whether local edits are disposable.
 
 ## Uninstall
@@ -225,10 +225,11 @@ Existing installations under `cooperative-feature-architecture` are a separate
 plugin identity. Installing this renamed plugin does not remove the old one;
 review any local changes before deactivating the previous installation.
 
-For standalone skills, remove only the ten installed folders printed by the installer:
+For standalone skills, remove only the twelve installed folders printed by the installer:
 `cfa-app-creation`, `cfa-feature-work`, `cfa-architecture-adoption`,
 `swift-concurrency-migration`, `cfa-migration-orchestrator`, `cfa-architecture-review`, `cfa-codebase-tidy`,
-`cfa-unit-tests`, `enhanced-code-readability` and `swift-code-quality`. Keep any local edits first.
+`cfa-unit-tests`, `enhanced-code-readability`, `cfa-snapshot-test-integrity`,
+`cfa-anti-spaghetti-guard` and `swift-code-quality`. Keep any local edits first.
 
 ## Offline staging and checksums
 

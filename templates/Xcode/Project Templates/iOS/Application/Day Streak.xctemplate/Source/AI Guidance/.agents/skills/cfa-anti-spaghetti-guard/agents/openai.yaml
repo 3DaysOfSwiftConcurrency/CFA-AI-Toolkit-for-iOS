@@ -1,0 +1,4 @@
+interface:
+  display_name: "CFA Anti-Spaghetti Guard"
+  short_description: "Keep CFA ownership and async design explicit"
+  default_prompt: "Use $cfa-anti-spaghetti-guard before proposing CFA Swift code."

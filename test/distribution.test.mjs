@@ -71,7 +71,7 @@ test('portable installation guidance distinguishes releases from source checkout
  for(const text of [readme,installation]) {
   assert.match(text,/extracted plugin release/);
   assert.match(text,/source checkout[\s\S]{0,200}intentionally (?:has no|does not\s+contain)/);
-  assert.match(text,/copy [^\n]{0,80}ten [^\n]{0,30}folders\s+manually/);
+  assert.match(text,/copy [^\n]{0,80}twelve [^\n]{0,30}folders\s+manually/);
  }
 });
 
@@ -285,19 +285,25 @@ test('standalone release carries scanner dependencies and scans outside the sour
  const {dir,source}=release(t); const destination=path.join(dir,'customer');
  const result=install({source,destination,mode:'skills'});
  assert.equal(result.status,'installed');
- assert.equal(result.paths.length,10);
+ assert.equal(result.paths.length,skills.length);
  for(const installed of result.paths) assert.ok(fs.existsSync(path.join(installed,'SKILL.md')));
  const tidy=path.join(destination,'.agents/skills/cfa-codebase-tidy');
  assert.ok(result.paths.includes(tidy));
  for(const resource of ['references/cfa-specification.md','references/product-behaviour-contract.md','agents/openai.yaml','LICENSE']) assert.ok(fs.existsSync(path.join(tidy,resource)));
  assert.equal(hash(path.join(tidy,'references/cfa-specification.md')),hash(path.join(root,'architecture/cfa-specification.md')));
  const cli=path.join(destination,'.agents/skills/cfa-architecture-review/scripts/dashboard/src/cli.mjs');
+ const fixture=path.join(dir,'unrelated-app');fs.mkdirSync(fixture);
+ fs.writeFileSync(path.join(fixture,'Feature.swift'),'actor Feature { func refresh() async { await Task.yield() } }');
+ const snapshotScanner=path.join(destination,'.agents/skills/cfa-snapshot-test-integrity/scripts/snapshot-test-integrity.mjs');
+ assert.ok(result.paths.includes(path.dirname(path.dirname(snapshotScanner))));
+ const snapshotReport=path.join(dir,'snapshot-integrity.json');
+ const snapshotScan=spawnSync(process.execPath,[snapshotScanner,fixture,'--strict','--json',snapshotReport],{cwd:dir,encoding:'utf8'});
+ assert.equal(snapshotScan.status,0,snapshotScan.stderr);
+ assert.deepEqual(json(snapshotReport).summary,{errors:0,reviews:0});
  const installedDashboard=path.dirname(path.dirname(cli));
  const missingTests=spawnSync('npm',['test'],{cwd:installedDashboard,encoding:'utf8'});
  assert.notEqual(missingTests.status,0,'An installed dashboard without tests must not report a passing suite');
  assert.match(missingTests.stderr,/tests are available in the toolkit source checkout/i);
- const fixture=path.join(dir,'unrelated-app');fs.mkdirSync(fixture);
- fs.writeFileSync(path.join(fixture,'Feature.swift'),'actor Feature { func refresh() async { await Task.yield() } }');
  const report=path.join(dir,'report');
  const execution=spawnSync(process.execPath,[cli,fixture,'--out',report],{cwd:dir,encoding:'utf8'});
  assert.equal(execution.status,0,execution.stderr);
@@ -368,7 +374,7 @@ test('portable installation accepts an explicit host skill directory',t=>{
  const {dir,source}=release(t); const destination=path.join(dir,'customer');
  const skillsDirectory=path.join(destination,'.claude','skills');
  const result=install({source,destination,mode:'skills',skillsDirectory});
- assert.equal(result.paths.length,10);
+ assert.equal(result.paths.length,skills.length);
  assert.ok(result.paths.every(item=>item.startsWith(skillsDirectory+path.sep)));
  assert.ok(fs.existsSync(path.join(skillsDirectory,'cfa-feature-work','SKILL.md')));
  assert.ok(fs.existsSync(path.join(skillsDirectory,'cfa-unit-tests','SKILL.md')));

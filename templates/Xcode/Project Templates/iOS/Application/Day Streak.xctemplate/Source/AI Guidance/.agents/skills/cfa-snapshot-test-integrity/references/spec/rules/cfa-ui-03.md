@@ -1,0 +1,19 @@
+# CFA-SPEC-UI-03: Pass selected values to detail screens
+
+**Applies when:** A destination needs a selected item.
+
+**Strength:** Permitted exception.
+
+**Guidance:** A detail View may receive a selected immutable snapshot and use it to construct its own State-backed ViewModel in the View initializer. The snapshot is initial input for that destination identity. A changed input does not automatically replace its State-backed ViewModel. Keep each scene’s selection in its presentation, while the Feature owns the authoritative data. Preserve the displayed snapshot and navigation when the source list changes. Omission from a refreshed list does not establish deletion. Prefer explicit refresh where it meets the product need. Automatic adoption of newer snapshots is a product choice. If several consumers need updates for a specific item, prefer a focused Feature API by item identity and define its lifetime and missing-item behaviour.
+
+**Why:** Each destination can preserve its selection independently.
+
+**Example:** Next Rocket Launch passes a selected snapshot into its [detail View](https://github.com/3DaysOfSwift/RocketLaunch-iOS-App-Swift-Concurrency/blob/3ecaa30c76428bd8a6f5db8fd5506b6c20b846f7/Swift%20Concurrency%20Project/RocketLaunch/1%20-%20View/Views/Operators/LaunchDetail/LaunchDetailView.swift) and its [ViewModel](https://github.com/3DaysOfSwift/RocketLaunch-iOS-App-Swift-Concurrency/blob/3ecaa30c76428bd8a6f5db8fd5506b6c20b846f7/Swift%20Concurrency%20Project/RocketLaunch/1%20-%20View/Views/Operators/LaunchDetail/LaunchDetailViewModel.swift).
+
+**Explanation:** [Why use screen-owned ViewModels in our code?](https://www.3daysofswiftconcurrency.com/cfa/explanation/view-model-ownership).
+
+**Related reading:** [Why use a UI and model boundary in our code?](https://www.3daysofswiftconcurrency.com/cfa/explanation/presentation-boundaries).
+
+**Verify:** Open different snapshots in two independently identified destinations. Rebuild a detail View with changed input and the same identity and verify that its existing ViewModel retains its selection. Refresh the source list and verify neither destination silently changes or closes, including when an item is omitted. If the detail offers explicit refresh, verify that it updates only its own display.
+
+**Full rule, context and examples:** [Give Every Unique Screen Its Own ViewModel](../topics/14-give-every-unique-screen-its-own-viewmodel.md). This card is a reading aid; apply the complete canonical section.

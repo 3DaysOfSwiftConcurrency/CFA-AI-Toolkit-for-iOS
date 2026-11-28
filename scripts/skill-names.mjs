@@ -7,7 +7,9 @@ export const cfaSkills = [
   'enhanced-code-readability',
   'cfa-architecture-review',
   'cfa-codebase-tidy',
-  'cfa-unit-tests'
+  'cfa-unit-tests',
+  'cfa-snapshot-test-integrity',
+  'cfa-anti-spaghetti-guard'
 ];
 
 export const skills = [...cfaSkills, 'swift-code-quality'];
