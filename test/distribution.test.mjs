@@ -71,7 +71,7 @@ test('portable installation guidance distinguishes releases from source checkout
  for(const text of [readme,installation]) {
   assert.match(text,/extracted plugin release/);
   assert.match(text,/source checkout[\s\S]{0,200}intentionally (?:has no|does not\s+contain)/);
-  assert.match(text,/copy [^\n]{0,80}twelve [^\n]{0,30}folders\s+manually/);
+  assert.match(text,/copy [^\n]{0,80}thirteen [^\n]{0,30}folders\s+manually/);
  }
 });
 

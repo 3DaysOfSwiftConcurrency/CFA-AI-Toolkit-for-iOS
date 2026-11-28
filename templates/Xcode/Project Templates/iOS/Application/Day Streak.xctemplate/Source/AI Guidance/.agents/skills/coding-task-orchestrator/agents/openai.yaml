@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coding Task Orchestrator"
+  short_description: "Keeps coding work moving to verified completion"
+  default_prompt: "Use $coding-task-orchestrator to complete this coding task through verified results."

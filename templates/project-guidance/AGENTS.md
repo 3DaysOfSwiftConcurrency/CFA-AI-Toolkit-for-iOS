@@ -17,6 +17,12 @@ When changing or interpreting screenshot tests, apply the local
 launched app on the configured simulator; do not replace the root controller or
 window, add a test-only launch path, or wait for an arbitrary elapsed time.
 
+For a code-changing task with build, test, audit, or delivery criteria, apply
+the local `coding-task-orchestrator` skill. Keep working until the relevant
+checks complete and their authoritative results are inspected. Recover routine,
+non-destructive runner interruptions without requiring the developer to prompt
+“continue”; do not alter the product or test system merely to obtain a pass.
+
 Choose the relevant local workflow skill for the request. Preserve the product's
 existing behaviour, design and project instructions; CFA guidance does not
 authorise unrelated changes. Keep concrete Feature ownership, ViewModel

@@ -12,4 +12,4 @@ export const cfaSkills = [
   'cfa-anti-spaghetti-guard'
 ];
 
-export const skills = [...cfaSkills, 'swift-code-quality'];
+export const skills = [...cfaSkills, 'coding-task-orchestrator', 'swift-code-quality'];
