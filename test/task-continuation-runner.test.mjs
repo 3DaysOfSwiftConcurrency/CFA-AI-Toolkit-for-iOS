@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { claimContinuation, createTaskState, recoverContinuation, reserveContinuation } from '../mcp/cfa-task-continuation-contract.mjs';
+import { claimContinuation, createTaskState, markContinuationDelivery, recoverContinuation, reserveContinuation } from '../mcp/cfa-task-continuation-contract.mjs';
 
 test('an active task reserves, claims, and replaces an expired worker', () => {
   const task = createTaskState({ objective: 'Finish work', acceptanceCriteria: 'Tests pass', nextAction: 'Run tests', threadId: 'thread-1' });
@@ -18,4 +18,12 @@ test('terminal tasks never queue a replacement worker', () => {
   const task = createTaskState({ objective: 'Finish work', acceptanceCriteria: 'Tests pass', nextAction: 'Run tests', threadId: 'thread-1' });
   task.state = 'completed'; task.nextAction = 'No further task work is required.';
   assert.deepEqual(recoverContinuation(task), { queued: false, reason: 'Task is completed.' });
+});
+
+test('a delivered continuation is not redelivered until its retry interval elapses', () => {
+  const task = createTaskState({ objective: 'Finish work', acceptanceCriteria: 'Tests pass', nextAction: 'Run tests', threadId: 'thread-1' });
+  const pending = recoverContinuation(task, { now: 0 });
+  assert.equal(markContinuationDelivery(task, pending.token, { now: 1_000 }).delivered, true);
+  assert.deepEqual(recoverContinuation(task, { now: 10_000 }), { queued: false, reason: 'Continuation delivery is still within its retry interval.' });
+  assert.equal(recoverContinuation(task, { now: 302_000 }).queued, true);
 });

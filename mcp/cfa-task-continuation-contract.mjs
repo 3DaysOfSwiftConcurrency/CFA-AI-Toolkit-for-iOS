@@ -35,6 +35,14 @@ export function reserveContinuation(task) {
   return { queued: true, token: task.continuation.pending.token, task };
 }
 
+export function markContinuationDelivery(task, token, { now = Date.now() } = {}) {
+  if (terminalTaskStates.has(task.state)) return { delivered: false, reason: `Task is ${task.state}.` };
+  if (task.continuation.pending?.token !== token) return { delivered: false, reason: 'Continuation is stale or already claimed.' };
+  task.continuation.pending.deliveryAttempts += 1;
+  task.continuation.pending.lastDeliveredAt = new Date(now).toISOString();
+  return { delivered: true, token, task };
+}
+
 export function claimContinuation(task, token, { now = Date.now(), leaseSeconds = 1800 } = {}) {
   if (terminalTaskStates.has(task.state)) return { claimed: false, reason: `Task is ${task.state}.` };
   if (task.continuation.pending?.token !== token) return { claimed: false, reason: 'Continuation is stale or already claimed.' };
@@ -51,9 +59,11 @@ export function heartbeatContinuation(task, token, { now = Date.now(), leaseSeco
   return task.continuation.active;
 }
 
-export function recoverContinuation(task, { now = Date.now() } = {}) {
+export function recoverContinuation(task, { now = Date.now(), redeliverySeconds = 300 } = {}) {
   if (terminalTaskStates.has(task.state)) return { queued: false, reason: `Task is ${task.state}.` };
   if (task.continuation.active && Date.parse(task.continuation.active.expiresAt) > now) return { queued: false, reason: 'A worker lease is active.' };
   task.continuation.active = null;
+  const lastDeliveredAt = Date.parse(task.continuation.pending?.lastDeliveredAt);
+  if (lastDeliveredAt && lastDeliveredAt + redeliverySeconds * 1000 > now) return { queued: false, reason: 'Continuation delivery is still within its retry interval.' };
   return reserveContinuation(task);
 }

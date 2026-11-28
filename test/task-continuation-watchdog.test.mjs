@@ -17,4 +17,8 @@ test('watchdog queues the recorded next action for an unclaimed active task', t 
   assert.equal(calls[0].threadId, 'thread-1');
   assert.match(calls[0].message, /Run focused tests/);
   assert.match(calls[0].message, /Do not emit a final response/);
+  const persisted = JSON.parse(fs.readFileSync(state, 'utf8'));
+  assert.equal(persisted.continuation.pending.deliveryAttempts, 1);
+  assert.ok(persisted.continuation.pending.lastDeliveredAt);
+  assert.deepEqual(recover(state, { queue: () => { throw Error('must not redeliver within retry interval'); } }), { queued: false, reason: 'Continuation delivery is still within its retry interval.' });
 });

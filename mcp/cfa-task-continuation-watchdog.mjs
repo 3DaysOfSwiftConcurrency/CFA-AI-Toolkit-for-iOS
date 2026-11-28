@@ -13,7 +13,9 @@ export function recover(file, { queue = queueCodexContinuation } = {}) {
     claimInstruction: `First claim it through cfa-task-continuation-runner.mjs claim ${file} --token ${recovered.token}.`,
     workInstruction: `perform this exact next safe action: ${task.nextAction} Record evidence, and heartbeat before long work. Do not emit a final response while the task remains active.`
   });
-  return queue({ threadId: task.continuation.threadId, message });
+  const delivery = queue({ threadId: task.continuation.threadId, message });
+  main(['mark-delivery', file, '--token', recovered.token], { out: () => {} });
+  return delivery;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
