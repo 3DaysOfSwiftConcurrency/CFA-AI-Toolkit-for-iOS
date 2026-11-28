@@ -298,6 +298,14 @@ say “Using CFA” or name the relevant skill from the list below.
 
 The CFA AI Toolkit for iOS contains thirteen AI skills and one local analysis tool.
 
+## Shared UI components
+
+[Minimum-visible refresh controls](shared-ui-components/MinimumVisibleRefreshControl/README.md)
+provide UIKit and SwiftUI presentation components for the rare case where a
+refresh indicator must remain visible briefly. They measure from the indicator's
+start, never after the request completes, so Features and ViewModels do not
+need timing dependencies.
+
 | Skill | Use it when you want to… |
 | --- | --- |
 | [CFA App Creation](skills/cfa-app-creation/SKILL.md) | create and continue shaping a new iOS product with CFA. |
