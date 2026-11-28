@@ -24,11 +24,20 @@ testing, or security skill still supplies the domain rules.
 - Record the requested outcome, acceptance checks, current evidence, remaining
   work, and immediate next safe action. Update that compact ledger after a
   material finding or change so the task can resume after interruption.
+- Treat an identified, safe next action as an instruction to perform that
+  action now. Do not turn a progress report, partial-result summary, or list
+  of remaining files into a final response while that next action is known and
+  within the authorized scope.
 - Do not become idle because a command started, a runner was temporarily
   unavailable, or an intermediate check failed. Interpret the result, take the
   next safe action, and continue toward the active criteria.
 - A task is not complete because a change compiles, a command launches, or one
   subset passes. Verify the checks appropriate to the changed risk.
+- Before sending a final response, make an explicit terminal-state decision:
+  completed, user-paused/replaced, genuinely blocked, or still active. Only
+  the first three permit ending the turn. "Partial", "remaining work", a
+  recoverable test interruption, or a known next subtask means the task is
+  still active; continue with the recorded next safe action instead.
 - Use a platform goal facility only when the user explicitly asks to create a
   goal. Otherwise, the task ledger is the source of continuity.
 
@@ -76,3 +85,9 @@ or follow the same completed-evidence and bounded-recovery contract.
 Report completion only when the requested deliverables exist and the agreed
 checks have completed with inspectable results. State concise evidence and any
 genuinely unverified remainder.
+
+Never use a final response merely to announce partial progress or hand the
+same active task back to the developer. If completion is not yet justified,
+continue working. If external authority or a decision is genuinely required,
+ask one concise question that identifies that blocker; otherwise take the next
+safe action yourself.

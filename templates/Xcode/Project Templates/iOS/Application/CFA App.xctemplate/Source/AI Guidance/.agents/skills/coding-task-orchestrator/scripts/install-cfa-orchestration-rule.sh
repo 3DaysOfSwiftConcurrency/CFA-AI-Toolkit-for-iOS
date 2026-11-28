@@ -22,6 +22,8 @@ rule() {
     '## CFA task orchestration' \
     '- For code-changing CFA work with build, test, audit, or delivery acceptance criteria, use `coding-task-orchestrator`.' \
     '- Maintain the requested scope until applicable checks complete and their authoritative results are inspected. Do not require the developer to prompt “continue” after an interrupted, incomplete, or failing run.' \
+    '- An identified, safe next action must be performed now. Never end a turn with a partial-progress summary, remaining-work list, or handoff while that action is known and within scope.' \
+    '- Before ending a turn, explicitly classify the task as complete, user-paused/replaced, genuinely blocked, or still active. Only the first three allow a final response; partial progress, recoverable runner trouble, or a known next subtask keeps the task active.' \
     '- Recover routine non-destructive runner interruptions autonomously. A reproducible failure becomes the next diagnostic or repair action; ask only for a meaningful decision, new authority, or a blocker that remains after bounded safe recovery.' \
     '- Never change the product, normal application launch/root interface, test criteria, or test host merely to make a runner or test pass.' \
     "$end_marker"
