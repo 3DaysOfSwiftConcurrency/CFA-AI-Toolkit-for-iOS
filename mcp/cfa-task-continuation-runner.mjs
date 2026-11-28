@@ -45,17 +45,18 @@ export function main(args, { out = console.log, installWatchdog = installTaskWat
     if (state.state !== 'completed') throw Error('Only a completed generic task can hand off to an active migration ledger.');
     const authorityFile = path.resolve(ledgerFile);
     const ledger = readMigrationLedger(authorityFile);
+    const storedLedgerPath = path.relative(path.dirname(file), authorityFile) || path.basename(authorityFile);
     const handoff = {
       authority: 'migration-ledger',
-      ledger: authorityFile,
+      ledger: storedLedgerPath,
       token: ledger.continuation.pending.token,
       threadId: ledger.continuation.threadId,
       nextAction: ledger.nextAction,
-      claimCommand: `node orchestrator-state.mjs claim-continuation ${authorityFile} --token ${ledger.continuation.pending.token}`
+      claimCommand: `node orchestrator-state.mjs claim-continuation ${storedLedgerPath} --token ${ledger.continuation.pending.token}`
     };
     state.state = 'replaced';
-    state.nextAction = `Delegated to authoritative migration ledger: ${authorityFile}`;
-    state.evidence.push(`Delegated completed generic task to active migration ledger at ${authorityFile}.`);
+    state.nextAction = `Delegated to authoritative migration ledger: ${storedLedgerPath}`;
+    state.evidence.push(`Delegated completed generic task to active migration ledger at ${storedLedgerPath}.`);
     state.continuation.pending = null;
     state.continuation.active = null;
     state.authority = handoff;

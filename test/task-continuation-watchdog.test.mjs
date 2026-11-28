@@ -45,13 +45,13 @@ test('completed generic task delegates to an active migration ledger without cop
   assert.deepEqual(result, {
     reopened: true,
     handoff: {
-      authority: 'migration-ledger', ledger, token: 'ledger-token', threadId: 'migration-thread',
+      authority: 'migration-ledger', ledger: 'MIGRATION_LEDGER.md', token: 'ledger-token', threadId: 'migration-thread',
       nextAction: 'Extract the next explicit lifecycle owner.',
-      claimCommand: `node orchestrator-state.mjs claim-continuation ${ledger} --token ledger-token`
+      claimCommand: 'node orchestrator-state.mjs claim-continuation MIGRATION_LEDGER.md --token ledger-token'
     }
   });
   const persisted = JSON.parse(fs.readFileSync(task, 'utf8'));
   assert.equal(persisted.state, 'replaced');
-  assert.equal(persisted.authority.ledger, ledger);
+  assert.equal(persisted.authority.ledger, 'MIGRATION_LEDGER.md');
   assert.equal(persisted.continuation.pending, null);
 });
