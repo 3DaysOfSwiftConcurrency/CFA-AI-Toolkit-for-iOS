@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { main as engineMain } from '../skills/cfa-migration-orchestrator/scripts/orchestrator-state.mjs';
 import { inspect } from '../skills/cfa-architecture-review/scripts/dashboard/src/inspector.mjs';
 import { installWatchdog } from './cfa-migration-watchdog-install.mjs';
+import { continuationWakeMessage, queueCodexContinuation } from './cfa-continuation-core.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packageManifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -43,7 +44,11 @@ function text(value) {
 
 function continuationMessage(state) {
   const token = state.continuation?.pending?.token;
-  return `A CFA migration continuation is ready with token ${token}. This is a wake-up signal, not the current migration state. First call cfa_migration_claim_continuation with this token and the ledger path. If it is stale, blocked, or completed, stop without performing work. If claimed, use the returned workerToken as continuationToken in every state-changing CFA migration call. Heartbeat before an operation likely to exceed the active lease. Continue every independent audit, fix, and verification action until the ledger is completed or a genuine user decision is required.`;
+  return continuationWakeMessage({
+    taskName: 'A CFA migration', token,
+    claimInstruction: 'First call cfa_migration_claim_continuation with this token and the ledger path.',
+    workInstruction: 'use the returned workerToken as continuationToken in every state-changing CFA migration call. Heartbeat before an operation likely to exceed the active lease. Continue every independent audit, fix, and verification action until the ledger is completed or a genuine user decision is required.'
+  });
 }
 
 export const postMigrationReadabilityOffer = Object.freeze({
@@ -65,14 +70,9 @@ export function requestCodexContinuation(state, { execute = spawnSync, codex = '
     };
   }
   if (!state.continuation.pending?.token) return { queued: false, reason: 'No continuation reservation is pending.' };
-  const result = execute(codex, ['queue', '--thread', state.continuation.threadId, '--resume', '--message', continuationMessage(state)], { encoding: 'utf8' });
-  const detail = (result.stderr || result.stdout || '').trim();
-  if (result.error) throw Error(`Could not queue Codex continuation: ${result.error.message}`);
-  if (result.status !== 0) throw Error(`Could not queue Codex continuation: ${detail || `codex exited ${result.status}`}`);
-  if (/could not resume thread/i.test(detail) && !/already has an active writer/i.test(detail)) {
-    throw Error(`Could not queue Codex continuation: ${detail}`);
-  }
-  return { queued: true, threadId: state.continuation.threadId, resumed: !/already has an active writer/i.test(detail) };
+  return queueCodexContinuation({
+    threadId: state.continuation.threadId, message: continuationMessage(state), execute, codex
+  });
 }
 
 async function queueNextContinuation(ledger, continuationToken, queueContinuation) {
